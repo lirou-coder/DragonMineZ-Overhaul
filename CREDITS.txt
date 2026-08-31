@@ -1,0 +1,5 @@
+Dragon Mine Z Overhaul
+
+Assets, animations and main codes: Lirou Mage
+AI was used to assist on programing this mod. No AI was used for anything else.
+

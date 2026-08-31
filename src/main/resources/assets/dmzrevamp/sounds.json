@@ -1,0 +1,11 @@
+{
+  "grab": {
+    "sounds": ["dmzrevamp:grab"]
+  },
+  "arm_snap": {
+    "sounds": ["dmzrevamp:arm_snap"]
+  },
+  "arm_regen": {
+    "sounds": ["dmzrevamp:arm_regen"]
+  }
+}
