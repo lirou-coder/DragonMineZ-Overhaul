@@ -9,6 +9,7 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
@@ -35,6 +36,10 @@ public final class FlyingStrikeYLock {
         synchronized (FlyingStrikeYLock.class) {
             State state = STATES.get(player);
             if (state == null) {
+                return;
+            }
+            if (player.isDeadOrDying()) {
+                clear(player);
                 return;
             }
             if (!state.strikeActive && player.tickCount >= state.lockUntilTick) {
@@ -124,6 +129,13 @@ public final class FlyingStrikeYLock {
         return STATES.containsKey(player);
     }
 
+    @SubscribeEvent
+    public static synchronized void onPlayerDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            clear(player);
+        }
+    }
+
     /** Applies the authoritative server anchor to the local player after a strike teleport. */
     public static synchronized void syncClientAnchor(Player player, double anchorY, int remainingTicks) {
         State state = STATES.computeIfAbsent(player, ignored -> new State(anchorY));
@@ -143,6 +155,13 @@ public final class FlyingStrikeYLock {
     @SubscribeEvent
     public static synchronized void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         STATES.remove(event.getEntity());
+    }
+
+    private static void clear(Player player) {
+        if (STATES.remove(player) != null) {
+            player.fallDistance = 0.0F;
+            syncAnchor(player, player.getY(), 0);
+        }
     }
 
     private static void enforceAnchor(Player player, double anchorY) {

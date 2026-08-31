@@ -43,6 +43,13 @@ public final class HandwearCurioRenderer implements ICurioRenderer {
                                                                          float ageInTicks,
                                                                          float netHeadYaw,
                                                                          float headPitch) {
+        var inventory = top.theillusivec4.curios.api.CuriosApi.getCuriosInventory(slotContext.entity()).resolve().orElse(null);
+        var stacksHandler = inventory == null ? null : inventory.getCurios().get(slotContext.identifier());
+        int slotIndex = slotContext.index();
+        if (stacksHandler == null || slotIndex < 0 || slotIndex >= stacksHandler.getRenders().size()
+                || !stacksHandler.getRenders().get(slotIndex)) {
+            return;
+        }
         if (!(stack.getItem() instanceof HandwearItem handwear) || !(parent.getModel() instanceof HumanoidModel<?> parentModel)) {
             return;
         }

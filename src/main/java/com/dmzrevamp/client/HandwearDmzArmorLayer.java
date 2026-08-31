@@ -42,8 +42,8 @@ public final class HandwearDmzArmorLayer<T extends AbstractClientPlayer & GeoAni
             return;
         }
 
-        Optional<ItemStack> equippedHandwear = HandwearHelper.getEquippedHandwear(player, HandwearType.GLOVES)
-                .or(() -> HandwearHelper.getEquippedHandwear(player, HandwearType.WRISTBANDS));
+        Optional<ItemStack> equippedHandwear = HandwearHelper.getRenderableEquippedHandwear(player, HandwearType.GLOVES)
+                .or(() -> HandwearHelper.getRenderableEquippedHandwear(player, HandwearType.WRISTBANDS));
         if (equippedHandwear.isEmpty() || !(equippedHandwear.get().getItem() instanceof HandwearItem handwear)) {
             return;
         }

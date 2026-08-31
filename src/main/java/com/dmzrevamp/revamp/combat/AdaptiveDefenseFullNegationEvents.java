@@ -45,7 +45,7 @@ public final class AdaptiveDefenseFullNegationEvents {
             return;
         }
         double defense = stats.getDefense() * Math.max(1D, stats.getTotalMultiplier("DEF"));
-        double referenceDamage = event.getAmount();
+        double referenceDamage = effectiveReferenceDamage(event.getSource(), event.getAmount());
         double cancellationPoint = referenceDamage * config.cancelDamageMitigationThreshold;
         if (Double.isFinite(defense) && Double.isFinite(referenceDamage) && defense > 0D
                 && referenceDamage > 0D
@@ -60,6 +60,19 @@ public final class AdaptiveDefenseFullNegationEvents {
             victim.level().playSound(null, victim.blockPosition(), sound, SoundSource.PLAYERS, 1.0F,
                     0.9F + victim.getRandom().nextFloat() * 0.1F);
         }
+    }
+
+    /** PvP basic attacks are resolved from DMZ's melee stat, not the tiny vanilla attack packet value. */
+    private static double effectiveReferenceDamage(DamageSource source, double vanillaDamage) {
+        if (!(source.getEntity() instanceof Player attacker)) {
+            return vanillaDamage;
+        }
+        StatsData attackerStats = StatsProvider.get(StatsCapability.INSTANCE, attacker).resolve().orElse(null);
+        if (attackerStats == null || !attackerStats.getStatus().isHasCreatedCharacter()) {
+            return vanillaDamage;
+        }
+        double meleeDamage = attackerStats.getMeleeDamage();
+        return Double.isFinite(meleeDamage) && meleeDamage > 0D ? meleeDamage : vanillaDamage;
     }
 
     private static boolean isEligibleOrdinaryHit(DamageSource source, Player victim) {

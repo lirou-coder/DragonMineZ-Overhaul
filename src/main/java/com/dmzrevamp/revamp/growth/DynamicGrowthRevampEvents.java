@@ -95,15 +95,16 @@ public final class DynamicGrowthRevampEvents {
         double fullDistance = state.lastPosition.distanceTo(currentPosition);
         state.lastPosition = currentPosition;
 
-        if (player.isSwimming() && player.isInWater()) {
+        boolean mounted = player.isPassenger();
+        if (!mounted && player.isSwimming() && player.isInWater()) {
             awardWholeBlocks(player, data, state, fullDistance, true);
             state.runningDistance = 0D;
             state.flyingDistance = 0D;
-        } else if (isFastFlying(player, data, fullDistance)) {
+        } else if (!mounted && isFastFlying(player, data, fullDistance)) {
             awardFastFlightWholeBlocks(player, data, state, fullDistance);
             state.runningDistance = 0D;
             state.swimmingDistance = 0D;
-        } else if (player.isSprinting() && !player.isInWater()) {
+        } else if (!mounted && player.isSprinting() && !player.isInWater()) {
             awardSkpWholeBlocks(player, data, state, horizontalDistance, MovementMode.RUNNING);
             state.swimmingDistance = 0D;
             state.flyingDistance = 0D;
@@ -133,7 +134,7 @@ public final class DynamicGrowthRevampEvents {
             state.lavaTicks = 0;
         }
 
-        boolean flying = isFlying(player, data);
+        boolean flying = !mounted && isFlying(player, data);
         boolean movedWhileFlying = Double.isFinite(fullDistance)
                 && (fullDistance * fullDistance) > MIN_FLIGHT_MOVEMENT_SQR;
         if (flying && movedWhileFlying) {

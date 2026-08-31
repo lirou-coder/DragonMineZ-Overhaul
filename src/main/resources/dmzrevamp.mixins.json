@@ -74,6 +74,7 @@
     "QuestServiceRevampSpawnFieldsMixin",
     "RacialModeHandlerCustomSkillMixin",
     "RacialSkillCommandRevampResetMixin",
+    "ReloadCommandWeightConfigMixin",
     "SkillsCommandAllMixin",
     "CombatConfigAdaptiveDefenseDefaultsMixin",
     "StatsDataRevampMixin",

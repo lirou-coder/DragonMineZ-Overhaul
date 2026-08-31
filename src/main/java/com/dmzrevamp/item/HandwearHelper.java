@@ -39,6 +39,29 @@ public final class HandwearHelper {
                 .findFirst();
     }
 
+    /** Same lookup used by custom render layers, honoring Curios' per-slot visibility toggle. */
+    public static Optional<ItemStack> getRenderableEquippedHandwear(LivingEntity entity, HandwearType type) {
+        if (entity == null) {
+            return Optional.empty();
+        }
+        return CuriosApi.getCuriosInventory(entity).resolve().flatMap(handler -> {
+            var stacksHandler = handler.getCurios().get(HANDS_SLOT);
+            if (stacksHandler == null) {
+                return Optional.empty();
+            }
+            for (int index = 0; index < stacksHandler.getSlots(); index++) {
+                if (index >= stacksHandler.getRenders().size() || !stacksHandler.getRenders().get(index)) {
+                    continue;
+                }
+                ItemStack stack = stacksHandler.getStacks().getStackInSlot(index);
+                if (stack.getItem() instanceof HandwearItem handwear && handwear.getHandwearType() == type) {
+                    return Optional.of(stack);
+                }
+            }
+            return Optional.empty();
+        });
+    }
+
     public static Optional<ItemStack> getAnyActiveHandwear(LivingEntity entity) {
         if (!canUseHandwear(entity)) {
             return Optional.empty();
