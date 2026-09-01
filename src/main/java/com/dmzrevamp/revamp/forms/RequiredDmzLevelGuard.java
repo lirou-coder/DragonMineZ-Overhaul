@@ -1,5 +1,6 @@
 package com.dmzrevamp.revamp.forms;
 
+import com.dmzrevamp.compat.DmzSkillProgressionCompat;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.ChatFormatting;
@@ -11,6 +12,7 @@ public final class RequiredDmzLevelGuard {
 
     public static boolean allows(ServerPlayer player, StatsData data, FormConfig.FormData form) {
         if (player.isCreative()) return true;
+        if (DmzSkillProgressionCompat.isRankZeroKaiokenTraining(data, form)) return true;
         int required = form instanceof RequiredDmzLevelForm extension
                 ? Math.max(1, extension.dmzrevamp$getRequiredDMZLevel()) : 1;
         if (data.getLevel() >= required) return true;

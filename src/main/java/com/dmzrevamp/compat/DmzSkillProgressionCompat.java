@@ -2,6 +2,7 @@ package com.dmzrevamp.compat;
 
 import com.dmzrevamp.revamp.ki.KiAttackOverhaul;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.techniques.Techniques;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.capabilities.Capability;
@@ -71,6 +72,24 @@ public final class DmzSkillProgressionCompat {
 
     public static boolean isOverhaulSignatureKiAttack(String id) {
         return "final_kamehameha".equalsIgnoreCase(id) || "big_bang_kamehameha".equalsIgnoreCase(id);
+    }
+
+    /**
+     * Skill Progression trains Kaioken rank 0 by charging the selected x2 form while
+     * deliberately keeping DMZ's native skill at level zero. The Overhaul level gate
+     * must let that training charge reach the add-on's completion interceptor.
+     */
+    public static boolean isRankZeroKaiokenTraining(StatsData data, FormConfig.FormData form) {
+        if (!isLoaded() || data == null || form == null || data.getCharacter() == null) {
+            return false;
+        }
+        if (!"x2".equalsIgnoreCase(form.getName())
+                || !"kaioken".equalsIgnoreCase(data.getCharacter().getSelectedStackFormGroup())
+                || !"x2".equalsIgnoreCase(data.getCharacter().getSelectedStackForm())) {
+            return false;
+        }
+        var kaioken = data.getSkills().getSkill("kaioken");
+        return kaioken != null && kaioken.getLevel() == 0 && !data.getCharacter().hasActiveStackForm();
     }
 
     /** Clears the add-on's independent progression capability after a destructive skill reset. */
