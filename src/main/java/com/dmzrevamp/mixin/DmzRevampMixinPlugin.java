@@ -26,6 +26,7 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
     private boolean dmzSkillProgressionLoaded;
     private boolean dmzSparkingLoaded;
     private boolean sduLoaded;
+    private boolean alternatePassivesLoaded;
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -33,6 +34,7 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         dmzSkillProgressionLoaded = DmzSkillProgressionCompat.isLoadedEarly();
         dmzSparkingLoaded = DmzSparkingCompat.isLoadedEarly();
         sduLoaded = SduCompat.isLoadedEarly();
+        alternatePassivesLoaded = isModLoadedEarly("majinabsorption");
     }
 
     @Override
@@ -51,6 +53,9 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         if ("com.dmzrevamp.mixin.ConfigManagerSparkingCompatMixin".equals(mixinClassName)) return dmzSparkingLoaded;
         if ("com.dmzrevamp.mixin.compat.DmzBetterFormsTierCompatMixin".equals(mixinClassName)) {
             return isModLoadedEarly("dmzbetterforms") && hasClass(targetClassName);
+        }
+        if ("com.dmzrevamp.mixin.compat.AlternatePassivesRacialRouterMixin".equals(mixinClassName)) {
+            return alternatePassivesLoaded && hasClass(targetClassName);
         }
         if (isModLoadedEarly("dmzrealistic") && Set.of(
                 "com.dmzrevamp.mixin.WeightItemRevampLimitMixin",

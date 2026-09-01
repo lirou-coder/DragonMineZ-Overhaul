@@ -15,6 +15,7 @@
     "ClashParticipantConfiguredMixin",
     "KiBlastClashLockMixin",
     "AttributeFixDefaultsMixin",
+    "compat.AlternatePassivesRacialRouterMixin",
     "CombatEventBlockStaminaCostMixin",
     "CombatEventAdaptiveDefenseMoreConfiguredMixin",
     "CombatEventClassSkillKiCostMixin",
