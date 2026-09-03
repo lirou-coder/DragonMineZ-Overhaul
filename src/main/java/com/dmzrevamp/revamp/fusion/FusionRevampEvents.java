@@ -10,6 +10,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FusionRevampEvents {
     private static final Map<UUID, PendingFusionResources> PENDING_RESOURCE_AVERAGES = new ConcurrentHashMap<>();
+    private static final Map<UUID, PendingNpcFusionResources> PENDING_NPC_RESOURCE_AVERAGES = new ConcurrentHashMap<>();
     private static final Map<UUID, FusionSyncState> SYNC_STATES = new ConcurrentHashMap<>();
 
     private FusionRevampEvents() {
@@ -42,13 +44,54 @@ public final class FusionRevampEvents {
     }
 
     @SubscribeEvent
+    public static void onFusion(DMZEvent.FusionEvent event) {
+        ServerPlayer player = event.getInitiator();
+        if (!FusionsRevampedConfig.isRevampedEnabled()
+                || event.getType() != DMZEvent.FusionEvent.FusionType.METAMORU
+                || event.getTarget() instanceof ServerPlayer) {
+            return;
+        }
+        LivingEntity npc = event.getTarget();
+        StatsData data = data(player);
+        if (data == null || npc == null) {
+            return;
+        }
+
+        double health = averagePercent(player.getHealth(), player.getMaxHealth(), npc.getHealth(), npc.getMaxHealth());
+        double energy = percent(data.getResources().getCurrentEnergy(), data.getMaxEnergy());
+        double stamina = percent(data.getResources().getCurrentStamina(), data.getMaxStamina());
+        PENDING_NPC_RESOURCE_AVERAGES.put(player.getUUID(),
+                new PendingNpcFusionResources(npc.getUUID(), 10, health, energy, stamina));
+    }
+
+    @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide() || !(event.player instanceof ServerPlayer player)) {
             return;
         }
 
         processPendingResourceAverage(player);
+        processPendingNpcResourceAverage(player);
         syncObserverMultipliers(player);
+    }
+
+    private static void processPendingNpcResourceAverage(ServerPlayer player) {
+        PendingNpcFusionResources pending = PENDING_NPC_RESOURCE_AVERAGES.get(player.getUUID());
+        if (pending == null) {
+            return;
+        }
+        StatsData data = data(player);
+        boolean matchingFusion = data != null && data.getStatus().isFused()
+                && pending.partnerId.equals(data.getStatus().getFusionPartnerUUID());
+        if (matchingFusion) {
+            FusionRevampLogic.restoreNpcFusionResources(data, pending.healthPercent,
+                    pending.energyPercent, pending.staminaPercent, pending.ticksRemaining == 10);
+        }
+        if (pending.ticksRemaining > 1) {
+            PENDING_NPC_RESOURCE_AVERAGES.put(player.getUUID(), pending.nextTick());
+        } else {
+            PENDING_NPC_RESOURCE_AVERAGES.remove(player.getUUID());
+        }
     }
 
     private static void processPendingResourceAverage(ServerPlayer player) {
@@ -96,6 +139,7 @@ public final class FusionRevampEvents {
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         UUID id = event.getEntity().getUUID();
         PENDING_RESOURCE_AVERAGES.remove(id);
+        PENDING_NPC_RESOURCE_AVERAGES.remove(id);
         SYNC_STATES.remove(id);
     }
 
@@ -195,6 +239,14 @@ public final class FusionRevampEvents {
                                           double healthPercent, double energyPercent, double staminaPercent) {
         private PendingFusionResources nextTick() {
             return new PendingFusionResources(leaderId, partnerId, ticksRemaining - 1,
+                    healthPercent, energyPercent, staminaPercent);
+        }
+    }
+
+    private record PendingNpcFusionResources(UUID partnerId, int ticksRemaining,
+                                             double healthPercent, double energyPercent, double staminaPercent) {
+        private PendingNpcFusionResources nextTick() {
+            return new PendingNpcFusionResources(partnerId, ticksRemaining - 1,
                     healthPercent, energyPercent, staminaPercent);
         }
     }

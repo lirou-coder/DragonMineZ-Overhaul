@@ -335,6 +335,16 @@ public final class FusionRevampLogic {
         syncProgression(partnerData);
     }
 
+    public static void restoreNpcFusionResources(StatsData playerData, double healthPercent,
+                                                 double energyPercent, double staminaPercent,
+                                                 boolean restoreHealth) {
+        if (playerData == null) {
+            return;
+        }
+        setResourcePercent(playerData, healthPercent, energyPercent, staminaPercent, restoreHealth);
+        syncProgression(playerData);
+    }
+
     private static void setResourcePercent(StatsData data, double healthPercent, double energyPercent,
                                            double staminaPercent, boolean restoreHealth) {
         Resources resources = data.getResources();

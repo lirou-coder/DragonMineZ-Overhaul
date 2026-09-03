@@ -33,9 +33,6 @@ public final class FusionCosmeticArmorEvents {
     public static void onFusion(DMZEvent.FusionEvent event) {
         ServerPlayer controllingPlayer = event.getInitiator();
         LivingEntity target = event.getTarget();
-        if (!(target instanceof ServerPlayer otherPlayer)) {
-            return;
-        }
 
         if (event.getType() == DMZEvent.FusionEvent.FusionType.METAMORU) {
             InternalCosmeticArmorRows.setRow(
@@ -47,6 +44,10 @@ public final class FusionCosmeticArmorEvents {
                     ItemStack.EMPTY,
                     true
             );
+            return;
+        }
+
+        if (!(target instanceof ServerPlayer otherPlayer)) {
             return;
         }
 

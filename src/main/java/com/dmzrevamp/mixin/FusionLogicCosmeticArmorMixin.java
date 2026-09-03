@@ -21,6 +21,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class FusionLogicCosmeticArmorMixin {
     private static final ThreadLocal<Boolean> DMZREVAMP_METAMORU_BOTH_ANDROIDS = ThreadLocal.withInitial(() -> false);
 
+    @Redirect(
+            method = "applyFusion",
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/quest/PartyManager;beginFusionParty(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/server/level/ServerPlayer;)V"),
+            remap = false
+    )
+    private static void dmzrevamp$doNotCreateArtificialFusionParty(ServerPlayer leader, ServerPlayer partner) {
+        // Saga progress is party-owned. DMZ normally creates or merges a party
+        // here solely because the players fused, exposing the leader's quests
+        // and unclaimed rewards to a partner who was never in that party.
+        // Real parties already exist and need no mutation during fusion.
+    }
+
     @Inject(method = "endFusion", at = @At("HEAD"), remap = false)
     private static void dmzrevamp$clearFusionCosmeticArmor(ServerPlayer player, StatsData data, boolean forced, CallbackInfo ci) {
         if (player != null) {
