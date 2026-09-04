@@ -1,5 +1,6 @@
 package com.dmzrevamp.racial.impl;
 
+import com.dmzrevamp.compat.AlternatePassivesCompat;
 import com.dmzrevamp.racial.CustomRacialSkill;
 import com.dmzrevamp.config.racial.MajinRevampRacialConfig;
 import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
@@ -86,6 +87,9 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
             return;
         }
         if (TargetHelper.getRelation(player, target) == TargetHelper.Relation.FRIENDLY) {
+            return;
+        }
+        if (AlternatePassivesCompat.handleMajinAbsorption(player, data, target)) {
             return;
         }
         if (!canAbsorbTarget(player, data, target, config) && !player.isCreative()) {
