@@ -26,18 +26,24 @@ public final class ClassSkillHelper {
 
     private static final Map<String, String> CLASS_TO_SKILL = new LinkedHashMap<>();
     private static final Map<String, ClassSkillDefinition> CLASS_SKILLS = new LinkedHashMap<>();
+    private static boolean registeringBuiltInSkills;
 
     static {
-        registerClassSkill("warrior", WARRIOR, "Warrior", null);
-        registerClassSkill("berserker", BERSERKER, "Berserker", null);
-        registerClassSkill("spiritualist", SPIRITUALIST, "Spiritualist", null);
-        registerClassSkill("martialartist", MARTIAL_ARTIST, "Martial Artist", null);
-        registerClassSkill("cleric", CLERIC, "Cleric", null);
-        registerClassSkill("paladin", PALADIN, "Paladin", null);
-        registerClassSkill("tank", TANK, "Tank", null);
-        registerClassSkill("speedster", SPEEDSTER, "Speedster", null);
-        registerClassSkill("duelist", DUELIST, "Duelist", null);
-        registerClassSkill("kiassassin", KI_ASSASSIN, "Ki Assassin", null);
+        registeringBuiltInSkills = true;
+        try {
+            registerClassSkill("warrior", WARRIOR, "Warrior", null);
+            registerClassSkill("berserker", BERSERKER, "Berserker", null);
+            registerClassSkill("spiritualist", SPIRITUALIST, "Spiritualist", null);
+            registerClassSkill("martialartist", MARTIAL_ARTIST, "Martial Artist", null);
+            registerClassSkill("cleric", CLERIC, "Cleric", null);
+            registerClassSkill("paladin", PALADIN, "Paladin", null);
+            registerClassSkill("tank", TANK, "Tank", null);
+            registerClassSkill("speedster", SPEEDSTER, "Speedster", null);
+            registerClassSkill("duelist", DUELIST, "Duelist", null);
+            registerClassSkill("kiassassin", KI_ASSASSIN, "Ki Assassin", null);
+        } finally {
+            registeringBuiltInSkills = false;
+        }
     }
 
     private ClassSkillHelper() {
@@ -67,7 +73,9 @@ public final class ClassSkillHelper {
         if (!ALL_SKILLS.contains(normalizedSkill)) {
             ALL_SKILLS.add(normalizedSkill);
         }
-        ClassPassiveAliases.onClassSkillRegistered(normalizedSkill);
+        if (!registeringBuiltInSkills) {
+            ClassPassiveAliases.onClassSkillRegistered(normalizedSkill);
+        }
     }
 
     public static synchronized List<String> registeredClassSkills() {
