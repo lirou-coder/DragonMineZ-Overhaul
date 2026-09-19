@@ -7,8 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -16,11 +15,18 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ClashParticipant.class)
 public abstract class ClashParticipantConfiguredMixin implements com.dmzrevamp.revamp.ki.ClashParticipantAccess {
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/init/entities/ki/AbstractKiProjectile;getKiDamage()F"), remap = false)
-    private float dmzrevamp$neutralizeNativeKiDamageInfluence(AbstractKiProjectile projectile) {
+    @ModifyArg(
+            method = "<init>",
+            at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(DD)D"),
+            index = 1,
+            remap = false
+    )
+    private double dmzrevamp$neutralizeNativeKiDamageInfluence(double projectileDamage) {
         // The complete Overhaul clash system applies Ki damage exactly once in KiClashTeams.
         // Keeping DMZ's captured statPower here would also improve NPC accuracy and double the advantage.
-        return 1F;
+        // Modify Math.max's argument instead of redirecting getKiDamage directly: Ragnarok also
+        // redirects that invocation for planet clashes, and two redirects cannot own the same call.
+        return 1D;
     }
     @Accessor("momentum")
     public abstract float dmzrevamp$getMomentum();
