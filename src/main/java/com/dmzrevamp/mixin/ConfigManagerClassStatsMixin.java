@@ -5,6 +5,7 @@ import com.dmzrevamp.config.CustomBattlePowerConfig;
 import com.dmzrevamp.config.CustomStrikeAttacksConfig;
 import com.dmzrevamp.config.DynamicGrowthCurveConfig;
 import com.dmzrevamp.config.FusionsRevampedConfig;
+import com.dmzrevamp.config.ExtraDifficultiesConfig;
 import com.dmzrevamp.config.KiClashConfigured;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
@@ -91,6 +92,7 @@ public abstract class ConfigManagerClassStatsMixin {
         CustomStrikeAttacksConfig.reload();
         DynamicGrowthCurveConfig.reload();
         FusionsRevampedConfig.reload();
+        ExtraDifficultiesConfig.reload();
         KiClashConfigured.reload();
         StrikeClashConfigured.reload();
         LevelingRevampConfig.reload();

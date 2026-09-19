@@ -2,6 +2,7 @@ package com.dmzrevamp.revamp.battlepower;
 
 import com.dmzrevamp.config.CustomBattlePowerConfig;
 import com.dmzrevamp.revamp.quest.QuestSpawnAttributeApplier;
+import com.dmzrevamp.entity.DmzRevampAttributes;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
@@ -37,12 +38,17 @@ public final class AccurateMobBattlePowerCalculator {
     private AccurateMobBattlePowerCalculator() {
     }
 
-    public static long calculateCurvedBattlePower(LivingEntity entity) {
+    public static double calculateCurvedBattlePowerExact(LivingEntity entity) {
         double totalPower = calculateTotalPower(entity);
         if (!Double.isFinite(totalPower) || totalPower <= 0D) {
-            return 0L;
+            return 0D;
         }
-        return CustomBattlePowerCalculator.calculateMobBattlePower(totalPower);
+        return CustomBattlePowerCalculator.calculateMobBattlePowerExact(totalPower);
+    }
+
+    public static long calculateCurvedBattlePower(LivingEntity entity) {
+        double exact = calculateCurvedBattlePowerExact(entity);
+        return exact >= Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(0L, (long) exact);
     }
 
     public static int toStoredVisibleBattlePower(long battlePower) {
@@ -57,6 +63,7 @@ public final class AccurateMobBattlePowerCalculator {
         double total = 0D;
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "maxHealth", attributeValue(entity, Attributes.MAX_HEALTH));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "attackDamage", attributeValue(entity, Attributes.ATTACK_DAMAGE));
+        total += CustomBattlePowerConfig.weightedValue(config.mobStats, "defense", attributeValue(entity, DmzRevampAttributes.MOB_DEFENSE.get()));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "armor", attributeValue(entity, Attributes.ARMOR));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "armorToughness", attributeValue(entity, Attributes.ARMOR_TOUGHNESS));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "protection", protectionLevels(entity));

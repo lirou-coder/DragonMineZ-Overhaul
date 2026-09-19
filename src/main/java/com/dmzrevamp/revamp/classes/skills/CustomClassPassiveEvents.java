@@ -226,7 +226,24 @@ public final class CustomClassPassiveEvents {
     }
 
     @SubscribeEvent public static void death(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) clear(player, data(player));
+        if (event.getEntity() instanceof ServerPlayer player) {
+            StatsData data = data(player);
+            disablePotentialOnDeath(player, data);
+            clear(player, data);
+        }
+    }
+    @SubscribeEvent public static void respawn(PlayerEvent.Clone event) {
+        if (!event.isWasDeath() || !(event.getOriginal() instanceof ServerPlayer oldPlayer)
+                || !(event.getEntity() instanceof ServerPlayer player)) return;
+        long cooldown = oldPlayer.getPersistentData().getLong(POTENTIAL_COOLDOWN_UNTIL);
+        if (cooldown > 0L) player.getPersistentData().putLong(POTENTIAL_COOLDOWN_UNTIL, cooldown);
+        if (oldPlayer.getPersistentData().hasUUID(POTENTIAL_SOURCE)) {
+            player.getPersistentData().putUUID(POTENTIAL_SOURCE,
+                    oldPlayer.getPersistentData().getUUID(POTENTIAL_SOURCE));
+        }
+        player.getPersistentData().remove(POTENTIAL_ORIGINAL_RELEASE);
+        player.getPersistentData().remove(POTENTIAL_ACTIVE_UNTIL);
+        player.getPersistentData().remove(POTENTIAL_BONUS);
     }
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) clear(player, data(player));
@@ -409,6 +426,15 @@ public final class CustomClassPassiveEvents {
         player.getPersistentData().remove(POTENTIAL_ORIGINAL_RELEASE);
         player.getPersistentData().remove(POTENTIAL_ACTIVE_UNTIL);
         player.getPersistentData().remove(POTENTIAL_BONUS);
+    }
+
+    private static void disablePotentialOnDeath(ServerPlayer player, StatsData data) {
+        if (data == null || !player.getPersistentData().contains(POTENTIAL_ORIGINAL_RELEASE)) return;
+        long now = player.level().getGameTime();
+        long cooldown = Math.max(player.getPersistentData().getLong(POTENTIAL_COOLDOWN_UNTIL), now + 1800L);
+        restorePotentialRelease(player, data);
+        player.getPersistentData().putLong(POTENTIAL_COOLDOWN_UNTIL, cooldown);
+        NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
     }
 
     private static void clearPotentialCooldown(ServerPlayer player) {

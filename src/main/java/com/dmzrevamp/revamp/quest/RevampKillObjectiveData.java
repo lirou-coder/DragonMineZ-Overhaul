@@ -3,6 +3,8 @@ package com.dmzrevamp.revamp.quest;
 import java.util.List;
 
 public interface RevampKillObjectiveData {
+    Double dmzrevamp$getDefense();
+    void dmzrevamp$setDefense(Double value);
     boolean dmzrevamp$canTransformStage(int stage);
 
     void dmzrevamp$setCanTransformStage(int stage, boolean allowed);
@@ -28,6 +30,8 @@ public interface RevampKillObjectiveData {
     void dmzrevamp$setMovementSpeed(Double value);
 
     Double dmzrevamp$getTransformArmor();
+    Double dmzrevamp$getTransformDefense();
+    void dmzrevamp$setTransformDefense(Double value);
 
     void dmzrevamp$setTransformArmor(Double value);
 
@@ -44,6 +48,8 @@ public interface RevampKillObjectiveData {
     void dmzrevamp$setTransformMovementSpeed(Double value);
 
     Double dmzrevamp$getTransformArmorMultiplier();
+    Double dmzrevamp$getTransformDefenseMultiplier();
+    void dmzrevamp$setTransformDefenseMultiplier(Double value);
 
     void dmzrevamp$setTransformArmorMultiplier(Double value);
 

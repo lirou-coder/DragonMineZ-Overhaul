@@ -5,10 +5,10 @@ import com.dragonminez.common.stats.StatsData;
 
 public final class CustomBattlePowerCalculator {
     private static final double ANDROID_UPGRADED_BATTLE_POWER = 3.4028234663852886E38D;
-    private static final double DEFAULT_SCOUTER_BREAK_BATTLE_POWER = 150000D;
-    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1200D;
+    private static final double DEFAULT_SCOUTER_BREAK_BATTLE_POWER = 500000D;
+    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1500D;
     private static final double DEFAULT_TOTAL_STATS_DIVISOR = 500D;
-    private static final double DEFAULT_EXPONENT = 1.2D;
+    private static final double DEFAULT_EXPONENT = 2.425D;
     private static final double SCOUTER_BREAK_REFERENCE_STATS = DEFAULT_TOTAL_STATS_DIVISOR
             * Math.pow(DEFAULT_SCOUTER_BREAK_BATTLE_POWER / DEFAULT_REFERENCE_MULTIPLIER, 1D / DEFAULT_EXPONENT);
 
@@ -38,11 +38,15 @@ public final class CustomBattlePowerCalculator {
     }
 
     public static long calculateMobBattlePower(double totalStats) {
-        double calculated = calculate(CustomBattlePowerConfig.get(), totalStats, 1D);
+        double calculated = calculateMobBattlePowerExact(totalStats);
         if (calculated >= Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         }
         return Math.max(1L, (long) calculated);
+    }
+
+    public static double calculateMobBattlePowerExact(double totalStats) {
+        return calculate(CustomBattlePowerConfig.get(), totalStats, 1D);
     }
 
     public static double calculateScouterBreakBattlePower() {

@@ -7,6 +7,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -14,6 +16,12 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ClashParticipant.class)
 public abstract class ClashParticipantConfiguredMixin implements com.dmzrevamp.revamp.ki.ClashParticipantAccess {
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/init/entities/ki/AbstractKiProjectile;getKiDamage()F"), remap = false)
+    private float dmzrevamp$neutralizeNativeKiDamageInfluence(AbstractKiProjectile projectile) {
+        // The complete Overhaul clash system applies Ki damage exactly once in KiClashTeams.
+        // Keeping DMZ's captured statPower here would also improve NPC accuracy and double the advantage.
+        return 1F;
+    }
     @Accessor("momentum")
     public abstract float dmzrevamp$getMomentum();
 

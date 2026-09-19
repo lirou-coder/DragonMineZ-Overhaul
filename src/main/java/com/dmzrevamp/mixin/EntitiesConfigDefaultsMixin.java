@@ -84,15 +84,18 @@ public abstract class EntitiesConfigDefaultsMixin {
     }
 
     private static void setEntityExtraFields(JsonObject object, RevampEntityStatsData data) {
+        data.dmzrevamp$setDefense(nullableDouble(object, "Defense", "defense"));
         data.dmzrevamp$setArmor(nullableDouble(object, "Armor", "armor"));
         data.dmzrevamp$setArmorToughness(nullableDouble(object, "ArmorToughness", "armorToughness"));
         data.dmzrevamp$setProtection(nullableDouble(object, "Protection", "protection"));
         data.dmzrevamp$setMovementSpeed(nullableDouble(object, "movementSpeed", "MovementSpeed"));
         data.dmzrevamp$setTransformArmor(nullableDouble(object, "TransformArmor", "transformArmor"));
+        data.dmzrevamp$setTransformDefense(nullableDouble(object, "TransformDefense", "transformDefense"));
         data.dmzrevamp$setTransformArmorToughness(nullableDouble(object, "TransformArmorToughness", "transformArmorToughness"));
         data.dmzrevamp$setTransformProtection(nullableDouble(object, "TransformProtection", "transformProtection"));
         data.dmzrevamp$setTransformMovementSpeed(nullableDouble(object, "TransformMovementSpeed", "transformMovementSpeed"));
         data.dmzrevamp$setTransformArmorMultiplier(nullableDouble(object, "TransformArmorMultiplier", "transformArmorMultiplier"));
+        data.dmzrevamp$setTransformDefenseMultiplier(nullableDouble(object, "TransformDefenseMulti", "TransformDefenseMultiplier", "transformDefenseMulti"));
         data.dmzrevamp$setTransformArmorToughnessMultiplier(nullableDouble(object, "TransformArmorToughnessMultiplier", "transformArmorToughnessMultiplier"));
         data.dmzrevamp$setTransformProtectionMultiplier(nullableDouble(object, "TransformProtectionMultiplier", "transformProtectionMultiplier"));
         data.dmzrevamp$setTransformMovementSpeedMultiplier(nullableDouble(object, "TransformMovementSpeedMultiplier", "transformMovementSpeedMultiplier"));
@@ -101,11 +104,13 @@ public abstract class EntitiesConfigDefaultsMixin {
     }
 
     private static void setTransformExtraFields(JsonObject object, RevampTransformSettingsData data) {
+        data.dmzrevamp$setTransformDefense(nullableDouble(object, "TransformDefense", "transformDefense"));
         data.dmzrevamp$setTransformArmor(nullableDouble(object, "TransformArmor", "transformArmor"));
         data.dmzrevamp$setTransformArmorToughness(nullableDouble(object, "TransformArmorToughness", "transformArmorToughness"));
         data.dmzrevamp$setTransformProtection(nullableDouble(object, "TransformProtection", "transformProtection"));
         data.dmzrevamp$setTransformMovementSpeed(nullableDouble(object, "TransformMovementSpeed", "transformMovementSpeed"));
         data.dmzrevamp$setTransformArmorMultiplier(nullableDouble(object, "TransformArmorMultiplier", "transformArmorMultiplier"));
+        data.dmzrevamp$setTransformDefenseMultiplier(nullableDouble(object, "TransformDefenseMulti", "TransformDefenseMultiplier", "transformDefenseMulti"));
         data.dmzrevamp$setTransformArmorToughnessMultiplier(nullableDouble(object, "TransformArmorToughnessMultiplier", "transformArmorToughnessMultiplier"));
         data.dmzrevamp$setTransformProtectionMultiplier(nullableDouble(object, "TransformProtectionMultiplier", "transformProtectionMultiplier"));
         data.dmzrevamp$setTransformMovementSpeedMultiplier(nullableDouble(object, "TransformMovementSpeedMultiplier", "transformMovementSpeedMultiplier"));

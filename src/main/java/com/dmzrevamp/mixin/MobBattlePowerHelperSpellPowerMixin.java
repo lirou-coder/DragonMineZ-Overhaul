@@ -1,6 +1,6 @@
 package com.dmzrevamp.mixin;
 
-import com.dmzrevamp.revamp.battlepower.AccurateMobBattlePowerCalculator;
+import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,7 +28,6 @@ public abstract class MobBattlePowerHelperSpellPowerMixin {
         if (entity instanceof Player) {
             return 0;
         }
-        long curvedBattlePower = AccurateMobBattlePowerCalculator.calculateCurvedBattlePower(entity);
-        return AccurateMobBattlePowerCalculator.toStoredVisibleBattlePower(curvedBattlePower);
+        return ManualBattlePowerStatEvents.cachedStoredBattlePower(entity);
     }
 }

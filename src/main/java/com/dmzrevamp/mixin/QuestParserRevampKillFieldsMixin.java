@@ -23,9 +23,9 @@ import java.util.Map;
 @Mixin(targets = "com.dragonminez.common.quest.QuestParser", remap = false)
 public abstract class QuestParserRevampKillFieldsMixin {
     private static final String[] DMZREVAMP_KILL_KEYS = {
-            "Armor", "ArmorToughness", "Protection", "movementSpeed", "MovementSpeed",
-            "TransformArmor", "TransformArmorToughness", "TransformProtection", "TransformMovementSpeed",
-            "TransformArmorMultiplier", "TransformArmorToughnessMultiplier", "TransformProtectionMultiplier", "TransformMovementSpeedMultiplier",
+            "Defense", "Armor", "ArmorToughness", "Protection", "movementSpeed", "MovementSpeed",
+            "TransformDefense", "TransformArmor", "TransformArmorToughness", "TransformProtection", "TransformMovementSpeed",
+            "TransformDefenseMulti", "TransformDefenseMultiplier", "TransformArmorMultiplier", "TransformArmorToughnessMultiplier", "TransformProtectionMultiplier", "TransformMovementSpeedMultiplier",
             "mobEffects", "mobEffect", "TransformMobEffects", "TransformMobEffect",
             "canTransform2", "canTransform3"
     };
@@ -33,6 +33,7 @@ public abstract class QuestParserRevampKillFieldsMixin {
             "Health", "HealthMulti", "HealthMultiplier",
             "MeleeDamage", "MeleeDamageMulti", "MeleeDamageMultiplier", "MeleeMulti",
             "KiDamage", "KiDamageMulti", "KiDamageMultiplier", "KiMulti",
+            "Defense", "DefenseMulti", "DefenseMultiplier",
             "Armor", "ArmorMulti", "ArmorMultiplier",
             "ArmorToughness", "ArmorToughnessMulti", "ArmorToughnessMultiplier",
             "Protection", "ProtectionMulti", "ProtectionMultiplier",
@@ -48,15 +49,18 @@ public abstract class QuestParserRevampKillFieldsMixin {
             return;
         }
 
+        data.dmzrevamp$setDefense(nullableDouble(object, "Defense"));
         data.dmzrevamp$setArmor(nullableDouble(object, "Armor"));
         data.dmzrevamp$setArmorToughness(nullableDouble(object, "ArmorToughness"));
         data.dmzrevamp$setProtection(nullableDouble(object, "Protection"));
         data.dmzrevamp$setMovementSpeed(nullableDouble(object, "movementSpeed", "MovementSpeed"));
         data.dmzrevamp$setTransformArmor(nullableDouble(object, "TransformArmor"));
+        data.dmzrevamp$setTransformDefense(nullableDouble(object, "TransformDefense"));
         data.dmzrevamp$setTransformArmorToughness(nullableDouble(object, "TransformArmorToughness"));
         data.dmzrevamp$setTransformProtection(nullableDouble(object, "TransformProtection"));
         data.dmzrevamp$setTransformMovementSpeed(nullableDouble(object, "TransformMovementSpeed"));
         data.dmzrevamp$setTransformArmorMultiplier(nullableDouble(object, "TransformArmorMultiplier"));
+        data.dmzrevamp$setTransformDefenseMultiplier(nullableDouble(object, "TransformDefenseMulti", "TransformDefenseMultiplier"));
         data.dmzrevamp$setTransformArmorToughnessMultiplier(nullableDouble(object, "TransformArmorToughnessMultiplier"));
         data.dmzrevamp$setTransformProtectionMultiplier(nullableDouble(object, "TransformProtectionMultiplier"));
         data.dmzrevamp$setTransformMovementSpeedMultiplier(nullableDouble(object, "TransformMovementSpeedMultiplier"));

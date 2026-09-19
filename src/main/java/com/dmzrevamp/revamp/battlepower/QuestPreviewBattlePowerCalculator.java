@@ -13,6 +13,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import com.dmzrevamp.entity.DmzRevampAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,8 @@ public final class QuestPreviewBattlePowerCalculator {
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "maxHealth", health);
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "attackDamage", meleeDamage);
         total += weightedMobValue(config.mobStats, "kiDamage", "kiBlastDamage", kiDamage);
+        total += CustomBattlePowerConfig.weightedValue(config.mobStats, "defense",
+                questDefense(extraStats, previewEntity) * damageDifficulty);
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "armor", questArmor(extraStats, previewEntity));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "armorToughness", questArmorToughness(extraStats, previewEntity));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "protection", questProtection(extraStats));
@@ -70,6 +73,13 @@ public final class QuestPreviewBattlePowerCalculator {
             return extraStats.armor;
         }
         return attributeValue(previewEntity, Attributes.ARMOR);
+    }
+
+    private static double questDefense(QuestPreviewExtraStatsResolver.ExtraStats extraStats, LivingEntity previewEntity) {
+        if (extraStats.defense != null) {
+            return extraStats.defense;
+        }
+        return attributeValue(previewEntity, DmzRevampAttributes.MOB_DEFENSE.get());
     }
 
     private static double questArmorToughness(QuestPreviewExtraStatsResolver.ExtraStats extraStats, LivingEntity previewEntity) {

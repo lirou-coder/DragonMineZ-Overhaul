@@ -48,6 +48,7 @@ public final class EntityConfigAttributeApplier {
         }
 
         // These tags reuse the quest applier so entities.json and saga quests affect mobs in the same way.
+        putIfAbsent(tag, QuestSpawnAttributeApplier.DEFENSE_TAG, data.dmzrevamp$getDefense());
         putIfAbsent(tag, QuestSpawnAttributeApplier.ARMOR_TAG, data.dmzrevamp$getArmor());
         putIfAbsent(tag, QuestSpawnAttributeApplier.ARMOR_TOUGHNESS_TAG, data.dmzrevamp$getArmorToughness());
         putIfAbsent(tag, QuestSpawnAttributeApplier.PROTECTION_TAG, data.dmzrevamp$getProtection());
@@ -61,6 +62,11 @@ public final class EntityConfigAttributeApplier {
     }
 
     private static void applyTransformFields(CompoundTag tag, RevampEntityStatsData entityData, RevampTransformSettingsData defaultData) {
+        putDefaultPair(tag, QuestSpawnAttributeApplier.TF_DEFENSE_TAG, QuestSpawnAttributeApplier.TF_DEFENSE_MULT_TAG,
+                entityData == null ? null : entityData.dmzrevamp$getTransformDefense(),
+                entityData == null ? null : entityData.dmzrevamp$getTransformDefenseMultiplier(),
+                defaultData == null ? null : defaultData.dmzrevamp$getTransformDefense(),
+                defaultData == null ? null : defaultData.dmzrevamp$getTransformDefenseMultiplier());
         putDefaultPair(tag, QuestSpawnAttributeApplier.TF_ARMOR_TAG, QuestSpawnAttributeApplier.TF_ARMOR_MULT_TAG,
                 entityData == null ? null : entityData.dmzrevamp$getTransformArmor(),
                 entityData == null ? null : entityData.dmzrevamp$getTransformArmorMultiplier(),

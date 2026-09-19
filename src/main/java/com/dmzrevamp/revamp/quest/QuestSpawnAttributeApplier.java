@@ -5,6 +5,7 @@ import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.Difficulty;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import com.dmzrevamp.entity.DmzRevampAttributes;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
@@ -26,15 +28,18 @@ public final class QuestSpawnAttributeApplier {
     public static final String QUEST_NO_TRANSFORM_TAG = "dmz_quest_no_transform";
     public static final String VERIFIED_QUEST_SPAWN_TAG = "dmzrevamp_verified_quest_spawn";
     public static final String ARMOR_TAG = "dmzrevamp_quest_armor";
+    public static final String DEFENSE_TAG = "dmzrevamp_quest_defense";
     public static final String ARMOR_TOUGHNESS_TAG = "dmzrevamp_quest_armor_toughness";
     public static final String PROTECTION_TAG = "dmzrevamp_quest_protection";
     public static final String MOVEMENT_SPEED_TAG = "dmzrevamp_quest_movement_speed";
     public static final String ARMOR_CONFIGURED_TAG = "dmzrevamp_quest_armor_configured";
     public static final String TF_ARMOR_TAG = "dmzrevamp_quest_tf_armor";
+    public static final String TF_DEFENSE_TAG = "dmzrevamp_quest_tf_defense";
     public static final String TF_ARMOR_TOUGHNESS_TAG = "dmzrevamp_quest_tf_armor_toughness";
     public static final String TF_PROTECTION_TAG = "dmzrevamp_quest_tf_protection";
     public static final String TF_MOVEMENT_SPEED_TAG = "dmzrevamp_quest_tf_movement_speed";
     public static final String TF_ARMOR_MULT_TAG = "dmzrevamp_quest_tf_armor_mult";
+    public static final String TF_DEFENSE_MULT_TAG = "dmzrevamp_quest_tf_defense_mult";
     public static final String TF_ARMOR_TOUGHNESS_MULT_TAG = "dmzrevamp_quest_tf_armor_toughness_mult";
     public static final String TF_PROTECTION_MULT_TAG = "dmzrevamp_quest_tf_protection_mult";
     public static final String TF_MOVEMENT_SPEED_MULT_TAG = "dmzrevamp_quest_tf_movement_speed_mult";
@@ -50,8 +55,6 @@ public final class QuestSpawnAttributeApplier {
     private static final String DMZ_TF_KI_ABS = "dmz_quest_tf_ki_abs";
     private static final String DMZ_TF_KI_MULT = "dmz_quest_tf_ki_mult";
     private static final String DMZ_TF_TRIGGER = "dmz_quest_tf_trigger";
-
-    private static final UUID BASE_MOB_ARMOR_UUID = UUID.fromString("8997635e-2835-4b54-9e97-17f8e5dc570f");
 
     private QuestSpawnAttributeApplier() {
     }
@@ -103,6 +106,8 @@ public final class QuestSpawnAttributeApplier {
                 sagaEntity.setTransformationDisabled(true);
             }
         }
+        double difficultyDamage = questDamageMultiplier(tag);
+        putNullableScaled(tag, DEFENSE_TAG, data.dmzrevamp$getDefense(), difficultyDamage);
         putNullable(tag, ARMOR_TAG, data.dmzrevamp$getArmor());
         putNullable(tag, ARMOR_TOUGHNESS_TAG, data.dmzrevamp$getArmorToughness());
         putNullable(tag, PROTECTION_TAG, data.dmzrevamp$getProtection());
@@ -111,10 +116,12 @@ public final class QuestSpawnAttributeApplier {
             tag.putBoolean(ARMOR_CONFIGURED_TAG, true);
         }
         putNullable(tag, TF_ARMOR_TAG, data.dmzrevamp$getTransformArmor());
+        putNullableScaled(tag, TF_DEFENSE_TAG, data.dmzrevamp$getTransformDefense(), difficultyDamage);
         putNullable(tag, TF_ARMOR_TOUGHNESS_TAG, data.dmzrevamp$getTransformArmorToughness());
         putNullable(tag, TF_PROTECTION_TAG, data.dmzrevamp$getTransformProtection());
         putNullable(tag, TF_MOVEMENT_SPEED_TAG, data.dmzrevamp$getTransformMovementSpeed());
         putNullable(tag, TF_ARMOR_MULT_TAG, data.dmzrevamp$getTransformArmorMultiplier());
+        putNullable(tag, TF_DEFENSE_MULT_TAG, data.dmzrevamp$getTransformDefenseMultiplier());
         putNullable(tag, TF_ARMOR_TOUGHNESS_MULT_TAG, data.dmzrevamp$getTransformArmorToughnessMultiplier());
         putNullable(tag, TF_PROTECTION_MULT_TAG, data.dmzrevamp$getTransformProtectionMultiplier());
         putNullable(tag, TF_MOVEMENT_SPEED_MULT_TAG, data.dmzrevamp$getTransformMovementSpeedMultiplier());
@@ -132,13 +139,16 @@ public final class QuestSpawnAttributeApplier {
     public static void applyConfiguredSpawnAttributes(LivingEntity entity) {
         CompoundTag tag = entity.getPersistentData();
         if (tag.contains(ARMOR_TAG)) {
-            setAttributeBase(entity, Attributes.ARMOR, tag.getDouble(ARMOR_TAG), true);
+            setAttributeBase(entity, Attributes.ARMOR, tag.getDouble(ARMOR_TAG));
+        }
+        if (tag.contains(DEFENSE_TAG)) {
+            setAttributeBase(entity, DmzRevampAttributes.MOB_DEFENSE.get(), tag.getDouble(DEFENSE_TAG));
         }
         if (tag.contains(ARMOR_TOUGHNESS_TAG)) {
-            setAttributeBase(entity, Attributes.ARMOR_TOUGHNESS, tag.getDouble(ARMOR_TOUGHNESS_TAG), false);
+            setAttributeBase(entity, Attributes.ARMOR_TOUGHNESS, tag.getDouble(ARMOR_TOUGHNESS_TAG));
         }
         if (tag.contains(MOVEMENT_SPEED_TAG)) {
-            setAttributeBase(entity, Attributes.MOVEMENT_SPEED, tag.getDouble(MOVEMENT_SPEED_TAG), false);
+            setAttributeBase(entity, Attributes.MOVEMENT_SPEED, tag.getDouble(MOVEMENT_SPEED_TAG));
         }
     }
 
@@ -146,26 +156,31 @@ public final class QuestSpawnAttributeApplier {
         copyRevampQuestTags(previous, transformed);
 
         CompoundTag source = previous.getPersistentData();
+        double defense = resolveTransformValue(source, TF_DEFENSE_TAG, TF_DEFENSE_MULT_TAG, attributeValue(previous, DmzRevampAttributes.MOB_DEFENSE.get()));
         double armor = resolveTransformValue(source, TF_ARMOR_TAG, TF_ARMOR_MULT_TAG, attributeValue(previous, Attributes.ARMOR));
         double toughness = resolveTransformValue(source, TF_ARMOR_TOUGHNESS_TAG, TF_ARMOR_TOUGHNESS_MULT_TAG, attributeValue(previous, Attributes.ARMOR_TOUGHNESS));
         double protection = resolveTransformValue(source, TF_PROTECTION_TAG, TF_PROTECTION_MULT_TAG, protectionValue(previous));
         double movementSpeed = resolveTransformValue(source, TF_MOVEMENT_SPEED_TAG, TF_MOVEMENT_SPEED_MULT_TAG, attributeValue(previous, Attributes.MOVEMENT_SPEED));
 
+        if (!Double.isNaN(defense)) {
+            transformed.getPersistentData().putDouble(DEFENSE_TAG, defense);
+            setAttributeBase(transformed, DmzRevampAttributes.MOB_DEFENSE.get(), defense);
+        }
         if (!Double.isNaN(armor)) {
             transformed.getPersistentData().putBoolean(ARMOR_CONFIGURED_TAG, true);
             transformed.getPersistentData().putDouble(ARMOR_TAG, armor);
-            setAttributeBase(transformed, Attributes.ARMOR, armor, true);
+            setAttributeBase(transformed, Attributes.ARMOR, armor);
         }
         if (!Double.isNaN(toughness)) {
             transformed.getPersistentData().putDouble(ARMOR_TOUGHNESS_TAG, toughness);
-            setAttributeBase(transformed, Attributes.ARMOR_TOUGHNESS, toughness, false);
+            setAttributeBase(transformed, Attributes.ARMOR_TOUGHNESS, toughness);
         }
         if (!Double.isNaN(protection)) {
             transformed.getPersistentData().putDouble(PROTECTION_TAG, protection);
         }
         if (!Double.isNaN(movementSpeed)) {
             transformed.getPersistentData().putDouble(MOVEMENT_SPEED_TAG, movementSpeed);
-            setAttributeBase(transformed, Attributes.MOVEMENT_SPEED, movementSpeed, false);
+            setAttributeBase(transformed, Attributes.MOVEMENT_SPEED, movementSpeed);
         }
 
         removeMobEffects(transformed, source, MOB_EFFECTS_TAG);
@@ -193,10 +208,10 @@ public final class QuestSpawnAttributeApplier {
         CompoundTag sourceTag = source.getPersistentData();
         CompoundTag targetTag = target.getPersistentData();
         for (String key : new String[]{
-                ARMOR_TAG, ARMOR_TOUGHNESS_TAG, PROTECTION_TAG, ARMOR_CONFIGURED_TAG,
+                DEFENSE_TAG, ARMOR_TAG, ARMOR_TOUGHNESS_TAG, PROTECTION_TAG, ARMOR_CONFIGURED_TAG,
                 MOVEMENT_SPEED_TAG,
-                TF_ARMOR_TAG, TF_ARMOR_TOUGHNESS_TAG, TF_PROTECTION_TAG, TF_MOVEMENT_SPEED_TAG,
-                TF_ARMOR_MULT_TAG, TF_ARMOR_TOUGHNESS_MULT_TAG, TF_PROTECTION_MULT_TAG, TF_MOVEMENT_SPEED_MULT_TAG,
+                TF_DEFENSE_TAG, TF_ARMOR_TAG, TF_ARMOR_TOUGHNESS_TAG, TF_PROTECTION_TAG, TF_MOVEMENT_SPEED_TAG,
+                TF_DEFENSE_MULT_TAG, TF_ARMOR_MULT_TAG, TF_ARMOR_TOUGHNESS_MULT_TAG, TF_PROTECTION_MULT_TAG, TF_MOVEMENT_SPEED_MULT_TAG,
                 MOB_EFFECTS_TAG, TF_MOB_EFFECTS_TAG, TRANSFORM_STAGE_TAG,
                 CAN_TRANSFORM_2_TAG, CAN_TRANSFORM_3_TAG, VERIFIED_QUEST_SPAWN_TAG
         }) {
@@ -216,6 +231,7 @@ public final class QuestSpawnAttributeApplier {
                 {DMZ_TF_HP_ABS, "hp_abs"}, {DMZ_TF_HP_MULT, "hp_mult"},
                 {DMZ_TF_MELEE_ABS, "melee_abs"}, {DMZ_TF_MELEE_MULT, "melee_mult"},
                 {DMZ_TF_KI_ABS, "ki_abs"}, {DMZ_TF_KI_MULT, "ki_mult"},
+                {TF_DEFENSE_TAG, "defense_abs"}, {TF_DEFENSE_MULT_TAG, "defense_mult"},
                 {TF_ARMOR_TAG, "armor_abs"}, {TF_ARMOR_MULT_TAG, "armor_mult"},
                 {TF_ARMOR_TOUGHNESS_TAG, "toughness_abs"}, {TF_ARMOR_TOUGHNESS_MULT_TAG, "toughness_mult"},
                 {TF_PROTECTION_TAG, "protection_abs"}, {TF_PROTECTION_MULT_TAG, "protection_mult"},
@@ -322,13 +338,20 @@ public final class QuestSpawnAttributeApplier {
         }
     }
 
-    private static void setAttributeBase(LivingEntity entity, net.minecraft.world.entity.ai.attributes.Attribute attribute, double value, boolean removeBaseArmorModifier) {
+    private static void putNullableScaled(CompoundTag tag, String key, Double value, double multiplier) {
+        if (value != null) tag.putDouble(key, value * multiplier);
+    }
+
+    private static double questDamageMultiplier(CompoundTag tag) {
+        return tag.contains("dmz_difficulty")
+                ? Difficulty.fromName(tag.getString("dmz_difficulty")).damageMultiplier()
+                : 1D;
+    }
+
+    private static void setAttributeBase(LivingEntity entity, net.minecraft.world.entity.ai.attributes.Attribute attribute, double value) {
         AttributeInstance instance = entity.getAttribute(attribute);
         if (instance == null) {
             return;
-        }
-        if (removeBaseArmorModifier && instance.getModifier(BASE_MOB_ARMOR_UUID) != null) {
-            instance.removeModifier(BASE_MOB_ARMOR_UUID);
         }
         instance.setBaseValue(Math.max(0D, value));
     }

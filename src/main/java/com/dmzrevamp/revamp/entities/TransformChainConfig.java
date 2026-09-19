@@ -41,6 +41,7 @@ public final class TransformChainConfig {
         ValuePair health = pair(value.health(), value.healthMulti(), fallback.health(), fallback.healthMulti());
         ValuePair melee = pair(value.meleeDamage(), value.meleeDamageMulti(), fallback.meleeDamage(), fallback.meleeDamageMulti());
         ValuePair ki = pair(value.kiDamage(), value.kiDamageMulti(), fallback.kiDamage(), fallback.kiDamageMulti());
+        ValuePair defense = pair(value.defense(), value.defenseMulti(), fallback.defense(), fallback.defenseMulti());
         ValuePair armor = pair(value.armor(), value.armorMulti(), fallback.armor(), fallback.armorMulti());
         ValuePair toughness = pair(value.armorToughness(), value.armorToughnessMulti(), fallback.armorToughness(), fallback.armorToughnessMulti());
         ValuePair protection = pair(value.protection(), value.protectionMulti(), fallback.protection(), fallback.protectionMulti());
@@ -49,6 +50,7 @@ public final class TransformChainConfig {
                 health.exact(), health.multiplier(),
                 melee.exact(), melee.multiplier(),
                 ki.exact(), ki.multiplier(),
+                defense.exact(), defense.multiplier(),
                 armor.exact(), armor.multiplier(),
                 toughness.exact(), toughness.multiplier(),
                 protection.exact(), protection.multiplier(),

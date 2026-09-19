@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class DmzClassConfigManager {
+    private static final double VITALITY_SCALING_INCREASE = 1.5D;
     public static final String RACE_DEFAULT_CLASS = "race";
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -692,7 +693,7 @@ public final class DmzClassConfigManager {
         scaling.setStrikePowerScaling(strikePowerScaling);
         scaling.setDefenseScaling(defenseScaling);
         scaling.setStaminaScaling(staminaScaling);
-        scaling.setVitalityScaling(vitalityScaling);
+        scaling.setVitalityScaling(vitalityScaling * VITALITY_SCALING_INCREASE);
         scaling.setKiPowerScaling(kiPowerScaling);
         scaling.setEnergyScaling(energyScaling);
         classStats.setStatScaling(scaling);

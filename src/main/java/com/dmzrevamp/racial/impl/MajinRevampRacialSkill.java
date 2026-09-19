@@ -134,7 +134,17 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
     private static void killAbsorbedTarget(ServerPlayer player, LivingEntity target) {
         target.invulnerableTime = 0;
         // A player damage source lets DMZ's normal death handler award kill TP and quest kill progress.
-        target.hurt(player.damageSources().playerAttack(player), Math.max(Float.MAX_VALUE / 4F, target.getMaxHealth() * 100F));
+        float health = Float.isFinite(target.getHealth()) ? Math.max(0F, target.getHealth()) : 0F;
+        float absorption = Float.isFinite(target.getAbsorptionAmount()) ? Math.max(0F, target.getAbsorptionAmount()) : 0F;
+        float lethalDamage = Math.max(1F, health + absorption + Math.max(1F, target.getMaxHealth()));
+        target.hurt(player.damageSources().playerAttack(player), lethalDamage);
+        // Health guards may reject a malformed write produced by another damage modifier. Finish the
+        // absorption without another enormous damage value, while retaining the credited damage source.
+        if (target.isAlive()) {
+            target.setLastHurtByPlayer(player);
+            target.setHealth(0F);
+            target.die(player.damageSources().playerAttack(player));
+        }
     }
 
     public static void resetAbsorption(ServerPlayer player, StatsData data) {

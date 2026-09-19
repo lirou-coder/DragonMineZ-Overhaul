@@ -389,15 +389,14 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         int rowWidth = Math.max(120, valueCenterX + font.width(value) / 2 - rowX);
         if (mouseX >= rowX && mouseX <= rowX + rowWidth
                 && mouseY >= rowY && mouseY <= rowY + font.lineHeight) {
-            Component title = Component.literal("Prestige")
+            Component title = Component.translatable("gui.dmzrevamp.character_stats.prestige")
                     .withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.GOLD));
-            List<Component> descriptions = List.of(Component.literal(
-                    "Each Prestige break your limits and increase your natural strenght, but so does the enemies you may face."
-            ).withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.YELLOW)));
+            List<Component> descriptions = List.of(Component.translatable("gui.dmzrevamp.character_stats.prestige.tooltip.desc")
+                    .withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.YELLOW)));
             List<Component> values = List.of(
-                    dmzrevamp$prestigeTooltipValue("Scale Increase: x", PrestigeSystem.scaleMultiplier(statsData)),
-                    dmzrevamp$prestigeTooltipValue("Mastery Increase: x", PrestigeSystem.masteryMultiplier(statsData)),
-                    dmzrevamp$prestigeTooltipValue("Saga Difficulty: x", PrestigeSystem.storyDifficultyMultiplier(statsData))
+                    dmzrevamp$prestigeTooltipValue("gui.dmzrevamp.character_stats.prestige.tooltip.scale", PrestigeSystem.scaleMultiplier(statsData)),
+                    dmzrevamp$prestigeTooltipValue("gui.dmzrevamp.character_stats.prestige.tooltip.mastery", PrestigeSystem.masteryMultiplier(statsData)),
+                    dmzrevamp$prestigeTooltipValue("gui.dmzrevamp.character_stats.prestige.tooltip.saga", PrestigeSystem.storyDifficultyMultiplier(statsData))
             );
             TextUtil.renderAdvancedTooltip(
                     graphics,
@@ -415,8 +414,8 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     }
 
     @Unique
-    private static Component dmzrevamp$prestigeTooltipValue(String label, double multiplier) {
-        return Component.literal(label + String.format(Locale.US, "%.2f", multiplier))
+    private static Component dmzrevamp$prestigeTooltipValue(String key, double multiplier) {
+        return Component.translatable(key, String.format(Locale.US, "%.2f", multiplier))
                 .withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.GOLD));
     }
 

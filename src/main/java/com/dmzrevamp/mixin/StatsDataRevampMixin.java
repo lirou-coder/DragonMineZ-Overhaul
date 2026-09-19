@@ -8,12 +8,15 @@ import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(StatsData.class)
 public abstract class StatsDataRevampMixin {
+    @Unique private long dmzrevamp$battlePowerSignature = Long.MIN_VALUE;
+    @Unique private double dmzrevamp$cachedBattlePower;
     @Shadow(remap = false)
     @Final
     private Player player;
@@ -28,7 +31,28 @@ public abstract class StatsDataRevampMixin {
 
     @Inject(method = "getBattlePowerExact", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$useConfiguredBattlePowerFormula(CallbackInfoReturnable<Double> cir) {
-        cir.setReturnValue(CustomBattlePowerCalculator.calculatePlayerBattlePower((StatsData) (Object) this));
+        StatsData data = (StatsData) (Object) this;
+        long signature = dmzrevamp$battlePowerSignature(data);
+        if (signature != dmzrevamp$battlePowerSignature) {
+            dmzrevamp$cachedBattlePower = CustomBattlePowerCalculator.calculatePlayerBattlePower(data);
+            dmzrevamp$battlePowerSignature = signature;
+        }
+        cir.setReturnValue(dmzrevamp$cachedBattlePower);
+    }
+
+    @Unique
+    private static long dmzrevamp$battlePowerSignature(StatsData data) {
+        long hash = 17L;
+        hash = 31L * hash + Double.doubleToLongBits(data.getMaxMeleeDamage());
+        hash = 31L * hash + Double.doubleToLongBits(data.getMaxStrikeDamage());
+        hash = 31L * hash + Double.doubleToLongBits(data.getMaxStamina());
+        hash = 31L * hash + Double.doubleToLongBits(data.getMaxDefense());
+        hash = 31L * hash + Double.doubleToLongBits(data.getMaxHealth());
+        hash = 31L * hash + Double.doubleToLongBits(data.getMaxKiDamage());
+        hash = 31L * hash + Double.doubleToLongBits(data.getMaxEnergy());
+        hash = 31L * hash + data.getResources().getPowerRelease();
+        hash = 31L * hash + (data.getStatus().isAndroidUpgraded() ? 1L : 0L);
+        return hash;
     }
 
     @Inject(method = "getMaxStrikeDamage", at = @At("HEAD"), cancellable = true, remap = false)

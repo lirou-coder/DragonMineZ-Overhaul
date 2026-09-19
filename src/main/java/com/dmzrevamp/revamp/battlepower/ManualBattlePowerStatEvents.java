@@ -2,7 +2,6 @@ package com.dmzrevamp.revamp.battlepower;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dragonminez.common.init.entities.IBattlePower;
-import com.dragonminez.common.init.entities.MastersEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -14,11 +13,12 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ManualBattlePowerStatEvents {
+    private static final String CACHED_BP_TAG = "dmzrevamp_cached_battle_power";
     private ManualBattlePowerStatEvents() {
     }
 
     public static void syncDmzBattlePower(LivingEntity entity) {
-        if (entity.level().isClientSide() || entity instanceof Player || !isDmzEntity(entity)) {
+        if (entity.level().isClientSide() || entity instanceof Player) {
             return;
         }
 
@@ -27,14 +27,13 @@ public final class ManualBattlePowerStatEvents {
             return;
         }
         int currentBattlePower = currentBattlePower(entity);
-        if (!canStoreBattlePower(entity)) {
-            return;
-        }
         if (currentBattlePower == Integer.MAX_VALUE) {
             return;
         }
 
-        long calculatedBattlePower = AccurateMobBattlePowerCalculator.calculateCurvedBattlePower(entity);
+        double exactBattlePower = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(entity);
+        entity.getPersistentData().putDouble(CACHED_BP_TAG, exactBattlePower);
+        long calculatedBattlePower = exactBattlePower >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) exactBattlePower;
         int storedBattlePower = AccurateMobBattlePowerCalculator.toStoredVisibleBattlePower(calculatedBattlePower);
         if (entity instanceof IBattlePower battlePower) {
             battlePower.setBattlePower(storedBattlePower);
@@ -50,15 +49,20 @@ public final class ManualBattlePowerStatEvents {
     }
 
     public static boolean isKiSenseHiddenEntity(LivingEntity entity) {
-        return currentBattlePower(entity) == Integer.MAX_VALUE;
+        return mustHideKi(entity) || currentBattlePower(entity) == Integer.MAX_VALUE;
     }
 
     public static long displayedBattlePower(LivingEntity entity, long fallback) {
         if (entity instanceof Player) {
             return fallback;
         }
-        if (!isDmzEntity(entity) || isKiSenseHiddenEntity(entity)) {
+        if (isKiSenseHiddenEntity(entity)) {
             return fallback;
+        }
+
+        if (entity.getPersistentData().contains(CACHED_BP_TAG)) {
+            double cached = entity.getPersistentData().getDouble(CACHED_BP_TAG);
+            if (Double.isFinite(cached) && cached > 0D) return Math.min(Long.MAX_VALUE, (long) cached);
         }
 
         if (entity.level().isClientSide()) {
@@ -66,22 +70,23 @@ public final class ManualBattlePowerStatEvents {
             if (syncedBattlePower > 0) {
                 return syncedBattlePower;
             }
-            // Master NPCs do not store DMZ battle power, so clients calculate them from their live attributes.
-            if (entity instanceof MastersEntity) {
-                long calculated = AccurateMobBattlePowerCalculator.calculateCurvedBattlePower(entity);
-                return calculated > 0L ? calculated : fallback;
-            }
             return fallback;
         }
+        return fallback;
+    }
 
-        long calculated = AccurateMobBattlePowerCalculator.calculateCurvedBattlePower(entity);
-        return calculated > 0L ? calculated : fallback;
+    public static int cachedStoredBattlePower(LivingEntity entity) {
+        if (entity == null || !entity.getPersistentData().contains(CACHED_BP_TAG)) return 0;
+        double cached = entity.getPersistentData().getDouble(CACHED_BP_TAG);
+        if (!Double.isFinite(cached) || cached <= 0D) return 0;
+        long value = cached >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) cached;
+        return AccurateMobBattlePowerCalculator.toStoredVisibleBattlePower(value);
     }
 
     @SubscribeEvent
     public static void syncExistingDmzBattlePower(LivingEvent.LivingTickEvent event) {
         LivingEntity entity = event.getEntity();
-        if (entity.tickCount % 40 != 0) {
+        if (entity instanceof Player || entity.tickCount != 6) {
             return;
         }
         syncDmzBattlePower(entity);
@@ -100,9 +105,16 @@ public final class ManualBattlePowerStatEvents {
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
         String path = id == null ? "" : id.getPath();
         String name = entity.getName().getString().trim().toLowerCase(java.util.Locale.ROOT);
-        return path.matches("a_\\d+") || name.matches("a_\\d+")
-                || path.equals("saga_metal_cooler") || path.equals("saga_gete_robot")
-                || name.equals("meta cooler") || name.equals("metal cooler") || name.equals("gete robot");
+        return path.matches("saga_(?:super_)?a\\d+")
+                || path.equals("saga_gete_robot") || path.equals("saga_metal_cooler")
+                || path.equals("saga_metal_cooler_core") || path.equals("saga_drgero")
+                || name.equals("a13") || name.equals("android 13")
+                || name.equals("a14") || name.equals("android 14")
+                || name.equals("a15") || name.equals("android 15")
+                || name.equals("super a13") || name.equals("super android 13")
+                || name.equals("meta cooler") || name.equals("metal cooler")
+                || name.equals("meta cooler core") || name.equals("metal cooler core")
+                || name.equals("gete robot");
     }
 
     private static void setBattlePower(LivingEntity entity, int value) {

@@ -2,6 +2,7 @@ package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.revamp.battlepower.QuestPreviewBattlePowerCalculator;
 import com.dmzrevamp.revamp.battlepower.QuestPreviewExtraStatsResolver;
+import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
 import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.common.quest.Quest;
@@ -18,9 +19,8 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,7 +33,6 @@ import java.util.Locale;
 @Mixin(value = QuestEnemyPreview.class, remap = false)
 public abstract class QuestEnemyPreviewRevampStatsMixin {
     private static final ResourceLocation DMZ_FONT = ResourceLocation.fromNamespaceAndPath("dragonminez", "smooth");
-    private static final double BASE_MOB_ARMOR = 2D;
 
     @Shadow
     private Quest boundQuest;
@@ -74,6 +73,9 @@ public abstract class QuestEnemyPreviewRevampStatsMixin {
             require = 0
     )
     private String dmzrevamp$useCustomQuestBattlePower(long originalBattlePower) {
+        if (ManualBattlePowerStatEvents.isKiSenseHiddenEntity(dmzrevamp$currentPreviewEntity)) {
+            return "???";
+        }
         long calculatedBattlePower = QuestPreviewBattlePowerCalculator.calculate(
                 boundQuest,
                 dmzrevamp$currentKillObjective(),
@@ -112,7 +114,7 @@ public abstract class QuestEnemyPreviewRevampStatsMixin {
             CallbackInfo ci,
             float ease,
             int cardAlpha,
-            Object target,
+            @Coerce Object target,
             List<Component> lines,
             List<Component> threats
     ) {
@@ -122,21 +124,28 @@ public abstract class QuestEnemyPreviewRevampStatsMixin {
         }
         QuestPreviewExtraStatsResolver.ExtraStats data = QuestPreviewBattlePowerCalculator.extraStats(boundQuest, objective);
 
-        double armor = data.armor != null
-                ? data.armor
-                : Math.max(attributeValue(entity, Attributes.ARMOR), BASE_MOB_ARMOR);
-        double protection = data.protection != null ? data.protection : 0D;
-        double movementSpeed = data.movementSpeed != null
-                ? data.movementSpeed
-                : attributeValue(entity, Attributes.MOVEMENT_SPEED);
-
-        lines.add(dmzrevamp$stat("gui.dmzrevamp.quest_tree.preview.armor", dmzrevamp$formatNumber(armor), 0x55FFFF));
-        lines.add(dmzrevamp$stat("gui.dmzrevamp.quest_tree.preview.protection", dmzrevamp$formatNumber(protection), 0x55FFFF));
-        lines.add(dmzrevamp$stat(
-                "gui.dmzrevamp.quest_tree.preview.movement_speed",
-                dmzrevamp$formatNumber((movementSpeed / 0.2D) * 100D) + "%",
-                0x55FFFF
-        ));
+        // Only explicit, positive quest fields belong in this card. Entity defaults and
+        // zero-valued placeholders must not create rows that the pack author did not request.
+        if (data.defense != null && data.defense > 0D) {
+            double defense = data.defense * (boundDifficulty == null ? 1D : boundDifficulty.damageMultiplier());
+            lines.add(dmzrevamp$stat("gui.dmzrevamp.quest_tree.preview.defense", dmzrevamp$formatNumber(defense), 0x55FFFF));
+        }
+        if (data.armor != null && data.armor > 0D) {
+            lines.add(dmzrevamp$stat("gui.dmzrevamp.quest_tree.preview.armor", dmzrevamp$formatNumber(data.armor), 0x55FFFF));
+        }
+        if (data.armorToughness != null && data.armorToughness > 0D) {
+            lines.add(dmzrevamp$stat("gui.dmzrevamp.quest_tree.preview.armor_toughness", dmzrevamp$formatNumber(data.armorToughness), 0x55FFFF));
+        }
+        if (data.protection != null && data.protection > 0D) {
+            lines.add(dmzrevamp$stat("gui.dmzrevamp.quest_tree.preview.protection", dmzrevamp$formatNumber(data.protection), 0x55FFFF));
+        }
+        if (data.movementSpeed != null && data.movementSpeed > 0D) {
+            lines.add(dmzrevamp$stat(
+                    "gui.dmzrevamp.quest_tree.preview.movement_speed",
+                    dmzrevamp$formatNumber((data.movementSpeed / 0.2D) * 100D) + "%",
+                    0x55FFFF
+            ));
+        }
     }
 
     private KillObjective dmzrevamp$currentKillObjective() {
@@ -176,21 +185,19 @@ public abstract class QuestEnemyPreviewRevampStatsMixin {
 
     private static MutableComponent dmzrevamp$stat(String key, String value, int valueColor) {
         return Component.translatable(key)
-                .setStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(0xAAAAAA))
-                .append(Component.literal(": ").setStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(0xAAAAAA)))
+                .setStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(0xFFFFFF))
+                .append(Component.literal(": ").setStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(0xFFFFFF)))
                 .append(Component.literal(value).setStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(valueColor)));
-    }
-
-    private static double attributeValue(LivingEntity entity, net.minecraft.world.entity.ai.attributes.Attribute attribute) {
-        AttributeInstance instance = entity.getAttribute(attribute);
-        return instance == null ? 0D : instance.getValue();
     }
 
     private static String dmzrevamp$formatNumber(double value) {
         if (!Double.isFinite(value)) {
             return "0";
         }
-        String formatted = String.format(Locale.ROOT, "%.1f", value);
-        return formatted.endsWith(".0") ? formatted.substring(0, formatted.length() - 2) : formatted;
+        if (value == Math.floor(value)) {
+            long whole = value >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) value;
+            return dmzrevamp$abbreviateBattlePower(whole);
+        }
+        return String.format(Locale.ROOT, "%.1f", value);
     }
 }

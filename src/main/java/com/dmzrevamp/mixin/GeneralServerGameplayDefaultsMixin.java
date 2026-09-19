@@ -14,10 +14,13 @@ public abstract class GeneralServerGameplayDefaultsMixin {
     private Integer maxValue;
     @Shadow(remap = false)
     private String[] fusionBoosts;
+    @Shadow(remap = false)
+    private Boolean multiplicationInsteadOfAdditionForMultipliers;
 
     @Inject(method = "<init>", at = @At("RETURN"), remap = false)
     private void dmzrevamp$setGameplayDefaults(CallbackInfo ci) {
         this.maxValue = 1000000;
         this.fusionBoosts = DMZREVAMP_ALL_STATS.clone();
+        this.multiplicationInsteadOfAdditionForMultipliers = true;
     }
 }

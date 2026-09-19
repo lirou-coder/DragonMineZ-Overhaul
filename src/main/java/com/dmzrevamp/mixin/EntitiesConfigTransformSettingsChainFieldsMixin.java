@@ -15,6 +15,8 @@ public abstract class EntitiesConfigTransformSettingsChainFieldsMixin {
     @Unique @SerializedName(value="Transform2MeleeDamageMulti", alternate={"Transform2MeleeDamageMultiplier","Transform2MeleeMulti","transform2MeleeDamageMulti"}) private Double dmzrevamp$t2MeleeMulti;
     @Unique @SerializedName(value="Transform2KiDamage", alternate={"transform2KiDamage"}) private Double dmzrevamp$t2Ki;
     @Unique @SerializedName(value="Transform2KiDamageMulti", alternate={"Transform2KiDamageMultiplier","Transform2KiMulti","transform2KiDamageMulti"}) private Double dmzrevamp$t2KiMulti;
+    @Unique @SerializedName(value="Transform2Defense", alternate={"transform2Defense"}) private Double dmzrevamp$t2Defense;
+    @Unique @SerializedName(value="Transform2DefenseMulti", alternate={"Transform2DefenseMultiplier","transform2DefenseMulti","transform2DefenseMultiplier"}) private Double dmzrevamp$t2DefenseMulti;
     @Unique @SerializedName(value="Transform2Armor", alternate={"transform2Armor"}) private Double dmzrevamp$t2Armor;
     @Unique @SerializedName(value="Transform2ArmorMulti", alternate={"Transform2ArmorMultiplier","transform2ArmorMulti"}) private Double dmzrevamp$t2ArmorMulti;
     @Unique @SerializedName(value="Transform2ArmorToughness", alternate={"transform2ArmorToughness"}) private Double dmzrevamp$t2Toughness;
@@ -31,6 +33,8 @@ public abstract class EntitiesConfigTransformSettingsChainFieldsMixin {
     @Unique @SerializedName(value="Transform3MeleeDamageMulti", alternate={"Transform3MeleeDamageMultiplier","Transform3MeleeMulti","transform3MeleeDamageMulti"}) private Double dmzrevamp$t3MeleeMulti;
     @Unique @SerializedName(value="Transform3KiDamage", alternate={"transform3KiDamage"}) private Double dmzrevamp$t3Ki;
     @Unique @SerializedName(value="Transform3KiDamageMulti", alternate={"Transform3KiDamageMultiplier","Transform3KiMulti","transform3KiDamageMulti"}) private Double dmzrevamp$t3KiMulti;
+    @Unique @SerializedName(value="Transform3Defense", alternate={"transform3Defense"}) private Double dmzrevamp$t3Defense;
+    @Unique @SerializedName(value="Transform3DefenseMulti", alternate={"Transform3DefenseMultiplier","transform3DefenseMulti","transform3DefenseMultiplier"}) private Double dmzrevamp$t3DefenseMulti;
     @Unique @SerializedName(value="Transform3Armor", alternate={"transform3Armor"}) private Double dmzrevamp$t3Armor;
     @Unique @SerializedName(value="Transform3ArmorMulti", alternate={"Transform3ArmorMultiplier","transform3ArmorMulti"}) private Double dmzrevamp$t3ArmorMulti;
     @Unique @SerializedName(value="Transform3ArmorToughness", alternate={"transform3ArmorToughness"}) private Double dmzrevamp$t3Toughness;
@@ -42,4 +46,3 @@ public abstract class EntitiesConfigTransformSettingsChainFieldsMixin {
     @Unique @SerializedName(value="Transform3TriggerPercent", alternate={"Transform3TriggerHealthPercent","transform3TriggerPercent"}) private Double dmzrevamp$t3Trigger;
     @Unique @SerializedName(value="Transform3MobEffects", alternate={"Transform3MobEffect","transform3MobEffects","transform3MobEffect"}) private JsonElement dmzrevamp$t3Effects;
 }
-

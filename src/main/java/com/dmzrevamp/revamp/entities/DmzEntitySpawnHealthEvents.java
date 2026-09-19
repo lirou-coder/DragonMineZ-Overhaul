@@ -1,15 +1,10 @@
 package com.dmzrevamp.revamp.entities;
 
 import com.dmzrevamp.DmzRevampMod;
-import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
-import com.dmzrevamp.revamp.quest.QuestSpawnAttributeApplier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
@@ -22,13 +17,10 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class DmzEntitySpawnHealthEvents {
     private static final List<PendingHeal> PENDING_HEALS = new ArrayList<>();
-    private static final UUID BASE_MOB_ARMOR_UUID = UUID.fromString("8997635e-2835-4b54-9e97-17f8e5dc570f");
-    private static final double BASE_MOB_ARMOR = 2D;
 
     private DmzEntitySpawnHealthEvents() {
     }
@@ -40,7 +32,6 @@ public final class DmzEntitySpawnHealthEvents {
         }
 
         EntityConfigAttributeApplier.apply(entity);
-        applyBaseMobArmor(entity);
         PENDING_HEALS.add(new PendingHeal(level.dimension(), entity.getId(), 5));
     }
 
@@ -69,12 +60,10 @@ public final class DmzEntitySpawnHealthEvents {
             ServerLevel level = event.getServer().getLevel(pending.level);
             if (level != null && level.getEntity(pending.entityId) instanceof LivingEntity entity && !entity.isDeadOrDying()) {
                 EntityConfigAttributeApplier.apply(entity);
-                applyBaseMobArmor(entity);
 
                 boolean dmzEntity = isDmzEntity(entity);
                 if (dmzEntity) {
                     healToFull(entity);
-                    ManualBattlePowerStatEvents.syncDmzBattlePower(entity);
                 }
             }
 
@@ -85,23 +74,6 @@ public final class DmzEntitySpawnHealthEvents {
                 pending.delayTicks = 1;
             }
         }
-    }
-
-    private static void applyBaseMobArmor(LivingEntity entity) {
-        if (entity.getPersistentData().contains(QuestSpawnAttributeApplier.ARMOR_CONFIGURED_TAG)) {
-            QuestSpawnAttributeApplier.applyConfiguredSpawnAttributes(entity);
-            return;
-        }
-        AttributeInstance armor = entity.getAttribute(Attributes.ARMOR);
-        if (armor == null || armor.getModifier(BASE_MOB_ARMOR_UUID) != null) {
-            return;
-        }
-        armor.addTransientModifier(new AttributeModifier(
-                BASE_MOB_ARMOR_UUID,
-                "Dragon Mine Z: Overhaul base mob armor",
-                BASE_MOB_ARMOR,
-                AttributeModifier.Operation.ADDITION
-        ));
     }
 
     private static void healToFull(LivingEntity entity) {

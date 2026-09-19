@@ -11,6 +11,7 @@ import java.util.List;
 
 @Mixin(KillObjective.class)
 public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObjectiveData {
+    @Unique private Double dmzrevamp$defense;
     @Unique
     private Double dmzrevamp$armor;
     @Unique
@@ -21,6 +22,7 @@ public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObj
     private Double dmzrevamp$movementSpeed;
     @Unique
     private Double dmzrevamp$transformArmor;
+    @Unique private Double dmzrevamp$transformDefense;
     @Unique
     private Double dmzrevamp$transformArmorToughness;
     @Unique
@@ -29,6 +31,7 @@ public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObj
     private Double dmzrevamp$transformMovementSpeed;
     @Unique
     private Double dmzrevamp$transformArmorMultiplier;
+    @Unique private Double dmzrevamp$transformDefenseMultiplier;
     @Unique
     private Double dmzrevamp$transformArmorToughnessMultiplier;
     @Unique
@@ -210,4 +213,10 @@ public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObj
     public void dmzrevamp$setTransformMobEffects(List<QuestMobEffectConfig> mobEffects) {
         dmzrevamp$transformMobEffects = mobEffects == null ? List.of() : List.copyOf(mobEffects);
     }
+    @Override public Double dmzrevamp$getDefense() { return dmzrevamp$defense; }
+    @Override public void dmzrevamp$setDefense(Double value) { dmzrevamp$defense = value; }
+    @Override public Double dmzrevamp$getTransformDefense() { return dmzrevamp$transformDefense; }
+    @Override public void dmzrevamp$setTransformDefense(Double value) { dmzrevamp$transformDefense = value; }
+    @Override public Double dmzrevamp$getTransformDefenseMultiplier() { return dmzrevamp$transformDefenseMultiplier; }
+    @Override public void dmzrevamp$setTransformDefenseMultiplier(Double value) { dmzrevamp$transformDefenseMultiplier = value; }
 }

@@ -9,6 +9,7 @@ public record TransformStageOverrides(
         Double health, Double healthMulti,
         Double meleeDamage, Double meleeDamageMulti,
         Double kiDamage, Double kiDamageMulti,
+        Double defense, Double defenseMulti,
         Double armor, Double armorMulti,
         Double armorToughness, Double armorToughnessMulti,
         Double protection, Double protectionMulti,
@@ -17,7 +18,7 @@ public record TransformStageOverrides(
         List<QuestMobEffectConfig> mobEffects
 ) {
     public static final TransformStageOverrides EMPTY = new TransformStageOverrides(
-            null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null, null, null,
             null, null, null, null, null, null, null, List.of()
     );
 
@@ -33,6 +34,8 @@ public record TransformStageOverrides(
                 number(object, prefix + "MeleeDamageMulti", prefix + "MeleeDamageMultiplier", prefix + "MeleeMulti"),
                 number(object, prefix + "KiDamage"),
                 number(object, prefix + "KiDamageMulti", prefix + "KiDamageMultiplier", prefix + "KiMulti"),
+                number(object, prefix + "Defense"),
+                number(object, prefix + "DefenseMulti", prefix + "DefenseMultiplier"),
                 number(object, prefix + "Armor"),
                 number(object, prefix + "ArmorMulti", prefix + "ArmorMultiplier"),
                 number(object, prefix + "ArmorToughness"),

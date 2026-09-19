@@ -5,6 +5,8 @@ import com.dmzrevamp.revamp.quest.QuestMobEffectConfig;
 import java.util.List;
 
 public interface RevampEntityStatsData {
+    Double dmzrevamp$getDefense();
+    void dmzrevamp$setDefense(Double value);
     Double dmzrevamp$getArmor();
 
     void dmzrevamp$setArmor(Double value);
@@ -22,6 +24,8 @@ public interface RevampEntityStatsData {
     void dmzrevamp$setMovementSpeed(Double value);
 
     Double dmzrevamp$getTransformArmor();
+    Double dmzrevamp$getTransformDefense();
+    void dmzrevamp$setTransformDefense(Double value);
 
     void dmzrevamp$setTransformArmor(Double value);
 
@@ -38,6 +42,8 @@ public interface RevampEntityStatsData {
     void dmzrevamp$setTransformMovementSpeed(Double value);
 
     Double dmzrevamp$getTransformArmorMultiplier();
+    Double dmzrevamp$getTransformDefenseMultiplier();
+    void dmzrevamp$setTransformDefenseMultiplier(Double value);
 
     void dmzrevamp$setTransformArmorMultiplier(Double value);
 

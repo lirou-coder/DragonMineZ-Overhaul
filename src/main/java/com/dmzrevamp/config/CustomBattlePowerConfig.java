@@ -18,10 +18,10 @@ public final class CustomBattlePowerConfig {
     private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dmzrevamp");
     private static final Path CONFIG_PATH = CONFIG_DIR.resolve("custom_BP.json");
     private static final Path LEGACY_CONFIG_PATH = CONFIG_DIR.resolve("custom BP.json");
-    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1200D;
-    private static final double DEFAULT_TOTAL_STATS_DIVISOR = DmzSparkingCompat.isLoadedEarly() ? 100D : 500D;
-    private static final double DEFAULT_EXPONENT = 1.2D;
-    private static final int CURRENT_CONFIG_VERSION = 3;
+    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1500D;
+    private static final double DEFAULT_TOTAL_STATS_DIVISOR = 500D;
+    private static final double DEFAULT_EXPONENT = 2.425D;
+    private static final int CURRENT_CONFIG_VERSION = 4;
 
     private static Config cached = Config.createDefault();
 
@@ -105,6 +105,11 @@ public final class CustomBattlePowerConfig {
             if (!Double.isFinite(exponent) || exponent <= 0D) {
                 exponent = DEFAULT_EXPONENT;
             }
+            if (loadedVersion < 4) {
+                if (closeTo(referenceMultiplier, 1200D)) referenceMultiplier = DEFAULT_REFERENCE_MULTIPLIER;
+                if (closeTo(totalStatsDivisor, 100D) || closeTo(totalStatsDivisor, 500D)) totalStatsDivisor = DEFAULT_TOTAL_STATS_DIVISOR;
+                if (closeTo(exponent, 1.2D)) exponent = DEFAULT_EXPONENT;
+            }
             playerStats = sanitizeRules(playerStats, defaultPlayerStats(), false);
             mobStats = sanitizeRules(mobStats, defaultMobStats(), legacyConfig);
             if (loadedVersion < 3) {
@@ -162,6 +167,7 @@ public final class CustomBattlePowerConfig {
         rules.put("protection", enabled(4D));
         rules.put("resistance", enabled(20D));
         rules.put("movementOrFlyingSpeed", enabled(15D));
+        rules.put("defense", enabled(1D));
         rules.put("kiDamage", enabled(1D));
         rules.put("arrowDamage", enabled(0.5D));
         rules.put("autoLevelingProjectileDamage", enabled(0.5D));

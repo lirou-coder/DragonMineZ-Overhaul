@@ -6,6 +6,7 @@ import com.dmzrevamp.config.CustomStrikeAttacksConfig;
 import com.dmzrevamp.config.DynamicGrowthCurveConfig;
 import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.config.FusionsRevampedConfig;
+import com.dmzrevamp.config.ExtraDifficultiesConfig;
 import com.dmzrevamp.config.KiClashConfigured;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
@@ -14,6 +15,7 @@ import com.dmzrevamp.config.AdaptiveDefenseMoreConfigured;
 import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
 import com.dmzrevamp.effect.DmzRevampEffects;
 import com.dmzrevamp.entity.DmzRevampEntities;
+import com.dmzrevamp.entity.DmzRevampAttributes;
 import com.dmzrevamp.item.DmzRevampItems;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.racial.CustomRacialSkillRegistry;
@@ -42,6 +44,7 @@ public class DmzRevampMod {
         var modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         DmzRevampEffects.register(modEventBus);
         DmzRevampEntities.register(modEventBus);
+        DmzRevampAttributes.register(modEventBus);
         DmzRevampItems.register(modEventBus);
         DmzRevampSounds.register(modEventBus);
         LOGGER.warn("Dragon Mine Z: Overhaul does not migrate old generated configs. Delete config/dragonminez/classes and the affected config/dragonminez/races files when class, passive, or stat defaults change.");
@@ -58,13 +61,15 @@ public class DmzRevampMod {
         CustomStrikeAttacksConfig.initialize();
         DynamicGrowthCurveConfig.initialize();
         FusionsRevampedConfig.initialize();
+        ExtraDifficultiesConfig.initialize();
         KiClashConfigured.initialize();
         StrikeClashConfigured.initialize();
         LevelingRevampConfig.initialize();
         WeightMovementPenaltyConfig.initialize();
         DmzRevampNetwork.register();
         CustomRacialSkillRegistry.bootstrap();
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, this::writePrestigeSagaBeforeQuestLoad);
+        // Run after Sparking has suppressed/rebuilt DMZ defaults: Overhaul intentionally restores only PRESTIGE.
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, this::writePrestigeSagaBeforeQuestLoad);
     }
 
     private void writePrestigeSagaBeforeQuestLoad(ServerAboutToStartEvent event) {

@@ -1,6 +1,5 @@
 package com.dmzrevamp.revamp.defaults;
 
-import com.dmzrevamp.compat.DmzSparkingCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.quest.QuestUpgrader;
 import com.google.gson.JsonObject;
@@ -55,8 +54,7 @@ public final class PrestigeSagaDefaults {
     }
 
     private static boolean shouldCreateDefaults() {
-        return !DmzSparkingCompat.isLoaded()
-                && Boolean.TRUE.equals(ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled())
+        return Boolean.TRUE.equals(ConfigManager.getServerConfig().getGameplay().getStoryModeEnabled())
                 && Boolean.TRUE.equals(ConfigManager.getServerConfig().getGameplay().getCreateDefaultSagas());
     }
 

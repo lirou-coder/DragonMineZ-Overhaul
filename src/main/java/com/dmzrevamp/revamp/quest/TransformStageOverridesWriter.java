@@ -19,6 +19,8 @@ public final class TransformStageOverridesWriter {
                 scaled(values.meleeDamage(), damageScale), values.meleeDamageMulti(), replace);
         putPair(tag, key(stage, "ki_abs"), key(stage, "ki_mult"),
                 scaled(values.kiDamage(), damageScale), values.kiDamageMulti(), replace);
+        putPair(tag, key(stage, "defense_abs"), key(stage, "defense_mult"),
+                values.defense(), values.defenseMulti(), replace);
         putPair(tag, key(stage, "armor_abs"), key(stage, "armor_mult"),
                 values.armor(), values.armorMulti(), replace);
         putPair(tag, key(stage, "toughness_abs"), key(stage, "toughness_mult"),

@@ -38,6 +38,7 @@ public final class QuestPreviewExtraStatsResolver {
     private static ExtraStats fromObjective(KillObjective objective) {
         ExtraStats stats = new ExtraStats();
         if (objective instanceof RevampKillObjectiveData data) {
+            stats.defense = data.dmzrevamp$getDefense();
             stats.armor = data.dmzrevamp$getArmor();
             stats.armorToughness = data.dmzrevamp$getArmorToughness();
             stats.protection = data.dmzrevamp$getProtection();
@@ -135,6 +136,7 @@ public final class QuestPreviewExtraStatsResolver {
 
     private static ExtraStats fromObjectiveJson(JsonObject object) {
         ExtraStats stats = new ExtraStats();
+        stats.defense = number(object, "Defense", "defense");
         stats.armor = number(object, "Armor", "armor");
         stats.armorToughness = number(object, "ArmorToughness", "armorToughness");
         stats.protection = number(object, "Protection", "protection");
@@ -243,6 +245,7 @@ public final class QuestPreviewExtraStatsResolver {
     }
 
     public static final class ExtraStats {
+        public Double defense;
         public Double armor;
         public Double armorToughness;
         public Double protection;
@@ -250,7 +253,8 @@ public final class QuestPreviewExtraStatsResolver {
         public List<QuestMobEffectConfig> mobEffects = List.of();
 
         boolean hasAnyConfiguredValue() {
-            return armor != null
+            return defense != null
+                    || armor != null
                     || armorToughness != null
                     || protection != null
                     || movementSpeed != null

@@ -14,6 +14,8 @@ import java.util.List;
 
 @Mixin(value = EntitiesConfig.EntityStats.class, remap = false)
 public abstract class EntitiesConfigEntityStatsRevampMixin implements RevampEntityStatsData {
+    @Unique @SerializedName(value = "Defense", alternate = {"defense"})
+    private Double dmzrevamp$defense;
     @Unique
     @SerializedName(value = "Armor", alternate = {"armor"})
     private Double dmzrevamp$armor;
@@ -29,6 +31,8 @@ public abstract class EntitiesConfigEntityStatsRevampMixin implements RevampEnti
     @Unique
     @SerializedName(value = "TransformArmor", alternate = {"transformArmor"})
     private Double dmzrevamp$transformArmor;
+    @Unique @SerializedName(value = "TransformDefense", alternate = {"transformDefense"})
+    private Double dmzrevamp$transformDefense;
     @Unique
     @SerializedName(value = "TransformArmorToughness", alternate = {"transformArmorToughness"})
     private Double dmzrevamp$transformArmorToughness;
@@ -41,6 +45,8 @@ public abstract class EntitiesConfigEntityStatsRevampMixin implements RevampEnti
     @Unique
     @SerializedName(value = "TransformArmorMultiplier", alternate = {"transformArmorMultiplier"})
     private Double dmzrevamp$transformArmorMultiplier;
+    @Unique @SerializedName(value = "TransformDefenseMulti", alternate = {"TransformDefenseMultiplier", "transformDefenseMulti"})
+    private Double dmzrevamp$transformDefenseMultiplier;
     @Unique
     @SerializedName(value = "TransformArmorToughnessMultiplier", alternate = {"transformArmorToughnessMultiplier"})
     private Double dmzrevamp$transformArmorToughnessMultiplier;
@@ -240,4 +246,10 @@ public abstract class EntitiesConfigEntityStatsRevampMixin implements RevampEnti
             }
         }
     }
+    @Override public Double dmzrevamp$getDefense() { return dmzrevamp$defense; }
+    @Override public void dmzrevamp$setDefense(Double value) { dmzrevamp$defense = value; }
+    @Override public Double dmzrevamp$getTransformDefense() { return dmzrevamp$transformDefense; }
+    @Override public void dmzrevamp$setTransformDefense(Double value) { dmzrevamp$transformDefense = value; }
+    @Override public Double dmzrevamp$getTransformDefenseMultiplier() { return dmzrevamp$transformDefenseMultiplier; }
+    @Override public void dmzrevamp$setTransformDefenseMultiplier(Double value) { dmzrevamp$transformDefenseMultiplier = value; }
 }

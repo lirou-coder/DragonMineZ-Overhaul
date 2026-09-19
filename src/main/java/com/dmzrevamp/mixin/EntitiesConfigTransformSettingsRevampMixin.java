@@ -14,6 +14,8 @@ import java.util.List;
 
 @Mixin(value = EntitiesConfig.TransformSettings.class, remap = false)
 public abstract class EntitiesConfigTransformSettingsRevampMixin implements RevampTransformSettingsData {
+    @Unique @SerializedName(value = "TransformDefense", alternate = {"transformDefense"})
+    private Double dmzrevamp$transformDefense;
     @Unique
     @SerializedName(value = "TransformArmor", alternate = {"transformArmor"})
     private Double dmzrevamp$transformArmor;
@@ -29,6 +31,8 @@ public abstract class EntitiesConfigTransformSettingsRevampMixin implements Reva
     @Unique
     @SerializedName(value = "TransformArmorMultiplier", alternate = {"transformArmorMultiplier"})
     private Double dmzrevamp$transformArmorMultiplier;
+    @Unique @SerializedName(value = "TransformDefenseMulti", alternate = {"TransformDefenseMultiplier", "transformDefenseMulti"})
+    private Double dmzrevamp$transformDefenseMultiplier;
     @Unique
     @SerializedName(value = "TransformArmorToughnessMultiplier", alternate = {"transformArmorToughnessMultiplier"})
     private Double dmzrevamp$transformArmorToughnessMultiplier;
@@ -167,4 +171,8 @@ public abstract class EntitiesConfigTransformSettingsRevampMixin implements Reva
             }
         }
     }
+    @Override public Double dmzrevamp$getTransformDefense() { return dmzrevamp$transformDefense; }
+    @Override public void dmzrevamp$setTransformDefense(Double value) { dmzrevamp$transformDefense = value; }
+    @Override public Double dmzrevamp$getTransformDefenseMultiplier() { return dmzrevamp$transformDefenseMultiplier; }
+    @Override public void dmzrevamp$setTransformDefenseMultiplier(Double value) { dmzrevamp$transformDefenseMultiplier = value; }
 }
