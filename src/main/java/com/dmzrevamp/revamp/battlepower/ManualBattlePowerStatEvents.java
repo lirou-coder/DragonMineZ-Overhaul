@@ -1,6 +1,7 @@
 package com.dmzrevamp.revamp.battlepower;
 
 import com.dmzrevamp.DmzRevampMod;
+import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dragonminez.common.init.entities.IBattlePower;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraft.resources.ResourceLocation;
@@ -18,7 +19,7 @@ public final class ManualBattlePowerStatEvents {
     }
 
     public static void syncDmzBattlePower(LivingEntity entity) {
-        if (entity.level().isClientSide() || entity instanceof Player) {
+        if (entity.level().isClientSide() || entity instanceof Player || KiSenseBlacklistConfig.contains(entity)) {
             return;
         }
 
@@ -81,6 +82,12 @@ public final class ManualBattlePowerStatEvents {
         if (!Double.isFinite(cached) || cached <= 0D) return 0;
         long value = cached >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) cached;
         return AccurateMobBattlePowerCalculator.toStoredVisibleBattlePower(value);
+    }
+
+    public static void clearBattlePower(LivingEntity entity) {
+        if (entity == null || entity.level().isClientSide()) return;
+        entity.getPersistentData().remove(CACHED_BP_TAG);
+        setBattlePower(entity, 0);
     }
 
     @SubscribeEvent

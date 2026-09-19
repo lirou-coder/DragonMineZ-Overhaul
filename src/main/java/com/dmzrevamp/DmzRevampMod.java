@@ -8,6 +8,7 @@ import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.config.FusionsRevampedConfig;
 import com.dmzrevamp.config.ExtraDifficultiesConfig;
 import com.dmzrevamp.config.KiClashConfigured;
+import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
 import com.dmzrevamp.config.WeightMovementPenaltyConfig;
@@ -50,6 +51,7 @@ public class DmzRevampMod {
         LOGGER.warn("Dragon Mine Z: Overhaul does not migrate old generated configs. Delete config/dragonminez/classes and the affected config/dragonminez/races files when class, passive, or stat defaults change.");
         DmzRevampRacialConfigs.loadAll();
         AdaptiveDefenseMoreConfigured.initialize();
+        KiSenseBlacklistConfig.initialize();
         ClassPassiveAliases.register();
         DmzJackClassCompat.registerIfPresent();
         // Load separated class data directly as well as through the DMZ config mixin.

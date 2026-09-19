@@ -7,6 +7,7 @@ import com.dmzrevamp.config.DynamicGrowthCurveConfig;
 import com.dmzrevamp.config.FusionsRevampedConfig;
 import com.dmzrevamp.config.ExtraDifficultiesConfig;
 import com.dmzrevamp.config.KiClashConfigured;
+import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
 import com.dmzrevamp.config.WeightMovementPenaltyConfig;
@@ -85,6 +86,7 @@ public abstract class ConfigManagerClassStatsMixin {
     private static void dmzrevamp$reloadRevampConfigs() {
         dmzrevamp$reloadForgeCommonConfig();
         AdaptiveDefenseMoreConfigured.reload();
+        KiSenseBlacklistConfig.reload();
         DmzRevampRacialConfigs.loadAll();
         KiAttackExtraEffectRules.reload();
         DmzClassConfigManager.reload();

@@ -1,6 +1,7 @@
 package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
+import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -11,6 +12,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = KiSenseScan.class, remap = false)
 public abstract class KiSenseScanBattlePowerMixin {
+    @Inject(method = "canTarget", at = @At("HEAD"), cancellable = true, require = 0)
+    private static void dmzrevamp$filterBlacklistedTargets(LivingEntity target,
+                                                           com.dragonminez.common.stats.StatsData data,
+                                                           CallbackInfoReturnable<Boolean> cir) {
+        if (KiSenseBlacklistConfig.contains(target)) cir.setReturnValue(false);
+    }
+
     @Inject(method = "getEntityBP", at = @At("HEAD"), cancellable = true, require = 0)
     private static void dmzrevamp$useLongManualBattlePower(LivingEntity entity, CallbackInfoReturnable<Float> cir) {
         if (entity instanceof Player) {

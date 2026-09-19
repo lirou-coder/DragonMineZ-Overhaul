@@ -3,6 +3,7 @@ package com.dmzrevamp.mixin;
 import com.dmzrevamp.revamp.DmzRevampHelper;
 import com.dmzrevamp.config.LevelingRevampConfig;
 import com.dmzrevamp.revamp.battlepower.CustomBattlePowerCalculator;
+import com.dmzrevamp.revamp.battlepower.BattlePowerCacheControl;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Final;
@@ -14,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(StatsData.class)
-public abstract class StatsDataRevampMixin {
+public abstract class StatsDataRevampMixin implements BattlePowerCacheControl {
     @Unique private long dmzrevamp$battlePowerSignature = Long.MIN_VALUE;
     @Unique private double dmzrevamp$cachedBattlePower;
     @Shadow(remap = false)
@@ -53,6 +54,12 @@ public abstract class StatsDataRevampMixin {
         hash = 31L * hash + data.getResources().getPowerRelease();
         hash = 31L * hash + (data.getStatus().isAndroidUpgraded() ? 1L : 0L);
         return hash;
+    }
+
+    @Override
+    public void dmzrevamp$recalculateBattlePower() {
+        dmzrevamp$battlePowerSignature = Long.MIN_VALUE;
+        ((StatsData) (Object) this).getBattlePowerExact();
     }
 
     @Inject(method = "getMaxStrikeDamage", at = @At("HEAD"), cancellable = true, remap = false)

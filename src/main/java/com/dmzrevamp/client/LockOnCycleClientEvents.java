@@ -5,6 +5,7 @@ import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.mixin.client.LockOnEventAccessor;
 import com.dragonminez.client.events.LockOnEvent;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
+import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -127,6 +128,7 @@ public final class LockOnCycleClientEvents {
     }
 
     public static boolean canTarget(LivingEntity target, StatsData data) {
+        if (KiSenseBlacklistConfig.contains(target)) return false;
         return DmzRevampConfig.ALLOW_LOCK_ON_ANDROID.get()
                 ? LockOnEvent.canTarget(target, data)
                 : KiSenseScan.canTarget(target, data);

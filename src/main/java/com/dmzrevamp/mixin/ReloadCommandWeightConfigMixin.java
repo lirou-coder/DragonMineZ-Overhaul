@@ -1,6 +1,7 @@
 package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.config.WeightMovementPenaltyConfig;
+import com.dmzrevamp.revamp.battlepower.BattlePowerReloadService;
 import com.dragonminez.server.commands.ReloadCommand;
 import net.minecraft.commands.CommandSourceStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,6 +29,10 @@ public abstract class ReloadCommandWeightConfigMixin {
                 && ("all".equalsIgnoreCase(rawScope) || "config".equalsIgnoreCase(rawScope)
                 || "configs".equalsIgnoreCase(rawScope))) {
             WeightMovementPenaltyConfig.reload();
+        }
+        if (cir.getReturnValueI() == 1
+                && ("all".equalsIgnoreCase(rawScope) || "config".equalsIgnoreCase(rawScope))) {
+            BattlePowerReloadService.recalculateAll(source.getServer());
         }
     }
 }

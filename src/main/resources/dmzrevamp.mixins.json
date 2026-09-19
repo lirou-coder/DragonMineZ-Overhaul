@@ -161,6 +161,7 @@
     "client.LockOnEventScouterMixin",
     "client.MasterTextScreenWeightLimitMixin",
     "client.ScouterHUDRevampMixin",
+    "client.ScouterHUDBlacklistMixin",
     "client.TechniqueChargeOverlaySecondBarCompatMixin",
     "client.TechniqueChargeOverlayOverchargeMixin",
     "compat.sdu.SduRaceListScreenMixin",

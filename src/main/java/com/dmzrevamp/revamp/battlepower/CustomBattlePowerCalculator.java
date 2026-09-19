@@ -28,7 +28,7 @@ public final class CustomBattlePowerCalculator {
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "meleeDamage", data.getMaxMeleeDamage());
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "strikeDamage", data.getMaxStrikeDamage());
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxStamina", data.getMaxStamina());
-        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "defense", data.getMaxDefense());
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "defense", data.getMaxFlatMitigation());
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxHealth", data.getMaxHealth());
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "kiDamage", data.getMaxKiDamage());
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxKi", data.getMaxEnergy());
