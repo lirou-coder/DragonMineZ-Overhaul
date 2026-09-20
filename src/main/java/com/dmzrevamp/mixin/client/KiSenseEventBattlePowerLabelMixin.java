@@ -58,9 +58,6 @@ public abstract class KiSenseEventBattlePowerLabelMixin {
             }
 
             float cached = KiSenseScan.getCachedBP(entity.getId());
-            if (Float.isFinite(cached) && cached >= Integer.MAX_VALUE) {
-                return original;
-            }
             if (Float.isFinite(cached) && cached > 0F && cached < Float.MAX_VALUE) {
                 return "BP: " + formatBattlePower(cached);
             }
@@ -69,13 +66,20 @@ public abstract class KiSenseEventBattlePowerLabelMixin {
         String numeric = original.substring(4).replace(".", "");
         try {
             double value = Double.parseDouble(numeric);
-            if (value >= Integer.MAX_VALUE) {
-                return original;
-            }
             return "BP: " + formatBattlePower(value);
         } catch (NumberFormatException ignored) {
             return original;
         }
+    }
+
+    @ModifyVariable(method = "renderBPLabel", at = @At("STORE"), ordinal = 0, require = 0)
+    private static boolean dmzrevamp$usePlayerBattlePowerLimitForMobs(boolean original,
+                                                                      PoseStack poseStack,
+                                                                      LivingEntity entity,
+                                                                      float topY) {
+        // DMZ normally checks Integer.MAX_VALUE for mobs. Their scan now follows the player
+        // float path, so the hidden/overflow sentinel must also be Float.MAX_VALUE.
+        return true;
     }
 
     private static String formatBattlePower(double value) {

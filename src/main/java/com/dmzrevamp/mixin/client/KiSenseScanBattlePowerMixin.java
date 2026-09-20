@@ -1,6 +1,7 @@
 package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
+import com.dmzrevamp.revamp.battlepower.AccurateMobBattlePowerCalculator;
 import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,9 +31,13 @@ public abstract class KiSenseScanBattlePowerMixin {
             return;
         }
 
-        long battlePower = ManualBattlePowerStatEvents.displayedBattlePower(entity, -1L);
-        if (battlePower >= 0L) {
-            cir.setReturnValue((float) battlePower);
+        // Match the player path: calculate in double and expose only the final scan value as
+        // float. Never consult IBattlePower here because DMZ stores mob BP as a capped int.
+        double battlePower = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(entity);
+        if (!Double.isFinite(battlePower) || battlePower <= 0D) {
+            cir.setReturnValue(0F);
+            return;
         }
+        cir.setReturnValue(battlePower >= Float.MAX_VALUE ? Float.MAX_VALUE : (float) battlePower);
     }
 }

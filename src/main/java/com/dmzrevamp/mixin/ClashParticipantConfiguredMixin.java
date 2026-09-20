@@ -19,7 +19,8 @@ public abstract class ClashParticipantConfiguredMixin implements com.dmzrevamp.r
             method = "<init>",
             at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(DD)D"),
             index = 1,
-            remap = false
+            remap = false,
+            require = 0
     )
     private double dmzrevamp$neutralizeNativeKiDamageInfluence(double projectileDamage) {
         // The complete Overhaul clash system applies Ki damage exactly once in KiClashTeams.

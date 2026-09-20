@@ -27,11 +27,6 @@ public final class ManualBattlePowerStatEvents {
             setBattlePower(entity, Integer.MAX_VALUE);
             return;
         }
-        int currentBattlePower = currentBattlePower(entity);
-        if (currentBattlePower == Integer.MAX_VALUE) {
-            return;
-        }
-
         double exactBattlePower = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(entity);
         entity.getPersistentData().putDouble(CACHED_BP_TAG, exactBattlePower);
         long calculatedBattlePower = exactBattlePower >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) exactBattlePower;
@@ -50,7 +45,7 @@ public final class ManualBattlePowerStatEvents {
     }
 
     public static boolean isKiSenseHiddenEntity(LivingEntity entity) {
-        return mustHideKi(entity) || currentBattlePower(entity) == Integer.MAX_VALUE;
+        return mustHideKi(entity);
     }
 
     public static long displayedBattlePower(LivingEntity entity, long fallback) {

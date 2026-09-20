@@ -149,7 +149,6 @@
     "client.PlayerSolidProjectileClashAnimationMixin",
     "client.QuestEnemyPreviewRevampStatsMixin",
     "client.QuestTreeExtraDifficultiesMixin",
-    "client.CombatIndicatorsMobDefenseMixin",
     "client.QuestEnemyPreviewPrestigeDifficultyMixin",
     "client.QuestNpcPrestigeRewardMixin",
     "client.QuestTreePrestigeDifficultyMixin",

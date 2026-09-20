@@ -3,6 +3,9 @@ package com.dmzrevamp.revamp.combat;
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.entity.DmzRevampAttributes;
 import com.dmzrevamp.config.AdaptiveDefenseMoreConfigured;
+import com.dmzrevamp.config.LevelingRevampConfig;
+import com.dmzrevamp.revamp.DmzRevampHelper;
+import com.dmzrevamp.revamp.prestige.PrestigeSystem;
 import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.world.entity.LivingEntity;
@@ -18,7 +21,9 @@ import net.minecraftforge.fml.common.Mod;
 public final class MobDefenseEvents {
     private MobDefenseEvents() {}
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    // DMZ rebuilds player melee damage at HIGH and writes it back to the event. Run after that
+    // authoritative calculation so mob defense cannot be overwritten by CombatEvent.
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void mitigate(LivingHurtEvent event) {
         LivingEntity entity = event.getEntity();
         if (entity instanceof Player || event.getAmount() <= 0F) return;
@@ -43,15 +48,37 @@ public final class MobDefenseEvents {
         double flat = defense * config.getFlatMitigationFactor();
         double minimum = incoming * (1D - config.getFlatMitigationMaxAbsorbFraction());
         double afterFlat = Math.max(minimum, incoming - flat);
+
+        // Mirrors the player's max-Defense damage-reduction stage, but deliberately uses only
+        // mob_defense. Vanilla armor and Protection remain independent mitigation systems.
+        double defenseReference = playerDefenseReference();
+        double defenseReduction = DmzRevampHelper.getConfiguredDefenseStyleEffect(
+                defense,
+                defenseReference,
+                config.getBaseDamageReductionCap()
+        );
+        double afterDefenseCurve = afterFlat * (1D - defenseReduction);
+
         if (AdaptiveDefenseMoreConfigured.get().enable) {
-            afterFlat *= 1D - configuredAdaptiveMitigation(incoming, defense);
+            afterDefenseCurve *= 1D - configuredAdaptiveMitigation(incoming, defense);
         } else if (config.getEnableAdaptativeDefenseMitigation() && defense > 0D) {
             // DMZ uses incoming damage / raw defense for its adaptive curve. The mob's
             // separate flat-mitigation factor must not alter that ratio.
-            afterFlat *= 1D - adaptiveMitigation(incoming / defense, config);
+            afterDefenseCurve *= 1D - adaptiveMitigation(incoming / defense, config);
         }
-        // Intentionally never cancels damage and never applies the player's extra total-defense reduction.
-        return (float) Math.max(0.0001D, afterFlat);
+        // Mob Defense never invokes the player's complete-negation rule.
+        return (float) Math.max(0.0001D, afterDefenseCurve);
+    }
+
+    private static double playerDefenseReference() {
+        if (LevelingRevampConfig.levelsEnabled()) {
+            return Math.max(1D, PrestigeSystem.attributeFormulaMaximum());
+        }
+        var gameplay = ConfigManager.getServerConfig().getGameplay();
+        double configuredMaximum = Math.max(1D, gameplay.getMaxValue());
+        return gameplay.getMaxLevelValueInsteadOfStats()
+                ? configuredMaximum * 6D / 2D
+                : configuredMaximum;
     }
 
     private static double configuredAdaptiveMitigation(double incoming, double defense) {
