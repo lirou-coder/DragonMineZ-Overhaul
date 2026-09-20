@@ -15,6 +15,7 @@
   "technique.type.target": "Objetivo",
   "technique.type.multi_cast": "Multidisparo",
   "technique.type.domain": "Dominio",
+  "technique.type.rush": "Ráfaga",
   "technique.utility.both": "Ambos",
   "dynamicgrowth.dragonminez.stat.skp": "VEL",
   "gui.dragonminez.character_stats.strike_damage": "Velocidad",

@@ -9,6 +9,7 @@ public enum CustomStrikeType {
     METEOR_COMBINATION("meteor_combination", 2.0F, 1.0F, "skp.kaioken_attack", 50, 1.0F),
     FAST_PUNCH("fast_punch", 1.4F, 1.0F, "combo6", 25, 1.0F),
     STRONG_PUNCH("strong_punch", 2.0F, 1.0F, "combo7", 20, 1.0F),
+    RUSH("rush", 1.25F, 1.0F, "combo7", 20, 1.0F),
     EVASIVE("evasive", 0.2F, 1.0F, "technique.evasive", 20, 0.0F);
 
     private final String translationSuffix;

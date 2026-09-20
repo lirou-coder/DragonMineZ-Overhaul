@@ -596,6 +596,34 @@ public abstract class StrikeAttackHandlerRevampMixin {
                     return true;
                 }
             }
+            case RUSH -> {
+                if (tick == 1) {
+                    Vec3 look = target.getLookAngle().normalize();
+                    dmzrevamp$movePlayer(player, target.getX() + look.x, target.getY(), target.getZ() + look.z);
+                    dmzrevamp$play(player, MainSounds.TP, 1.0F, 1.0F);
+                    dmzrevamp$play(player, MainSounds.KI_CHARGE_LOOP, 0.5F, 2.0F);
+                } else if (tick > 1 && tick < 20 && tick % 2 == 0) {
+                    dmzrevamp$face(player, target);
+                    if (player.distanceTo(target) <= 3.0D) {
+                        float hit = (float) (totalDamage / 9.0D);
+                        boolean finalHit = tick == 18;
+                        dmzrevamp$hit(player, target, hit, strike, finalHit, data);
+                        dmzrevamp$play(player, MainSounds.CRITICO1, 0.4F, 1.6F);
+                        dmzrevamp$spawnPunchParticles(player, target);
+
+                        Vec3 push = target.position().subtract(player.position());
+                        if (push.lengthSqr() < 0.01D) {
+                            push = player.getLookAngle();
+                        }
+                        push = push.normalize();
+                        double horizontal = finalHit ? 1.08D : 0.05D;
+                        double vertical = finalHit ? 0.48D : 0.05D;
+                        dmzrevamp$setMotion(target, push.x * horizontal, vertical, push.z * horizontal);
+                    }
+                } else if (tick >= 20) {
+                    return true;
+                }
+            }
             default -> {
             }
         }
