@@ -191,6 +191,7 @@ dependencies {
     // The group id is ignored when searching -- in this case, it is "blank"
     compileOnly files(dmzApiJar)
     compileOnly fg.deobf('local:dmz_ragnarok:1.1.72')
+    compileOnly files('../reference mods/NoeaBosses-0.95.0-alpha.8.16.54-DMZ-2.1.3.jar')
     compileOnly files('../reference mods/curios-forge-5.14.1+1.20.1.jar')
     compileOnly files('../reference mods/geckolib-forge-1.20.1-4.8.3.jar')
     // Production mod jars must be remapped to the official mappings used by

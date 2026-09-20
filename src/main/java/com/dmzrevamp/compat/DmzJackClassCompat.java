@@ -17,7 +17,7 @@ public final class DmzJackClassCompat {
         }
         RaceStatsConfig.ClassStats stats = DmzClassConfigManager.createClassStats(
                 3, 3, 3, 3, 3, 3,
-                0.6D, 0.6D, 0.6D, 0.6D, 1.0D, 0.6D, 1.2D);
+                0.6D, 0.6D, 0.6D, 0.6D, 1.5D, 0.6D, 1.2D);
         RaceStatsConfig.Passive passive = new RaceStatsConfig.Passive();
         passive.setEnabled(true);
         passive.getValues().put("strStkPwrBoost", 0.2D);

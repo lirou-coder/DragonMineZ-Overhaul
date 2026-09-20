@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 public final class DmzClassConfigManager {
-    private static final double VITALITY_SCALING_INCREASE = 1.5D;
     public static final String RACE_DEFAULT_CLASS = "race";
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -274,19 +273,19 @@ public final class DmzClassConfigManager {
         }
 
         return switch (normalized) {
-            case "human" -> createRaceStats(2, 3, 1, 0, 2, 5, 0.5D, 0.5D, 0.4D, 0.6D, 0.6D, 0.7D, 2.0D);
-            case "android" -> createRaceStats(4, 3, 2, 2, 2, 0, 0.7D, 0.7D, 0.7D, 0.7D, 0.7D, 0.7D, 1.4D);
-            case "saiyan" -> createRaceStats(5, 3, 2, 1, 1, 1, 0.7D, 1.0D, 0.6D, 0.8D, 0.4D, 0.5D, 0.8D);
-            case "frostdemon" -> createRaceStats(0, 3, 1, 0, 5, 4, 0.1D, 0.7D, 0.5D, 0.3D, 0.3D, 1.0D, 2.0D);
-            case "namekian" -> createRaceStats(2, 2, 3, 2, 2, 2, 0.8D, 0.3D, 1.0D, 0.9D, 1.0D, 0.4D, 1.4D);
-            case "majin" -> createRaceStats(3, 2, 2, 1, 2, 3, 0.7D, 0.6D, 1.0D, 0.6D, 0.8D, 0.5D, 1.6D);
-            case "bioandroid" -> createRaceStats(2, 3, 1, 1, 2, 3, 0.5D, 0.6D, 0.6D, 0.6D, 0.6D, 0.4D, 1.6D);
+            case "human" -> createRaceStats(2, 3, 1, 0, 2, 5, 0.5D, 0.5D, 0.4D, 0.6D, 0.9D, 0.7D, 2.0D);
+            case "android" -> createRaceStats(4, 3, 2, 2, 2, 0, 0.7D, 0.7D, 0.7D, 0.7D, 1.1D, 0.7D, 1.4D);
+            case "saiyan" -> createRaceStats(5, 3, 2, 1, 1, 1, 0.7D, 1.0D, 0.6D, 0.8D, 0.6D, 0.5D, 0.8D);
+            case "frostdemon" -> createRaceStats(0, 3, 1, 0, 5, 4, 0.1D, 0.7D, 0.5D, 0.3D, 0.5D, 1.0D, 2.0D);
+            case "namekian" -> createRaceStats(2, 2, 3, 2, 2, 2, 0.8D, 0.3D, 1.0D, 0.9D, 1.5D, 0.4D, 1.4D);
+            case "majin" -> createRaceStats(3, 2, 2, 1, 2, 3, 0.7D, 0.6D, 1.0D, 0.6D, 1.2D, 0.5D, 1.6D);
+            case "bioandroid" -> createRaceStats(2, 3, 1, 1, 2, 3, 0.5D, 0.6D, 0.6D, 0.6D, 0.9D, 0.4D, 1.6D);
             default -> createGenericRaceDefaultStats();
         };
     }
 
     private static RaceStatsConfig.ClassStats createGenericRaceDefaultStats() {
-        return createRaceStats(5, 5, 5, 5, 5, 5, 0.6D, 0.6D, 0.6D, 0.6D, 0.6D, 0.6D, 0.6D);
+        return createRaceStats(5, 5, 5, 5, 5, 5, 0.6D, 0.6D, 0.6D, 0.6D, 0.9D, 0.6D, 1.2D);
     }
 
     private static void applyRaceRegenOverrides(String normalizedRace, RaceStatsConfig.ClassStats raceDefault) {
@@ -535,17 +534,17 @@ public final class DmzClassConfigManager {
     private static RaceStatsConfig.ClassStats createKnownClassDefault(String classId) {
         String normalizedClassId = normalize(classId);
         RaceStatsConfig.ClassStats stats = switch (normalizedClassId) {
-            case "warrior" -> createClassStats(6, 3, 2, 1, 1, 0, 1.0D, 0.7D, 0.4D, 0.6D, 0.6D, 0.3D, 1.0D);
-            case "spiritualist" -> createClassStats(0, 2, 1, 0, 6, 3, 0.2D, 0.6D, 0.5D, 0.4D, 0.6D, 1.0D, 2.0D);
-            case "berserker" -> createClassStats(7, 3, 2, 2, 0, 0, 1.0D, 0.8D, 0.7D, 0.9D, 0.7D, 0.1D, 0.6D);
-            case "martialartist" -> createClassStats(4, 1, 2, 2, 4, 2, 1.0D, 0.8D, 0.7D, 0.7D, 0.2D, 1.0D, 1.2D);
-            case "cleric" -> withTp(createClassStats(0, 2, 1, 0, 4, 5, 0.2D, 0.7D, 0.6D, 0.6D, 1.0D, 0.9D, 2.0D), -0.1D, 0.25D);
-            case "paladin" -> createClassStats(5, 1, 3, 1, 1, 1, 1.0D, 0.5D, 0.9D, 0.9D, 0.8D, 0.7D, 1.6D);
-            case "tank" -> withTp(createClassStats(3, 0, 3, 3, 2, 1, 0.7D, 0.4D, 1.0D, 0.9D, 1.0D, 0.5D, 1.6D), 0.0D, 0.25D);
-            case "speedster" -> createClassStats(1, 6, 0, 0, 3, 2, 0.7D, 1.0D, 0.4D, 0.8D, 0.6D, 0.6D, 1.6D);
-            case "duelist" -> createClassStats(2, 3, 2, 2, 2, 2, 0.7D, 0.9D, 0.6D, 1.0D, 0.6D, 0.7D, 2.0D);
-            case "kiassassin" -> createClassStats(0, 4, 0, 0, 6, 4, 0.0D, 0.8D, 0.3D, 0.5D, 0.5D, 1.0D, 2.0D);
-            case "potentialist" -> createClassStats(3, 3, 3, 3, 3, 3, 0.6D, 0.6D, 0.6D, 0.6D, 0.6D, 0.6D, 1.2D);
+            case "warrior" -> createClassStats(6, 3, 2, 1, 1, 0, 1.0D, 0.7D, 0.4D, 0.6D, 0.9D, 0.3D, 1.0D);
+            case "spiritualist" -> createClassStats(0, 2, 1, 0, 6, 3, 0.2D, 0.6D, 0.5D, 0.4D, 0.9D, 1.0D, 2.0D);
+            case "berserker" -> createClassStats(7, 3, 2, 2, 0, 0, 1.0D, 0.8D, 0.7D, 0.9D, 1.1D, 0.1D, 0.6D);
+            case "martialartist" -> createClassStats(4, 1, 2, 2, 4, 2, 1.0D, 0.8D, 0.7D, 0.7D, 0.3D, 1.0D, 1.2D);
+            case "cleric" -> withTp(createClassStats(0, 2, 1, 0, 4, 5, 0.2D, 0.7D, 0.6D, 0.6D, 1.5D, 0.9D, 2.0D), -0.1D, 0.25D);
+            case "paladin" -> createClassStats(5, 1, 3, 1, 1, 1, 1.0D, 0.5D, 0.9D, 0.9D, 1.2D, 0.7D, 1.6D);
+            case "tank" -> withTp(createClassStats(3, 0, 3, 3, 2, 1, 0.7D, 0.4D, 1.0D, 0.9D, 1.5D, 0.5D, 1.6D), 0.0D, 0.25D);
+            case "speedster" -> createClassStats(1, 6, 0, 0, 3, 2, 0.7D, 1.0D, 0.4D, 0.8D, 0.9D, 0.6D, 1.6D);
+            case "duelist" -> createClassStats(2, 3, 2, 2, 2, 2, 0.7D, 0.9D, 0.6D, 1.0D, 0.9D, 0.7D, 2.0D);
+            case "kiassassin" -> createClassStats(0, 4, 0, 0, 6, 4, 0.0D, 0.8D, 0.3D, 0.5D, 0.8D, 1.0D, 2.0D);
+            case "potentialist" -> createClassStats(3, 3, 3, 3, 3, 3, 0.6D, 0.6D, 0.6D, 0.6D, 0.9D, 0.6D, 1.2D);
             default -> createZeroClassStats();
         };
         stats.setPassive(defaultPassive(normalizedClassId));
@@ -702,7 +701,7 @@ public final class DmzClassConfigManager {
         scaling.setStrikePowerScaling(strikePowerScaling);
         scaling.setDefenseScaling(defenseScaling);
         scaling.setStaminaScaling(staminaScaling);
-        scaling.setVitalityScaling(roundToOneDecimal(vitalityScaling * VITALITY_SCALING_INCREASE));
+        scaling.setVitalityScaling(roundToOneDecimal(vitalityScaling));
         scaling.setKiPowerScaling(kiPowerScaling);
         scaling.setEnergyScaling(energyScaling);
         classStats.setStatScaling(scaling);

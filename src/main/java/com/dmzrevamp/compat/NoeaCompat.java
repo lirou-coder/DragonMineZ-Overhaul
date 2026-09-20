@@ -105,6 +105,17 @@ public final class NoeaCompat {
 
     public static Object findAliasedGodKiVariant(String race, String group, String form) {
         if (!isLoaded()) return null;
+        String[] alias = aliasedGodKiVariantIds(race, group, form);
+        if (alias == null) return null;
+        try {
+            return reflection().godKiVariantFind.invoke(null, alias[0], alias[1], alias[2]);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    /** Returns the canonical Noea ledger identity for an Overhaul form, without touching configs. */
+    public static String[] aliasedGodKiVariantIds(String race, String group, String form) {
         String normalizedRace = string(race);
         String normalizedGroup = string(group);
         String normalizedForm = string(form);
@@ -127,12 +138,7 @@ public final class NoeaCompat {
                 && "fifthfp".equals(normalizedForm)) {
             alias = "fifth";
         }
-        if (alias == null) return null;
-        try {
-            return reflection().godKiVariantFind.invoke(null, normalizedRace, aliasGroup, alias);
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            return null;
-        }
+        return alias == null ? null : new String[]{normalizedRace, aliasGroup, alias};
     }
 
     private static boolean noeaOwnsFusionBattlePower(StatsData data, Object noeaData, Reflection api)

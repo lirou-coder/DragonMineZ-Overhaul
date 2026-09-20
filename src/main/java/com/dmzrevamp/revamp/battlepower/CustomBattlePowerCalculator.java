@@ -45,6 +45,25 @@ public final class CustomBattlePowerCalculator {
         return calculate(config, totalStats, release);
     }
 
+    public static double calculatePlayerBattlePowerFromValues(double meleeDamage,
+                                                               double strikeDamage,
+                                                               double maxStamina,
+                                                               double defense,
+                                                               double maxHealth,
+                                                               double kiDamage,
+                                                               double maxKi) {
+        CustomBattlePowerConfig.Config config = CustomBattlePowerConfig.get();
+        double totalStats = 0D;
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "meleeDamage", meleeDamage);
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "strikeDamage", strikeDamage);
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxStamina", maxStamina);
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "defense", defense);
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxHealth", maxHealth);
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "kiDamage", kiDamage);
+        totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxKi", maxKi);
+        return calculate(config, totalStats, 1D);
+    }
+
     public static long calculateMobBattlePower(double totalStats) {
         double calculated = calculateMobBattlePowerExact(totalStats);
         if (calculated >= Long.MAX_VALUE) {

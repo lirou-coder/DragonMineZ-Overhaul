@@ -60,6 +60,10 @@ public abstract class ConfigManagerClassStatsMixin {
 
     @Shadow(remap = false)
     @Final
+    private static Map<String, RaceCharacterConfig> RACE_CHARACTER;
+
+    @Shadow(remap = false)
+    @Final
     private static Path RACES_DIR;
 
     @Shadow(remap = false)
@@ -156,6 +160,25 @@ public abstract class ConfigManagerClassStatsMixin {
     @Inject(method = "getAllRaceCharacters", at = @At("RETURN"), cancellable = true, remap = false)
     private static void dmzrevamp$orderAllRaceCharacters(CallbackInfoReturnable<Map<String, RaceCharacterConfig>> cir) {
         cir.setReturnValue(dmzrevamp$orderedRaceMap(cir.getReturnValue()));
+    }
+
+    @Inject(method = "getRaceCharacter", at = @At("RETURN"), cancellable = true, remap = false)
+    private static void dmzrevamp$avoidCrossRaceCharacterFallback(String raceName,
+                                                                   CallbackInfoReturnable<RaceCharacterConfig> cir) {
+        String requestedRace = raceName == null ? "human" : raceName.toLowerCase(Locale.ROOT);
+        RaceCharacterConfig returned = cir.getReturnValue();
+        if (returned != null && requestedRace.equalsIgnoreCase(returned.getRaceName())) {
+            return;
+        }
+
+        // During a server-sync batch DMZ falls back to the already-received Human
+        // character config when the requested race has not arrived yet. That makes
+        // Saiyan superforms temporarily use Human's four-level limit and clamps the
+        // client skill. Keep the same-race local config until its synced copy arrives.
+        RaceCharacterConfig sameRaceLocal = dmzrevamp$getRaceMapValue(RACE_CHARACTER, requestedRace);
+        if (sameRaceLocal != null) {
+            cir.setReturnValue(sameRaceLocal);
+        }
     }
 
     @Inject(method = "getLoadedRaces", at = @At("RETURN"), cancellable = true, remap = false)

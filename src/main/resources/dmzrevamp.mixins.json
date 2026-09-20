@@ -99,6 +99,7 @@
     "SagaComboManagerStrikeClashMixin",
     "SkillProgressionTechniqueChargeContextMixin",
     "SkillProgressionTechniqueRegistryMixin",
+    "SkillLevelPreservationMixin",
     "SPDragonFistEntityYLockMixin",
     "PredefinedFusionTechniquesMixin",
     "StrikeAttackDamageUsesMeleeMixin",
