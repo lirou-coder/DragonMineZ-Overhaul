@@ -1,5 +1,6 @@
 package com.dmzrevamp.mixin;
 
+import com.dmzrevamp.revamp.classes.skills.ClassSkillHelper;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
@@ -43,6 +44,46 @@ public abstract class SkillsCommandAllMixin {
         int targetCount = targets.size();
         source.sendSuccess(() -> Component.literal("Set all " + skills.size() + " listed skills to level "
                 + level + " for " + targetCount + " player" + (targetCount == 1 ? "." : "s.")), log);
+        cir.setReturnValue(targetCount);
+    }
+
+    @Inject(method = "removeSkill", at = @At("HEAD"), cancellable = true, require = 0)
+    private static void dmzrevamp$removeAllListedSkills(CommandSourceStack source,
+                                                        Collection<ServerPlayer> targets,
+                                                        String skillName,
+                                                        CallbackInfoReturnable<Integer> cir) {
+        if (!"all".equalsIgnoreCase(skillName)) return;
+
+        var config = ConfigManager.getSkillsConfig();
+        List<String> removableSkills = config.getSkills().keySet().stream()
+                .filter(skill -> !config.getKiSkills().contains(skill)
+                        && !config.getStackSkills().contains(skill)
+                        && !config.getFormSkills().contains(skill)
+                        && !config.getStrikeSkills().contains(skill)
+                        && !ClassSkillHelper.isClassSkill(skill))
+                .toList();
+
+        int[] removed = {0};
+        for (ServerPlayer player : targets) {
+            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+                boolean changed = false;
+                for (String skill : removableSkills) {
+                    if (!data.getSkills().hasSkill(skill)) continue;
+                    data.getSkills().removeSkill(skill);
+                    removed[0]++;
+                    changed = true;
+                }
+                if (changed) {
+                    NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
+                }
+            });
+        }
+
+        boolean log = ConfigManager.getServerConfig().getGameplay().getCommandOutputOnConsole();
+        int targetCount = targets.size();
+        source.sendSuccess(() -> Component.literal("Removed " + removed[0]
+                + " listed skill" + (removed[0] == 1 ? "" : "s") + " from " + targetCount
+                + " player" + (targetCount == 1 ? "." : "s.")), log);
         cir.setReturnValue(targetCount);
     }
 }
