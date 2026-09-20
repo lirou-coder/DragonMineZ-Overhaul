@@ -4,6 +4,7 @@ import com.dmzrevamp.config.FusionsRevampedConfig;
 import com.dmzrevamp.revamp.cosmetic.FusionCosmeticArmorEvents;
 import com.dmzrevamp.revamp.fusion.FusionRevampLogic;
 import com.dmzrevamp.revamp.fusion.FusionRevampEvents;
+import com.dmzrevamp.compat.NoeaCompat;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -89,6 +90,9 @@ public abstract class FusionLogicCosmeticArmorMixin {
     @Inject(method = "calculateAndApplyStats", at = @At("HEAD"), cancellable = true, remap = false)
     private static void dmzrevamp$applyRevampedFusionStats(StatsData data, StatsData otherData, String fusionType, int playerTotalStats, int otherTotalStats, CallbackInfo ci) {
         if (!FusionsRevampedConfig.isRevampedEnabled()) {
+            return;
+        }
+        if (!NoeaCompat.overhaulOwnsStandardPlayerFusion(data, otherData)) {
             return;
         }
         FusionRevampLogic.applyFusionBonuses(data, otherData, fusionType, playerTotalStats, otherTotalStats);

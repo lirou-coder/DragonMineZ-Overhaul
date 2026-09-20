@@ -2,6 +2,7 @@ package com.dmzrevamp.client;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.DmzRevampConfig;
+import com.dmzrevamp.compat.NoeaCompat;
 import com.dmzrevamp.mixin.client.LockOnEventAccessor;
 import com.dragonminez.client.events.LockOnEvent;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
@@ -59,6 +60,7 @@ public final class LockOnCycleClientEvents {
         @SubscribeEvent
         public static void onClientTick(TickEvent.ClientTickEvent event) {
             if (event.phase != TickEvent.Phase.END) return;
+            if (NoeaCompat.isLoaded()) return;
             while (LOCK_CYCLE.consumeClick()) cycleTarget();
         }
     }
@@ -99,6 +101,7 @@ public final class LockOnCycleClientEvents {
     }
 
     public static List<LivingEntity> findPrioritizedTargets(Player player, double range, StatsData data) {
+        if (NoeaCompat.isLoaded()) return List.of();
         Vec3 eye = player.getEyePosition();
         Vec3 view = player.getViewVector(1.0F).normalize();
         List<TargetCandidate> candidates = new ArrayList<>();
@@ -117,6 +120,7 @@ public final class LockOnCycleClientEvents {
     }
 
     public static void rememberTarget(LivingEntity target) {
+        if (NoeaCompat.isLoaded()) return;
         UUID id = target.getUUID();
         RECENT_TARGETS.remove(id);
         RECENT_TARGETS.addLast(id);
@@ -128,6 +132,7 @@ public final class LockOnCycleClientEvents {
     }
 
     public static boolean canTarget(LivingEntity target, StatsData data) {
+        if (NoeaCompat.isLoaded()) return LockOnEvent.canTarget(target, data);
         if (KiSenseBlacklistConfig.contains(target)) return false;
         return DmzRevampConfig.ALLOW_LOCK_ON_ANDROID.get()
                 ? LockOnEvent.canTarget(target, data)

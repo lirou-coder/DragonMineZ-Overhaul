@@ -1,6 +1,7 @@
 package com.dmzrevamp.revamp.fusion;
 
 import com.dmzrevamp.config.FusionsRevampedConfig;
+import com.dmzrevamp.compat.NoeaCompat;
 import com.dmzrevamp.revamp.prestige.PrestigeSystem;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceStatsConfig;
@@ -403,7 +404,7 @@ public final class FusionRevampLogic {
     }
 
     private static double getBaseRaceClassScale(StatsData data, String stat) {
-        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(data.getCharacter().getRaceName());
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(NoeaCompat.realFusionRace(data));
         RaceStatsConfig.ClassStats classStats = raceConfig != null ? raceConfig.getClassStats(data.getCharacter().getCharacterClass()) : null;
         RaceStatsConfig.StatScaling scaling = classStats != null ? classStats.getStatScaling() : null;
         if (scaling == null) {

@@ -2,8 +2,8 @@ package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.revamp.DmzRevampHelper;
 import com.dmzrevamp.config.LevelingRevampConfig;
-import com.dmzrevamp.revamp.battlepower.CustomBattlePowerCalculator;
 import com.dmzrevamp.revamp.battlepower.BattlePowerCacheControl;
+import com.dmzrevamp.compat.NoeaCompat;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Final;
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(StatsData.class)
+@Mixin(value = StatsData.class, priority = 2000)
 public abstract class StatsDataRevampMixin implements BattlePowerCacheControl {
     @Unique private long dmzrevamp$battlePowerSignature = Long.MIN_VALUE;
     @Unique private double dmzrevamp$cachedBattlePower;
@@ -35,10 +35,10 @@ public abstract class StatsDataRevampMixin implements BattlePowerCacheControl {
         StatsData data = (StatsData) (Object) this;
         long signature = dmzrevamp$battlePowerSignature(data);
         if (signature != dmzrevamp$battlePowerSignature) {
-            dmzrevamp$cachedBattlePower = CustomBattlePowerCalculator.calculatePlayerBattlePower(data);
+            dmzrevamp$cachedBattlePower = NoeaCompat.calculateBaseBattlePower(data);
             dmzrevamp$battlePowerSignature = signature;
         }
-        cir.setReturnValue(dmzrevamp$cachedBattlePower);
+        cir.setReturnValue(NoeaCompat.applyDynamicBattlePower(data, dmzrevamp$cachedBattlePower));
     }
 
     @Unique

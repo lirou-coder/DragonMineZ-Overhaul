@@ -23,6 +23,14 @@ public final class CustomBattlePowerCalculator {
             return ANDROID_UPGRADED_BATTLE_POWER;
         }
 
+        return calculateFinitePlayerBattlePower(data);
+    }
+
+    public static double calculateFinitePlayerBattlePower(StatsData data) {
+        if (data == null) {
+            return 0D;
+        }
+
         CustomBattlePowerConfig.Config config = CustomBattlePowerConfig.get();
         double totalStats = 0D;
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "meleeDamage", data.getMaxMeleeDamage());

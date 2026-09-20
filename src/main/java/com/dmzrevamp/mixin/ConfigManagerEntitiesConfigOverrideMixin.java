@@ -1,6 +1,7 @@
 package com.dmzrevamp.mixin;
 
 import com.dragonminez.common.config.ConfigManager;
+import com.dmzrevamp.compat.NoeaConfigCompat;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.ModList;
 import org.slf4j.Logger;
@@ -16,7 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-@Mixin(ConfigManager.class)
+@Mixin(value = ConfigManager.class, priority = 2000)
 public abstract class ConfigManagerEntitiesConfigOverrideMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String ENTITIES_SNAPSHOT = "data/dmzrevamp/defaults/config/entities.json";
@@ -35,6 +36,12 @@ public abstract class ConfigManagerEntitiesConfigOverrideMixin {
     @Shadow(remap = false)
     @Final
     private static Path CONFIG_DIR;
+
+    @Inject(method = "initialize", at = @At("HEAD"), remap = false)
+    private static void dmzrevamp$seedBaseBeforeAddonInstallers(CallbackInfo ci) {
+        // Priority 2000: this runs before Noea's default-priority HEAD installer.
+        NoeaConfigCompat.prepareBaseDefaults();
+    }
 
     @Inject(method = "initialize",
             at = @At(value = "INVOKE",

@@ -4,6 +4,7 @@ import com.dmzrevamp.compat.DmzKiOverchargeCompat;
 import com.dmzrevamp.compat.DmzSkillProgressionCompat;
 import com.dmzrevamp.compat.DmzSparkingCompat;
 import com.dmzrevamp.compat.SduCompat;
+import com.dmzrevamp.compat.NoeaCompat;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -27,6 +28,7 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
     private boolean dmzSparkingLoaded;
     private boolean sduLoaded;
     private boolean alternatePassivesLoaded;
+    private boolean noeaLoaded;
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -35,6 +37,7 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         dmzSparkingLoaded = DmzSparkingCompat.isLoadedEarly();
         sduLoaded = SduCompat.isLoadedEarly();
         alternatePassivesLoaded = isModLoadedEarly("majinabsorption");
+        noeaLoaded = NoeaCompat.isLoadedEarly();
     }
 
     @Override
@@ -44,6 +47,16 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (noeaLoaded && "com.dmzrevamp.mixin.client.LockOnEventScouterMixin".equals(mixinClassName)) {
+            return false;
+        }
+        if (Set.of(
+                "com.dmzrevamp.mixin.compat.NoeaArmBandRaceCaptureMixin",
+                "com.dmzrevamp.mixin.compat.NoeaGodKiUnknownFormMixin",
+                "com.dmzrevamp.mixin.compat.NoeaGodKiVariantAliasMixin"
+        ).contains(mixinClassName)) {
+            return noeaLoaded && hasClass(targetClassName);
+        }
         if (mixinClassName.startsWith("com.dmzrevamp.mixin.compat.sdu.")) {
             return sduLoaded;
         }

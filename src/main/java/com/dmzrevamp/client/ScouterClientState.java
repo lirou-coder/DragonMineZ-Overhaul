@@ -1,5 +1,6 @@
 package com.dmzrevamp.client;
 
+import com.dmzrevamp.compat.NoeaCompat;
 import com.dmzrevamp.mixin.client.LockOnEventAccessor;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.network.LocateMasterStructureC2SPacket;
@@ -57,6 +58,10 @@ public final class ScouterClientState {
     }
 
     public static void forceUnlockScouterBackedLock() {
+        if (NoeaCompat.isLoaded()) {
+            scouterBackedLock = false;
+            return;
+        }
         unlockIfScouterBacked();
     }
 
@@ -86,6 +91,11 @@ public final class ScouterClientState {
     }
 
     public static void handleLockInput(LocalPlayer player, StatsData data) {
+        if (NoeaCompat.isLoaded()) {
+            wasLockKeyDown = false;
+            scouterBackedLock = false;
+            return;
+        }
         if (player == null || data == null || !hasScouter(player) || !isScouterActive() || data.getSkills().hasSkill("kisense")) {
             wasLockKeyDown = false;
             return;
@@ -126,6 +136,7 @@ public final class ScouterClientState {
     }
 
     public static void toggleScouterLock(Player player, StatsData data) {
+        if (NoeaCompat.isLoaded()) return;
         LivingEntity currentTarget = LockOnEventAccessor.dmzrevamp$getLockedTarget();
         if (currentTarget != null) {
             LockOnEvent.unlock();
@@ -141,6 +152,10 @@ public final class ScouterClientState {
     }
 
     public static boolean validateScouterLock(Player player, StatsData data) {
+        if (NoeaCompat.isLoaded()) {
+            scouterBackedLock = false;
+            return false;
+        }
         if (!scouterBackedLock) {
             return false;
         }
@@ -194,6 +209,10 @@ public final class ScouterClientState {
     }
 
     private static void unlockIfScouterBacked() {
+        if (NoeaCompat.isLoaded()) {
+            scouterBackedLock = false;
+            return;
+        }
         if (scouterBackedLock) {
             LockOnEvent.unlock();
             scouterBackedLock = false;

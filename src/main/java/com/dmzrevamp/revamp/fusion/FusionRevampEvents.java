@@ -2,6 +2,7 @@ package com.dmzrevamp.revamp.fusion;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.FusionsRevampedConfig;
+import com.dmzrevamp.compat.NoeaCompat;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.events.DMZEvent;
@@ -30,6 +31,7 @@ public final class FusionRevampEvents {
     }
 
     public static void captureAndScheduleResourceAverage(StatsData leaderData, StatsData partnerData) {
+        if (!NoeaCompat.overhaulOwnsStandardPlayerFusion(leaderData, partnerData)) return;
         if (!(leaderData.getPlayer() instanceof ServerPlayer leader) || !(partnerData.getPlayer() instanceof ServerPlayer partner)) {
             return;
         }
@@ -45,6 +47,7 @@ public final class FusionRevampEvents {
 
     @SubscribeEvent
     public static void onFusion(DMZEvent.FusionEvent event) {
+        if (NoeaCompat.isLoaded()) return;
         ServerPlayer player = event.getInitiator();
         if (!FusionsRevampedConfig.isRevampedEnabled()
                 || event.getType() != DMZEvent.FusionEvent.FusionType.METAMORU
@@ -102,6 +105,7 @@ public final class FusionRevampEvents {
         ServerPlayer partner = player.server.getPlayerList().getPlayer(pending.partnerId);
         StatsData leaderData = data(player);
         StatsData partnerData = data(partner);
+        if (!NoeaCompat.overhaulOwnsStandardPlayerFusion(leaderData, partnerData)) return;
         if (leaderData != null && partnerData != null && leaderData.getStatus().isFused()) {
             FusionRevampLogic.restoreFusionResources(leaderData, partnerData,
                     pending.healthPercent, pending.energyPercent, pending.staminaPercent, pending.ticksRemaining == 10);
@@ -119,6 +123,10 @@ public final class FusionRevampEvents {
         ServerPlayer partner = player.server.getPlayerList().getPlayer(data.getStatus().getFusionPartnerUUID());
         StatsData partnerData = data(partner);
         if (partnerData != null) {
+            if (!NoeaCompat.overhaulOwnsStandardPlayerFusion(data, partnerData)) {
+                SYNC_STATES.remove(player.getUUID());
+                return;
+            }
             boolean multipliersChanged = FusionRevampLogic.mirrorLeaderMultipliersToObserver(data, partnerData);
             boolean resourcesChanged = FusionRevampLogic.synchronizeSharedFusionState(data, partnerData);
             long leaderBonuses = FusionRevampLogic.ownBonusSignature(data);
@@ -188,6 +196,7 @@ public final class FusionRevampEvents {
         synchronizeFusedEffect(player, reducedTimer);
         StatsData partnerData = FusionRevampLogic.getFusionPartnerData(leaderData);
         if (partnerData != null) {
+            if (!NoeaCompat.overhaulOwnsStandardPlayerFusion(leaderData, partnerData)) return;
             partnerData.getStatus().setFusionTimer(reducedTimer);
             if (partnerData.getPlayer() instanceof ServerPlayer partner) {
                 synchronizeFusedEffect(partner, reducedTimer);
