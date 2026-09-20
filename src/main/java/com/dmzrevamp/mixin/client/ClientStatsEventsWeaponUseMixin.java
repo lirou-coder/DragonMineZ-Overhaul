@@ -2,7 +2,6 @@ package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.revamp.combat.HeldItemTechniqueUse;
 import com.dragonminez.client.events.ClientStatsEvents;
-import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;

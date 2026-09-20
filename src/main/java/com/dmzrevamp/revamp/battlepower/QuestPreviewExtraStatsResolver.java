@@ -3,7 +3,6 @@ package com.dmzrevamp.revamp.battlepower;
 import com.dmzrevamp.revamp.quest.QuestMobEffectConfig;
 import com.dmzrevamp.revamp.quest.RevampKillObjectiveData;
 import com.dragonminez.common.quest.Quest;
-import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

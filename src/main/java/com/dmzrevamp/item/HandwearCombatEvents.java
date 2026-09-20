@@ -82,18 +82,18 @@ public final class HandwearCombatEvents {
 
     private static float applyCurioWeaponEnchantments(ItemStack stack, LivingEntity attacker, LivingEntity target, float amount) {
         float modified = amount + EnchantmentHelper.getDamageBonus(stack, target.getMobType());
-        int fireAspect = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.FIRE_ASPECT, stack);
+        int fireAspect = stack.getEnchantmentLevel(Enchantments.FIRE_ASPECT);
         if (fireAspect > 0) {
             target.setSecondsOnFire(fireAspect * 4);
         }
-        int knockback = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.KNOCKBACK, stack);
+        int knockback = stack.getEnchantmentLevel(Enchantments.KNOCKBACK);
         if (knockback > 0) {
             double x = attacker.getX() - target.getX();
             double z = attacker.getZ() - target.getZ();
             target.knockback(knockback * 0.5D, x, z);
         }
         if (attacker instanceof Player player
-                && EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SHARPNESS, stack) > 0) {
+                && stack.getEnchantmentLevel(Enchantments.SHARPNESS) > 0) {
             // Player#attack normally emits this enchanted-hit feedback from the
             // held stack. Curios handwear is virtual, so reproduce that packet.
             player.magicCrit(target);
@@ -113,7 +113,7 @@ public final class HandwearCombatEvents {
             event.setAmount(Math.max(0F, event.getAmount() - bonus));
         }
         Integer previousFire = TARGET_FIRE_BEFORE_HELD_HANDWEAR_ATTACK.remove(event.getEntity().getUUID());
-        if (previousFire != null && EnchantmentHelper.getItemEnchantmentLevel(Enchantments.FIRE_ASPECT, held) > 0) {
+        if (previousFire != null && held.getEnchantmentLevel(Enchantments.FIRE_ASPECT) > 0) {
             event.getEntity().setRemainingFireTicks(previousFire);
         }
     }

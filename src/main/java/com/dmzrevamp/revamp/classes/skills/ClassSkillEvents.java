@@ -255,7 +255,6 @@ public final class ClassSkillEvents {
 
     // Clears temporary class state for commands or reset wishes.
     public static boolean clearClassCooldowns(ServerPlayer player) {
-        StatsData data = getData(player);
         boolean removedAny = false;
 
         BLOCK_PROJECTILE_CACHE.remove(player.getUUID());
@@ -413,25 +412,6 @@ public final class ClassSkillEvents {
         }
     }
 
-    private static void syncBerserkerCritDamage(ServerPlayer player, StatsData data) {
-        AttributeInstance critDamage = player.getAttribute(MainAttributes.CRIT_DAMAGE.get());
-        if (critDamage == null) {
-            return;
-        }
-        AttributeModifier existing = critDamage.getModifier(BERSERKER_CRIT_DAMAGE_UUID);
-        if (existing != null) {
-            critDamage.removeModifier(existing);
-        }
-        if (!ClassSkillHelper.hasClassPassive(data, ClassSkillHelper.BERSERKER) || player.getMaxHealth() <= 0F) {
-            return;
-        }
-        double missingHpPercent = Math.max(0D, 1D - (player.getHealth() / player.getMaxHealth())) * 100D;
-        double amount = missingHpPercent * ClassSkillHelper.berserkerCritDamagePerMissingHpPercent(data);
-        if (amount > 0.000001D) {
-            critDamage.addTransientModifier(new AttributeModifier(BERSERKER_CRIT_DAMAGE_UUID, "Berserker crit damage", amount, AttributeModifier.Operation.ADDITION));
-        }
-    }
-
     private static boolean isGuardBroken(LivingEntity target) {
         if (!(target instanceof ServerPlayer player)) {
             return false;
@@ -503,16 +483,6 @@ public final class ClassSkillEvents {
                     || revamp.dmzrevamp$getExtraEffectTwo().isActive();
         }
         return false;
-    }
-
-    // Returns the value used by isLowHealthTarget.
-    private static boolean isLowHealthTarget(LivingEntity target) {
-        return target.getMaxHealth() > 0F && (target.getHealth() / target.getMaxHealth()) <= 0.30F;
-    }
-
-    // Returns the value used by isDirectPhysicalMelee.
-    private static boolean isDirectPhysicalMelee(DamageSource source, ServerPlayer player) {
-        return source.getEntity() == player && source.getDirectEntity() == player && !source.isIndirect();
     }
 
     // Returns the value used by isKiDamage.

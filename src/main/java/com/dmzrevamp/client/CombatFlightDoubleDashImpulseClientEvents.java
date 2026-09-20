@@ -3,7 +3,6 @@ package com.dmzrevamp.client;
 import com.dmzrevamp.mixin.client.CombatFlightHandlerStateAccessor;
 import com.dragonminez.client.flight.CombatFlightHandler;
 import com.dragonminez.common.init.EntityAttributes;
-import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;

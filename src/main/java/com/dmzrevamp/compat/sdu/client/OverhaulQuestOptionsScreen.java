@@ -2,9 +2,9 @@ package com.dmzrevamp.compat.sdu.client;
 
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.shurui.dev.sdu.client.gui.FieldEditScreen;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,7 +21,7 @@ public final class OverhaulQuestOptionsScreen extends FieldEditScreen {
         number("Armor", "Armor"); number("Armor Toughness", "ArmorToughness"); number("Protection Points", "Protection");
         JsonObject effect = effect();
         List<String> effects = new ArrayList<>(); effects.add("none");
-        BuiltInRegistries.MOB_EFFECT.keySet().stream().map(ResourceLocation::toString).sorted(Comparator.naturalOrder()).forEach(effects::add);
+        ForgeRegistries.MOB_EFFECTS.getKeys().stream().map(ResourceLocation::toString).sorted(Comparator.naturalOrder()).forEach(effects::add);
         df("Mob Effect", effects, effect == null ? "none" : string(effect, "effectId", "none"), value -> {
             if ("none".equals(value)) options.remove("mobEffect");
             else { JsonObject target = effect(); if (target == null) target = defaultEffect(); target.addProperty("effectId", value); options.add("mobEffect", target); }

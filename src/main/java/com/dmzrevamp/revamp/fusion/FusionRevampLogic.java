@@ -3,7 +3,6 @@ package com.dmzrevamp.revamp.fusion;
 import com.dmzrevamp.config.FusionsRevampedConfig;
 import com.dmzrevamp.compat.NoeaCompat;
 import com.dmzrevamp.revamp.prestige.PrestigeSystem;
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.RaceStatsConfig;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;

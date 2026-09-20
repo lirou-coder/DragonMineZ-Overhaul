@@ -114,6 +114,20 @@ public final class NoeaCompat {
         }
     }
 
+    /** Resolves a ledger entry through the canonical alias when present, or through Noea's original identity otherwise. */
+    public static Object findGodKiVariant(String race, String group, String form) {
+        if (!isLoaded()) return null;
+        String[] alias = aliasedGodKiVariantIds(race, group, form);
+        String lookupRace = alias == null ? race : alias[0];
+        String lookupGroup = alias == null ? group : alias[1];
+        String lookupForm = alias == null ? form : alias[2];
+        try {
+            return reflection().godKiVariantFind.invoke(null, lookupRace, lookupGroup, lookupForm);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return null;
+        }
+    }
+
     /** Returns the canonical Noea ledger identity for an Overhaul form, without touching configs. */
     public static String[] aliasedGodKiVariantIds(String race, String group, String form) {
         String normalizedRace = string(race);

@@ -29,7 +29,6 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -41,8 +40,8 @@ public class DmzRevampMod {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     // Forge calls this once while loading the mod; this is where Overhaul registers its items, effects, configs, packets, and custom skill systems.
-    public DmzRevampMod() {
-        var modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+    public DmzRevampMod(FMLJavaModLoadingContext loadingContext) {
+        var modEventBus = loadingContext.getModEventBus();
         DmzRevampEffects.register(modEventBus);
         DmzRevampEntities.register(modEventBus);
         DmzRevampAttributes.register(modEventBus);
@@ -58,7 +57,7 @@ public class DmzRevampMod {
         // Some development/runtime launch paths initialize ConfigManager before that
         // injection is observable, which used to postpone new class files until reload.
         DmzClassConfigManager.reload();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DmzRevampConfig.SPEC);
+        loadingContext.registerConfig(ModConfig.Type.COMMON, DmzRevampConfig.SPEC);
         CustomBattlePowerConfig.initialize();
         CustomStrikeAttacksConfig.initialize();
         DynamicGrowthCurveConfig.initialize();

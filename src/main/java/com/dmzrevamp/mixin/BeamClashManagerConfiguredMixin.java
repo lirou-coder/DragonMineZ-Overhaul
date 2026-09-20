@@ -33,7 +33,7 @@ public abstract class BeamClashManagerConfiguredMixin {
 
     @Inject(method = "onLevelTick", at = @At("TAIL"), remap = false)
     private static void dmzrevamp$syncHelpersLast(TickEvent.LevelTickEvent event, CallbackInfo ci) {
-        if (event.phase == TickEvent.Phase.END && event.level instanceof ServerLevel level) {
+        if (event.phase == TickEvent.Phase.END && event.level instanceof ServerLevel) {
             KiClashTeams.syncHelpers();
         }
     }

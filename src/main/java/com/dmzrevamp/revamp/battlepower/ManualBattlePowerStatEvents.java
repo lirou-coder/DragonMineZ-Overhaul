@@ -94,15 +94,6 @@ public final class ManualBattlePowerStatEvents {
         syncDmzBattlePower(entity);
     }
 
-    private static boolean isDmzEntity(LivingEntity entity) {
-        ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
-        return key != null && ("dragonminez".equals(key.getNamespace()) || DmzRevampMod.MODID.equals(key.getNamespace()));
-    }
-
-    private static boolean canStoreBattlePower(LivingEntity entity) {
-        return entity instanceof IBattlePower || entity instanceof DBSagasEntity;
-    }
-
     private static boolean mustHideKi(LivingEntity entity) {
         ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
         String path = id == null ? "" : id.getPath();

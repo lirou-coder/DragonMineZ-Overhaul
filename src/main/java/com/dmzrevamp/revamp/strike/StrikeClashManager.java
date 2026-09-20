@@ -56,7 +56,6 @@ public final class StrikeClashManager {
     private static final float POWER_FLOOR = 0.6F;
     private static final float POWER_SPAN = 0.95F;
     private static final float MIN_TRACTION = 0.35F;
-    private static final float WIN_THRESHOLD = 0.8F;
     private static final float BURST_PER_PRESS = 0.6F;
     private static final List<Clash> ACTIVE = new ArrayList<>();
     private static final Map<UUID, Float> WINNER_DAMAGE_BOOST = new HashMap<>();
@@ -82,7 +81,7 @@ public final class StrikeClashManager {
         }
 
         Object attackerStrike = activeStrikes().get(attacker.getUUID());
-        if (!(attackerStrike instanceof StrikeAttackActiveAccessor attackerActive)) {
+        if (!(attackerStrike instanceof StrikeAttackActiveAccessor)) {
             return false;
         }
 

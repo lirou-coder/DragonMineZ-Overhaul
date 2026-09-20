@@ -6,7 +6,6 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -45,7 +44,7 @@ public final class VirtualProtectionEvents {
     private static int equipmentProtection(LivingEntity entity) {
         int total = 0;
         for (ItemStack stack : entity.getArmorSlots()) {
-            total += EnchantmentHelper.getItemEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, stack);
+            total += stack.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION);
         }
         return Math.max(0, total);
     }

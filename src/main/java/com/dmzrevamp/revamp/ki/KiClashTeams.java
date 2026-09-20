@@ -492,7 +492,7 @@ public final class KiClashTeams {
     /** DMZ renderers fade from tickCount/maxLife, so maxLife itself stays frozen far ahead. */
     private static void preserveFullRender(AbstractKiProjectile projectile) {
         if (projectile.isRemoved()) return;
-        FrozenLifetime lifetime = FROZEN_LIFETIMES.computeIfAbsent(projectile, attack -> {
+        FROZEN_LIFETIMES.computeIfAbsent(projectile, attack -> {
             int remaining = Math.max(1, attack.getMaxLife() - attack.tickCount);
             return new FrozenLifetime(remaining);
         });
@@ -504,14 +504,6 @@ public final class KiClashTeams {
         if (lifetime != null && !projectile.isRemoved()) {
             projectile.setMaxLife(projectile.tickCount + lifetime.originalRemaining);
         }
-    }
-
-    private static float scoreEfficiency(float phase) {
-        var config = KiClashConfigured.get();
-        if (phase < config.goodAreaLow || phase > config.goodAreaHigh) return config.offWindowMomentumEfficiency;
-        float center = (config.goodAreaLow + config.goodAreaHigh) * 0.5F;
-        float half = Math.max(0.0001F, (config.goodAreaHigh - config.goodAreaLow) * 0.5F);
-        return config.offWindowMomentumEfficiency + (1F - config.offWindowMomentumEfficiency) * Math.max(0F, 1F - Math.abs(phase - center) / half);
     }
 
     private static Vec3 direction(AbstractKiProjectile projectile) {

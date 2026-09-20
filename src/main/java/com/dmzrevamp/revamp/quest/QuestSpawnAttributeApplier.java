@@ -19,7 +19,6 @@ import com.dmzrevamp.entity.DmzRevampAttributes;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
-import java.util.UUID;
 
 public final class QuestSpawnAttributeApplier {
     public static final String QUEST_KEY_TAG = "dmz_quest_key";
@@ -301,7 +300,8 @@ public final class QuestSpawnAttributeApplier {
         ListTag effects = tag.getList(MOB_EFFECTS_TAG, 10);
         for (int i = 0; i < effects.size(); i++) {
             QuestMobEffectConfig config = QuestMobEffectConfig.load(effects.getCompound(i));
-            MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation(config.effectId()));
+            ResourceLocation effectId = ResourceLocation.tryParse(config.effectId());
+            MobEffect effect = effectId == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(effectId);
             if (effect != null) {
                 entity.addEffect(new MobEffectInstance(effect, config.durationTicks(), config.amplifier(), config.ambient(), config.visible(), config.showIcon()));
             }
@@ -315,7 +315,8 @@ public final class QuestSpawnAttributeApplier {
         ListTag effects = source.getList(key, 10);
         for (int i = 0; i < effects.size(); i++) {
             QuestMobEffectConfig config = QuestMobEffectConfig.load(effects.getCompound(i));
-            MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(new ResourceLocation(config.effectId()));
+            ResourceLocation effectId = ResourceLocation.tryParse(config.effectId());
+            MobEffect effect = effectId == null ? null : ForgeRegistries.MOB_EFFECTS.getValue(effectId);
             if (effect != null) {
                 entity.removeEffect(effect);
             }

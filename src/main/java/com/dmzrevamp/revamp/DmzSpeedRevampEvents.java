@@ -381,11 +381,6 @@ public final class DmzSpeedRevampEvents {
     }
 
     // Handles the syncModifier logic for this class.
-    private static double syncModifier(AttributeInstance attribute, UUID uuid, String name, double amount, double previousAmount) {
-        return syncModifier(attribute, uuid, name, amount, previousAmount, AttributeModifier.Operation.MULTIPLY_TOTAL);
-    }
-
-    // Handles the syncModifier logic for this class.
     private static double syncModifier(AttributeInstance attribute, UUID uuid, String name, double amount, double previousAmount, AttributeModifier.Operation operation) {
         return syncModifier(attribute, uuid, name, amount, previousAmount, operation, false);
     }
@@ -698,14 +693,6 @@ public final class DmzSpeedRevampEvents {
     // Calculates the vanilla movement speed multiplier from external modifiers that should be folded into the SPD cap logic.
     private static double getExternalMovementSpeedMultiplier(AttributeInstance moveSpeed) {
         return getExternalAttributeMultiplier(moveSpeed, SPD_MOVE_SPEED_UUID, DMZ_SPRINT_SPEED_UUID, VANILLA_SPRINT_SPEED_UUID);
-    }
-
-    // Returns the positive swim speed bonus added by external modifiers, excluding the revamp swim modifier.
-    private static double getExternalSwimSpeedBonusPercent(AttributeInstance swimSpeed) {
-        if (swimSpeed == null) {
-            return 0D;
-        }
-        return Math.max(0D, (getExternalSwimSpeedMultiplier(swimSpeed) - 1D) * 100D);
     }
 
     // Calculates the swim speed multiplier from external modifiers that should be folded into the SPD cap logic.

@@ -16,9 +16,9 @@ public final class DmzRevampItems {
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, DmzRevampMod.MODID);
 
     public static final RegistryObject<Item> GLOVES = ITEMS.register("gloves",
-            () -> new HandwearItem(HandwearType.GLOVES, new Item.Properties().stacksTo(1).durability(Items.IRON_SWORD.getMaxDamage() * 10).rarity(Rarity.UNCOMMON)));
+            () -> new HandwearItem(HandwearType.GLOVES, new Item.Properties().stacksTo(1).durability(Items.IRON_SWORD.getDefaultInstance().getMaxDamage() * 10).rarity(Rarity.UNCOMMON)));
     public static final RegistryObject<Item> WRISTBANDS = ITEMS.register("wristbands",
-            () -> new HandwearItem(HandwearType.WRISTBANDS, new Item.Properties().stacksTo(1).durability(Items.IRON_SWORD.getMaxDamage() * 10).rarity(Rarity.UNCOMMON)));
+            () -> new HandwearItem(HandwearType.WRISTBANDS, new Item.Properties().stacksTo(1).durability(Items.IRON_SWORD.getDefaultInstance().getMaxDamage() * 10).rarity(Rarity.UNCOMMON)));
 
     private DmzRevampItems() {
     }

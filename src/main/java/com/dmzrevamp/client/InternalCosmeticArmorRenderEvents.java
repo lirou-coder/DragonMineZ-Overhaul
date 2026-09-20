@@ -3,7 +3,6 @@ package com.dmzrevamp.client;
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.revamp.cosmetic.InternalCosmeticArmorRows;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.NonNullList;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -15,7 +14,6 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -78,16 +76,6 @@ public final class InternalCosmeticArmorRenderEvents {
 
     private static void apply(Player player) {
         restore(player);
-    }
-
-    private static ItemStack replacementFor(Player player, EquipmentSlot slot) {
-        if (InternalCosmeticArmorRows.isClientEnabled(player, InternalCosmeticArmorRows.ROW_EXTERNAL, slot)) {
-            return InternalCosmeticArmorRows.getClientStack(player, InternalCosmeticArmorRows.ROW_EXTERNAL, slot);
-        }
-        if (InternalCosmeticArmorRows.isClientEnabled(player, InternalCosmeticArmorRows.ROW_FUSION, slot)) {
-            return InternalCosmeticArmorRows.getClientStack(player, InternalCosmeticArmorRows.ROW_FUSION, slot);
-        }
-        return player.getInventory().armor.get(InternalCosmeticArmorRows.slotIndex(slot));
     }
 
     private static void restore(Player player) {

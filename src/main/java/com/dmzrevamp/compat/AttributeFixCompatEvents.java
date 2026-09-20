@@ -8,7 +8,6 @@ import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.mixin.common.RangedAttributeMixin;
 import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;

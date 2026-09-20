@@ -433,10 +433,6 @@ public final class DmzRevampHelper {
         return serverConfig == null ? null : serverConfig.getGravity();
     }
 
-    private static double clamp01(double value) {
-        return clamp(value, 0D, 1D);
-    }
-
     private static double clamp(double value, double min, double max) {
         if (!Double.isFinite(value)) {
             return min;

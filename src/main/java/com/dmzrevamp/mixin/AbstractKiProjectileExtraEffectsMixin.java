@@ -334,7 +334,7 @@ public abstract class AbstractKiProjectileExtraEffectsMixin {
         if (tag.getBoolean(PROJECTILES_SPAWNED_TAG) || !(original.getOwner() instanceof LivingEntity owner)) {
             return;
         }
-        if (!(original.level() instanceof ServerLevel serverLevel)) {
+        if (!(original.level() instanceof ServerLevel)) {
             return;
         }
         KiAttackData technique = dmzrevamp$technique(original);

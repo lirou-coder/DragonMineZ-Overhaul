@@ -15,7 +15,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -27,13 +26,13 @@ public final class AccurateMobBattlePowerCalculator {
     public static final int STORED_VISIBLE_MAX = Integer.MAX_VALUE - 1;
 
     private static final ResourceLocation AUTOLEVELING_PROJECTILE_DAMAGE =
-            new ResourceLocation("autoleveling", "monster.projectile_damage_bonus");
+            ResourceLocation.fromNamespaceAndPath("autoleveling", "monster.projectile_damage_bonus");
     private static final ResourceLocation APOTHIC_ARROW_DAMAGE =
-            new ResourceLocation("attributeslib", "arrow_damage");
+            ResourceLocation.fromNamespaceAndPath("attributeslib", "arrow_damage");
     private static final ResourceLocation AUTOLEVELING_EXPLOSION_DAMAGE =
-            new ResourceLocation("autoleveling", "monster.explosion_damage_bonus");
+            ResourceLocation.fromNamespaceAndPath("autoleveling", "monster.explosion_damage_bonus");
     private static final ResourceLocation IRONS_SPELL_POWER =
-            new ResourceLocation("irons_spellbooks", "spell_power");
+            ResourceLocation.fromNamespaceAndPath("irons_spellbooks", "spell_power");
 
     private AccurateMobBattlePowerCalculator() {
     }
@@ -88,7 +87,7 @@ public final class AccurateMobBattlePowerCalculator {
     private static double protectionLevels(LivingEntity entity) {
         int levels = 0;
         for (ItemStack armor : entity.getArmorSlots()) {
-            levels += EnchantmentHelper.getItemEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION, armor);
+            levels += armor.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION);
         }
         return levels + QuestSpawnAttributeApplier.protectionValue(entity);
     }

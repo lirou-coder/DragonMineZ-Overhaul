@@ -120,10 +120,6 @@ public final class EntityConfigAttributeApplier {
         }
     }
 
-    private static Double first(Double primary, Double fallback) {
-        return primary != null ? primary : fallback;
-    }
-
     private static List<QuestMobEffectConfig> firstNonEmpty(List<QuestMobEffectConfig> primary, List<QuestMobEffectConfig> fallback) {
         return primary != null && !primary.isEmpty() ? primary : fallback;
     }

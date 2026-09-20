@@ -138,7 +138,6 @@ public final class ApotheosisHandwearBridge {
             });
         }
 
-        @SuppressWarnings("unchecked")
         private Map<?, ?> affixes(ItemStack stack) throws ReflectiveOperationException {
             return (Map<?, ?>) affixHelperGetAffixes.invoke(null, stack);
         }

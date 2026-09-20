@@ -5,7 +5,6 @@ import com.dmzrevamp.revamp.ki.KiAttackOverhaul;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.character.Resources;
 import com.dragonminez.common.stats.techniques.KiAttackData;
-import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.common.stats.techniques.Techniques;
 import com.dragonminez.server.events.players.TickHandler;
 import net.minecraft.server.level.ServerPlayer;

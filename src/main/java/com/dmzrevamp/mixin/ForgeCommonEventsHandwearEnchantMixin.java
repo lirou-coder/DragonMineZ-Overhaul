@@ -2,7 +2,6 @@ package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.item.HandwearHelper;
 import com.dragonminez.common.events.ForgeCommonEvents;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;

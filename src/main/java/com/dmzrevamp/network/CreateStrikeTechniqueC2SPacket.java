@@ -5,7 +5,6 @@ import com.dmzrevamp.compat.SkillProgressionTechniqueRandomizer;
 import com.dmzrevamp.revamp.ki.KiAttackExtraEffect;
 import com.dmzrevamp.revamp.strike.CustomStrikeType;
 import com.dmzrevamp.revamp.strike.RevampStrikeAttackData;
-import com.dmzrevamp.revamp.strike.StrikeAttackCategoryRules;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
