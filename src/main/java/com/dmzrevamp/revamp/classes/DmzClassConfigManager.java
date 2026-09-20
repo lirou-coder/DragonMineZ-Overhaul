@@ -763,8 +763,8 @@ public final class DmzClassConfigManager {
             case "speedster" -> Map.of(
                     "maxStacks", 10.0D,
                     "speedBonusPerStack", 0.01D,
-                    "meleeDamageSpeedSharePerStack", 0.05D,
-                    "stackDurationTicks", 200.0D
+                    "meleeDamageSpeedSharePerStack", 0.025D,
+                    "stackDurationTicks", 100.0D
             );
             case "martialartist" -> Map.of(
                     "targetHpThreshold", 0.50D,
@@ -790,7 +790,7 @@ public final class DmzClassConfigManager {
                     "Custom Passive", 1.0D,
                     "PassiveType", 4.0D,
                     "Type", 6.0D,
-                    "Value", 0.5D
+                    "Value", 0.25D
             );
             default -> Map.of();
         });
