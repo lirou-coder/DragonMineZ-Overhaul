@@ -1,6 +1,5 @@
 package com.dmzrevamp.revamp.combat;
 
-import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.stats.StatsData;
 
 public final class StaminaCostScaling {
@@ -23,11 +22,7 @@ public final class StaminaCostScaling {
     }
 
     private static double getFormAndStackStrengthMultiplier(StatsData data) {
-        double formMultiplier = data.getFormMultiplier("STR");
-        double stackMultiplier = data.getStackFormMultiplier("STR");
-        if (ConfigManager.getServerConfig().getGameplay().getMultiplicationInsteadOfAdditionForMultipliers()) {
-            return formMultiplier * stackMultiplier;
-        }
-        return 1.0D + (formMultiplier - 1.0D) + (stackMultiplier - 1.0D);
+        return com.dmzrevamp.revamp.battlepower.UniqueFormStackCombination
+                .formAndStackMultiplier(data, "STR");
     }
 }

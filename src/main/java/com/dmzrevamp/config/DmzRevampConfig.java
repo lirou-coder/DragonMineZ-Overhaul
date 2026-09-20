@@ -5,6 +5,10 @@ import net.minecraftforge.common.ForgeConfigSpec;
 public final class DmzRevampConfig {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
+    public static final ForgeConfigSpec.BooleanValue OVERHAUL_UNIQUE_STACK_MODE = BUILDER
+            .comment("When true, Form + Stack Form attribute multipliers use Overhaul's BP-balanced interpolation instead of DMZ's additive or multiplicative combination. Other multipliers keep the DMZ gameplay setting.")
+            .define("overhaulUniqueStackMode", true);
+
     public static final ForgeConfigSpec.DoubleValue REVAMP_SPEED_BASE_CAP_PERCENT = BUILDER
             .comment("Default extra speed cap percent before sprint or movement ramping increases it.")
             .defineInRange("revamp.speed.baseCapPercent", 100D, 0D, 1000000D);

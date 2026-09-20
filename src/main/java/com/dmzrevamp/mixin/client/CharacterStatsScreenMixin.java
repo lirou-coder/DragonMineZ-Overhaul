@@ -241,13 +241,8 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
 
     @Unique
     private double dmzrevamp$formAndStackMultiplier(String stat) {
-        double form = statsData.getFormMultiplier(stat);
-        double stack = statsData.getStackFormMultiplier(stat);
-        if (com.dragonminez.common.config.ConfigManager.getServerConfig().getGameplay()
-                .getMultiplicationInsteadOfAdditionForMultipliers()) {
-            return form * stack;
-        }
-        return 1D + (form - 1D) + (stack - 1D);
+        return com.dmzrevamp.revamp.battlepower.UniqueFormStackCombination
+                .formAndStackMultiplier(statsData, stat);
     }
 
     @Redirect(

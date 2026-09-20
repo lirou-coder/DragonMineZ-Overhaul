@@ -83,6 +83,7 @@
     "SkillsCommandAllMixin",
     "CombatConfigAdaptiveDefenseDefaultsMixin",
     "StatsDataRevampMixin",
+    "StatsDataUniqueStackMixin",
     "StatsDataSpeedLimitMixin",
     "StatsDataPrestigeDataMixin",
     "StatsDataLevelingRevampMixin",
