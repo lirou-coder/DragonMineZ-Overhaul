@@ -413,7 +413,12 @@ public final class DmzClassConfigManager {
 
             JsonObject json = element.getAsJsonObject();
             normalizeCustomPassiveBoolean(json);
-            RaceStatsConfig.ClassStats stats = sanitize(GSON.fromJson(json, RaceStatsConfig.ClassStats.class));
+            RaceStatsConfig.ClassStats parsedStats = GSON.fromJson(json, RaceStatsConfig.ClassStats.class);
+            Double loadedVitalityScaling = parsedStats != null && parsedStats.getStatScaling() != null
+                    ? parsedStats.getStatScaling().getVitalityScaling() : null;
+            RaceStatsConfig.ClassStats stats = sanitize(parsedStats);
+            boolean roundedVitalityScaling = loadedVitalityScaling != null
+                    && Math.abs(loadedVitalityScaling - stats.getStatScaling().getVitalityScaling()) > 1.0E-9D;
             clearMissingClassOnlyMultipliers(json, stats);
             ClassMetadata metadata = readMetadata(classId, json, defaultMetadata);
             boolean legacyPotentialist = false;
@@ -434,7 +439,7 @@ public final class DmzClassConfigManager {
             boolean legacyNamedColor = isNamedDisplayColor(readString(json, DISPLAY_COLOR_KEY, ""));
             boolean decimalPassiveEnums = hasDecimalCustomPassiveEnums(json);
             if (!RaceStatsConfig.CURRENT_VERSION.equals(readString(json, CONFIG_VERSION_KEY, ""))
-                    || legacyNamedColor || decimalPassiveEnums || legacyPotentialist) {
+                    || legacyNamedColor || decimalPassiveEnums || legacyPotentialist || roundedVitalityScaling) {
                 try {
                     saveClassConfig(path, stats, metadata);
                 } catch (IOException ignored) {
@@ -626,6 +631,10 @@ public final class DmzClassConfigManager {
         if (classStats.getStatScaling() == null) {
             classStats.setStatScaling(new RaceStatsConfig.StatScaling());
         }
+        Double vitalityScaling = classStats.getStatScaling().getVitalityScaling();
+        if (vitalityScaling != null) {
+            classStats.getStatScaling().setVitalityScaling(roundToOneDecimal(vitalityScaling));
+        }
         return classStats;
     }
 
@@ -693,7 +702,7 @@ public final class DmzClassConfigManager {
         scaling.setStrikePowerScaling(strikePowerScaling);
         scaling.setDefenseScaling(defenseScaling);
         scaling.setStaminaScaling(staminaScaling);
-        scaling.setVitalityScaling(vitalityScaling * VITALITY_SCALING_INCREASE);
+        scaling.setVitalityScaling(roundToOneDecimal(vitalityScaling * VITALITY_SCALING_INCREASE));
         scaling.setKiPowerScaling(kiPowerScaling);
         scaling.setEnergyScaling(energyScaling);
         classStats.setStatScaling(scaling);
@@ -707,6 +716,10 @@ public final class DmzClassConfigManager {
         classStats.setTpGainMultiplier(0.0D);
         classStats.setPassive(defaultPassive(""));
         return classStats;
+    }
+
+    private static double roundToOneDecimal(double value) {
+        return Math.round(value * 10D) / 10D;
     }
 
     private static RaceStatsConfig.ClassStats withTp(RaceStatsConfig.ClassStats classStats, double tpCostMultiplier, double tpGainMultiplier) {

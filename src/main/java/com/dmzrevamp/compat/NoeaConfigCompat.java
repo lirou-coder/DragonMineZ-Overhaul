@@ -18,7 +18,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Seeds complete Overhaul/DMZ documents before Noea's additive overlay installer runs. */
 public final class NoeaConfigCompat {
@@ -31,21 +34,19 @@ public final class NoeaConfigCompat {
     }
 
     public static void prepareBaseDefaults() {
-        if (!NoeaCompat.isLoadedEarly()) {
+        if (!NoeaCompat.isLoadedEarly() || DmzSparkingCompat.isLoadedEarly()) {
             return;
         }
         Path dmz = FMLPaths.CONFIGDIR.get().resolve("dragonminez");
         seedSkills(dmz.resolve("skills.json"));
-        seedCompleteDmzForms(dmz);
+        List<String> overhaulForms = readOverhaulFormIndex();
+        seedCompleteDmzForms(dmz, controlledDmzFormPaths(overhaulForms));
         for (String race : RACES) {
             mergeMissingResource(ROOT + "races/" + race + "/character.json",
                     dmz.resolve("races").resolve(race).resolve("character.json"));
         }
-        try (InputStream stream = NoeaConfigCompat.class.getClassLoader()
-                .getResourceAsStream(ROOT + "forms/index.txt")) {
-            if (stream == null) return;
-            String index = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-            for (String entry : index.lines().map(String::trim).filter(line -> line.endsWith(".json")).toList()) {
+        try {
+            for (String entry : overhaulForms) {
                 Path target = entry.startsWith("races/")
                         ? dmz.resolve(entry)
                         : dmz.resolve("forms").resolve(Path.of(entry).getFileName());
@@ -54,6 +55,27 @@ public final class NoeaConfigCompat {
         } catch (Exception exception) {
             LOGGER.warn("Could not prepare Overhaul form defaults before Noea overlays: {}", exception.getMessage());
         }
+    }
+
+    private static List<String> readOverhaulFormIndex() {
+        try (InputStream stream = NoeaConfigCompat.class.getClassLoader()
+                .getResourceAsStream(ROOT + "forms/index.txt")) {
+            if (stream == null) return List.of();
+            return new String(stream.readAllBytes(), StandardCharsets.UTF_8).lines()
+                    .map(String::trim)
+                    .filter(line -> line.endsWith(".json"))
+                    .toList();
+        } catch (Exception exception) {
+            LOGGER.warn("Could not read the Overhaul form defaults index: {}", exception.getMessage());
+            return List.of();
+        }
+    }
+
+    private static Set<String> controlledDmzFormPaths(List<String> entries) {
+        return entries.stream().map(entry -> entry.startsWith("races/")
+                        ? entry
+                        : "forms/" + Path.of(entry).getFileName().toString().replace('\\', '/'))
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private static void mergeMissingResource(String resource, Path target) {
@@ -89,7 +111,7 @@ public final class NoeaConfigCompat {
         }
     }
 
-    private static void seedCompleteDmzForms(Path dmz) {
+    private static void seedCompleteDmzForms(Path dmz, Set<String> overhaulForms) {
         Path temporary = null;
         try {
             temporary = Files.createTempDirectory("dmzrevamp-noea-base-");
@@ -105,8 +127,11 @@ public final class NoeaConfigCompat {
 
             try (var paths = Files.walk(temporary)) {
                 for (Path source : paths.filter(Files::isRegularFile).filter(path -> path.toString().endsWith(".json")).toList()) {
-                    Path target = dmz.resolve(temporary.relativize(source));
-                    mergeMissingDocument(source, target);
+                    String relative = temporary.relativize(source).toString().replace('\\', '/');
+                    Path target = dmz.resolve(relative);
+                    if (!overhaulForms.contains(relative)) {
+                        mergeMissingDocument(source, target);
+                    }
                 }
             }
         } catch (Exception exception) {
@@ -135,15 +160,12 @@ public final class NoeaConfigCompat {
     }
 
     private static void mergeOverhaulSnapshot(String resource, Path target) throws Exception {
+        if (Files.exists(target)) return;
         try (InputStream stream = NoeaConfigCompat.class.getClassLoader().getResourceAsStream(resource)) {
             if (stream == null) return;
             JsonObject overhaul = JsonParser.parseString(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
-            JsonObject current = Files.exists(target)
-                    ? JsonParser.parseString(Files.readString(target, StandardCharsets.UTF_8)).getAsJsonObject()
-                    : new JsonObject();
-            mergeOverhaulKnown(current, overhaul);
             Files.createDirectories(target.getParent());
-            Files.writeString(target, GSON.toJson(current), StandardCharsets.UTF_8);
+            Files.writeString(target, GSON.toJson(overhaul), StandardCharsets.UTF_8);
         }
     }
 
@@ -159,17 +181,6 @@ public final class NoeaConfigCompat {
             }
         }
         return changed;
-    }
-
-    private static void mergeOverhaulKnown(JsonObject target, JsonObject overhaul) {
-        for (Map.Entry<String, JsonElement> entry : overhaul.entrySet()) {
-            JsonElement existing = target.get(entry.getKey());
-            if (existing != null && existing.isJsonObject() && entry.getValue().isJsonObject()) {
-                mergeOverhaulKnown(existing.getAsJsonObject(), entry.getValue().getAsJsonObject());
-            } else {
-                target.add(entry.getKey(), entry.getValue().deepCopy());
-            }
-        }
     }
 
 }

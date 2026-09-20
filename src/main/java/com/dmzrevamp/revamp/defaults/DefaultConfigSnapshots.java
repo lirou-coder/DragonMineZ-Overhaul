@@ -3,7 +3,6 @@ package com.dmzrevamp.revamp.defaults;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.dragonminez.common.config.FormConfig;
 
@@ -52,27 +51,10 @@ public final class DefaultConfigSnapshots {
             if (fileName.endsWith(".json")) {
                 fileName = fileName.substring(0, fileName.length() - ".json".length());
             }
-            FormConfig current = forms.get(fileName);
-            if (current == null) {
-                forms.put(fileName, copyFormConfig(entry.getValue()));
-                continue;
-            }
-            // Overhaul owns its known group/form values, while entries and properties supplied by
-            // Noea, users, or other addons survive. Replacing this object used to erase them.
-            JsonObject merged = GSON.toJsonTree(current).getAsJsonObject();
-            mergeKnownValues(merged, GSON.toJsonTree(entry.getValue()).getAsJsonObject());
-            forms.put(fileName, GSON.fromJson(merged, FormConfig.class));
-        }
-    }
-
-    private static void mergeKnownValues(JsonObject target, JsonObject overhaul) {
-        for (Map.Entry<String, JsonElement> entry : overhaul.entrySet()) {
-            JsonElement existing = target.get(entry.getKey());
-            if (existing != null && existing.isJsonObject() && entry.getValue().isJsonObject()) {
-                mergeKnownValues(existing.getAsJsonObject(), entry.getValue().getAsJsonObject());
-            } else {
-                target.add(entry.getKey(), entry.getValue().deepCopy());
-            }
+            // This hook only runs while DMZ is generating defaults. Use the complete Overhaul
+            // document so vanilla forms deliberately moved to another group are not reintroduced.
+            // Existing files are loaded without invoking this factory and remain user-editable.
+            forms.put(fileName, copyFormConfig(entry.getValue()));
         }
     }
 
