@@ -71,6 +71,8 @@
     "NPCActionWeightLimitMixin",
     "PassiveResetWishRevampMixin",
     "PlayerHeldHandwearAttackMixin",
+    "AnvilMenuHandwearEnchantMixin",
+    "DmzWeaponEnchantmentHandwearMixin",
     "ForgeCommonEventsHandwearEnchantMixin",
     "CombatEventHandwearEnchantMixin",
     "PredefinedTechniquesRevampStrikeMixin",
@@ -126,7 +128,7 @@
     "UpgradeTechniqueC2SCustomStrikeMixin",
     "WeightItemRevampLimitMixin"
   ],
-    "client": [
+  "client": [
     "client.BeamClashOverlayStrikeTitleMixin",
     "client.CharacterCustomizationScreenLabelsMixin",
     "client.CharacterStatsScreenMixin",

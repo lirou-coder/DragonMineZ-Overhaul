@@ -6,19 +6,25 @@ import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 import org.jetbrains.annotations.Nullable;
@@ -29,14 +35,19 @@ import top.theillusivec4.curios.api.type.capability.ICurioItem;
 import java.util.List;
 import java.util.UUID;
 
-public class HandwearItem extends Item implements ICurioItem {
+public class HandwearItem extends SwordItem implements ICurioItem {
     private static final String ACTIVE_WITH_EMPTY_HAND_TAG = "DmzRevampActiveWithEmptyHand";
     public static final String EMPTY_HAND_BONUS_NAME = "Empty Hand Bonus";
     private static final double EMPTY_HAND_STAT_MULTIPLIER = 1.05D;
     private final HandwearType type;
 
     public HandwearItem(HandwearType type, Properties properties) {
-        super(properties);
+        // DMZ's weapon enchantments use a hard instanceof SwordItem check instead of
+        // Forge's tool-action/enchantment hooks. Extending SwordItem is therefore the
+        // only classification that is honored by every DMZ/vanilla enchant path.
+        // WOOD gives the same enchantability (15) this item already exposed; all
+        // unwanted vanilla sword combat/mining behavior is neutralized below.
+        super(Tiers.WOOD, 0, 0.0F, properties);
         this.type = type;
     }
 
@@ -104,6 +115,15 @@ public class HandwearItem extends Item implements ICurioItem {
         if (enchantment == Enchantments.SWEEPING_EDGE) {
             return false;
         }
+        // Ask Forge's table-specific hook using a real sword probe. This keeps
+        // third-party sword-enchantment rules intact while preserving the Sweeping Edge exclusion above.
+        return new ItemStack(Items.DIAMOND_SWORD).canApplyAtEnchantingTable(enchantment);
+    }
+
+    public static boolean canAcceptSwordEnchantment(Enchantment enchantment) {
+        if (enchantment == null || enchantment == Enchantments.SWEEPING_EDGE) {
+            return false;
+        }
         return enchantment.canEnchant(new ItemStack(Items.DIAMOND_SWORD));
     }
 
@@ -125,12 +145,51 @@ public class HandwearItem extends Item implements ICurioItem {
         return material.is(net.minecraft.tags.ItemTags.WOOL);
     }
 
+    /**
+     * Handwear must be a SwordItem at the Java type level because DMZ's custom
+     * weapon enchantments hard-check instanceof SwordItem. These overrides keep
+     * the gameplay behavior identical to the former plain Item implementation.
+     */
+    @Override
+    public float getDamage() {
+        return 0.0F;
+    }
+
+    @Override
+    public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
+        return ImmutableMultimap.of();
+    }
+
+    @Override
+    public boolean canAttackBlock(BlockState state, Level level, BlockPos pos, Player player) {
+        return true;
+    }
+
+    @Override
+    public float getDestroySpeed(ItemStack stack, BlockState state) {
+        return 1.0F;
+    }
+
+    @Override
+    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        return false;
+    }
+
+    @Override
+    public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity miner) {
+        return false;
+    }
+
+    @Override
+    public boolean isCorrectToolForDrops(BlockState state) {
+        return false;
+    }
+
     @Override
     public boolean canPerformAction(ItemStack stack, ToolAction toolAction) {
-        // Apotheosis uses the sword tool action to select its sword affix
-        // category. This is classification metadata only: the item remains a
-        // plain Item and receives no SwordItem combat or mining behavior.
-        return toolAction == ToolActions.SWORD_DIG || super.canPerformAction(stack, toolAction);
+        // Preserve exactly the pre-SwordItem classification used by Apotheosis.
+        // Do not inherit any additional SwordItem tool actions.
+        return toolAction == ToolActions.SWORD_DIG;
     }
 
     @Override

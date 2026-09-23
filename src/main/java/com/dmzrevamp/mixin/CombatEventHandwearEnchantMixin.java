@@ -14,4 +14,21 @@ public abstract class CombatEventHandwearEnchantMixin {
     private static ItemStack dmzrevamp$useCurioHandwearEnchantments(LivingEntity entity) {
         return HandwearHelper.effectiveMainHand(entity);
     }
+
+    /**
+     * Healing Reduction is read directly inside CombatEvent#onLivingHurt rather
+     * than through computeDefensePenetration, so it needs the same effective
+     * main-hand bridge as Defense Penetration.
+     */
+    @Redirect(
+            method = "onLivingHurt",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/LivingEntity;m_21205_()Lnet/minecraft/world/item/ItemStack;"
+            ),
+            require = 0
+    )
+    private static ItemStack dmzrevamp$useCurioHandwearHealingReduction(LivingEntity entity) {
+        return HandwearHelper.effectiveMainHand(entity);
+    }
 }
