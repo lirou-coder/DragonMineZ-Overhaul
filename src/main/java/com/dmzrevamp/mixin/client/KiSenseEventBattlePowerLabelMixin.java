@@ -1,5 +1,6 @@
 package com.dmzrevamp.mixin.client;
 
+import com.dmzrevamp.client.KiSenseDangerStyle;
 import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
 import com.dragonminez.client.events.KiSenseEvent;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
@@ -128,10 +129,7 @@ public abstract class KiSenseEventBattlePowerLabelMixin {
             return original;
         }
         double ratio = dmzrevamp$battlePowerRatio(DMZREVAMP_RENDERED_BP_ENTITY.get());
-        if (ratio >= 1.75D) return 0xFF5555;
-        if (ratio >= 1.25D) return 0xFFAA00;
-        if (ratio >= 0.75D) return 0xFFFF55;
-        return 0x55FFFF;
+        return KiSenseDangerStyle.color(ratio);
     }
 
     private static float dmzrevamp$dangerScale(LivingEntity entity) {
@@ -139,18 +137,12 @@ public abstract class KiSenseEventBattlePowerLabelMixin {
             return 1.0F;
         }
         double ratio = dmzrevamp$battlePowerRatio(entity);
-        if (ratio >= 1.75D) return 1.75F;
-        if (ratio >= 1.25D) return 1.4F;
-        if (ratio >= 0.75D) return 1.2F;
-        return 1.0F;
+        return KiSenseDangerStyle.combatLabelScale(ratio);
     }
 
     private static double dmzrevamp$battlePowerRatio(LivingEntity entity) {
         float own = KiSenseScan.getMyBP();
         float target = entity == null ? 0F : KiSenseScan.getCachedBP(entity.getId());
-        if (!Float.isFinite(own) || own <= 0F || !Float.isFinite(target) || target < 0F) {
-            return 0D;
-        }
-        return target / (double) own;
+        return KiSenseDangerStyle.ratio(own, target);
     }
 }

@@ -5,9 +5,13 @@ import com.dmzrevamp.revamp.quest.QuestSpawnAttributeApplier;
 import com.dmzrevamp.revamp.quest.TransformStageOverridesWriter;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.EntitiesConfig;
+import com.dragonminez.common.init.entities.MastersEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
@@ -40,8 +44,17 @@ public final class EntityConfigAttributeApplier {
     }
 
     private static void applyBaseFields(LivingEntity entity, CompoundTag tag, EntitiesConfig.EntityStats stats, RevampEntityStatsData data) {
-        if (stats != null && stats.getKiDamage() != null && !tag.contains(KI_DAMAGE_TAG)) {
-            tag.putDouble(KI_DAMAGE_TAG, stats.getKiDamage());
+        if (stats != null) {
+            // Most DMZ combat mobs apply the three vanilla entities.json fields in their own
+            // spawn/setup code. Master NPCs do not, so bridge only that missing family here
+            // instead of overriding quest/saga stats for unrelated entities.
+            if (entity instanceof MastersEntity) {
+                setBaseAttribute(entity, Attributes.MAX_HEALTH, stats.getHealth());
+                setBaseAttribute(entity, Attributes.ATTACK_DAMAGE, stats.getMeleeDamage());
+            }
+            if (stats.getKiDamage() != null && !tag.contains(KI_DAMAGE_TAG)) {
+                tag.putDouble(KI_DAMAGE_TAG, stats.getKiDamage());
+            }
         }
         if (data == null) {
             return;
@@ -93,6 +106,17 @@ public final class EntityConfigAttributeApplier {
                 defaultData == null ? List.of() : defaultData.dmzrevamp$getTransformMobEffects()
         );
         saveEffectsIfAbsent(tag, QuestSpawnAttributeApplier.TF_MOB_EFFECTS_TAG, effects);
+    }
+
+
+    private static void setBaseAttribute(LivingEntity entity, Attribute attribute, Double configuredValue) {
+        if (configuredValue == null) {
+            return;
+        }
+        AttributeInstance instance = entity.getAttribute(attribute);
+        if (instance != null) {
+            instance.setBaseValue(configuredValue);
+        }
     }
 
     private static void putIfAbsent(CompoundTag tag, String key, Double value) {

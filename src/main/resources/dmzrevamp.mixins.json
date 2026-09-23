@@ -62,6 +62,7 @@
     "IncreaseStatC2SLongCostMixin",
     "KiAttackDataRevampExtensionMixin",
     "KillObjectiveRevampExtensionMixin",
+    "MastersEntityConfigAttributesMixin",
     "MerusLaserItemRevampDamageMixin",
     "KiBlastC2SClassSkillMixin",
     "DynamicGrowthServiceSpdNotificationMixin",
