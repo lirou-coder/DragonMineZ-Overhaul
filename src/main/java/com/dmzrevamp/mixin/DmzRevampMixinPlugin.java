@@ -70,11 +70,8 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         if ("com.dmzrevamp.mixin.compat.AlternatePassivesRacialRouterMixin".equals(mixinClassName)) {
             return alternatePassivesLoaded && hasClass(targetClassName);
         }
-        if (isModLoadedEarly("dmzrealistic") && Set.of(
-                "com.dmzrevamp.mixin.WeightItemRevampLimitMixin",
-                "com.dmzrevamp.mixin.NPCActionWeightLimitMixin",
-                "com.dmzrevamp.mixin.client.MasterTextScreenWeightLimitMixin"
-        ).contains(mixinClassName)) return false;
+        if (isModLoadedEarly("dmzrealistic")
+                && "com.dmzrevamp.mixin.WeightItemRevampLimitMixin".equals(mixinClassName)) return false;
         if ("com.dmzrevamp.mixin.client.ClientStatsEventsWeaponUseMixin".equals(mixinClassName) && isModLoadedEarly("dmzweaponguard")) return false;
         if ("com.dmzrevamp.mixin.CombatConfigAdaptiveDefenseDefaultsMixin".equals(mixinClassName)) {
             return hasField(targetClassName, "adaptativeMitigationParityValue");

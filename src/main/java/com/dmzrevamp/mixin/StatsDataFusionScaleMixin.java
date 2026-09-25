@@ -13,4 +13,14 @@ public abstract class StatsDataFusionScaleMixin {
     private void dmzrevamp$addFusionPartnerStatScale(String statName, CallbackInfoReturnable<Double> cir) {
         cir.setReturnValue(FusionRevampLogic.addPartnerScale((StatsData) (Object) this, statName, cir.getReturnValueD()));
     }
+
+    @Inject(method = "getVitalityScalingMax", at = @At("RETURN"), cancellable = true, remap = false)
+    private void dmzrevamp$addFusionPartnerVitalityMaxScale(CallbackInfoReturnable<Double> cir) {
+        cir.setReturnValue(FusionRevampLogic.addPartnerCurveMaxScale((StatsData) (Object) this, "VIT", cir.getReturnValueD()));
+    }
+
+    @Inject(method = "getDefenseScalingMax", at = @At("RETURN"), cancellable = true, remap = false)
+    private void dmzrevamp$addFusionPartnerDefenseMaxScale(CallbackInfoReturnable<Double> cir) {
+        cir.setReturnValue(FusionRevampLogic.addPartnerCurveMaxScale((StatsData) (Object) this, "DEF", cir.getReturnValueD()));
+    }
 }

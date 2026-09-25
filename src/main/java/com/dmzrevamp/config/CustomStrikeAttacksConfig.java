@@ -2,6 +2,7 @@ package com.dmzrevamp.config;
 
 import com.dmzrevamp.revamp.strike.CustomStrikeType;
 import com.dmzrevamp.revamp.strike.RevampStrikeAttackData;
+import com.dmzrevamp.revamp.strike.RaceExclusiveStrikeEvents;
 import com.dmzrevamp.revamp.strike.StrikeAttackTemplates;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.google.gson.Gson;
@@ -19,7 +20,7 @@ import java.util.Map;
 
 /** DMZ-techniques-style settings for Overhaul-created Strike Attacks. */
 public final class CustomStrikeAttacksConfig {
-    private static final String CONFIG_VERSION = "1.2.0";
+    private static final String CONFIG_VERSION = "1.3.0";
     private static final int LEGACY_RACIAL_COOLDOWN_TICKS = 80;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -73,7 +74,6 @@ public final class CustomStrikeAttacksConfig {
                     StrikeSettings.defaults(type.isEvasive() ? 400 : 240));
         }
         config.strikeAttacks.put(StrikeAttackTemplates.ANDROID_ABSORPTION, StrikeSettings.defaults(1200));
-        config.strikeAttacks.put(StrikeAttackTemplates.SLEEP_RECOVERY, StrikeSettings.defaults(1800));
         config.strikeAttacks.put(StrikeAttackTemplates.NAMEKIAN_REGENERATION, StrikeSettings.defaults(1200));
         return config;
     }
@@ -92,6 +92,9 @@ public final class CustomStrikeAttacksConfig {
                 }
             });
         }
+        // Sleep Recovery is a native DMZ 2.2 Evasion and must not keep a
+        // legacy custom-Strike settings entry from older Overhaul configs.
+        merged.remove(RaceExclusiveStrikeEvents.SLEEP_RECOVERY_ID);
         defaults.strikeAttacks.forEach(merged::putIfAbsent);
         if (migrateLegacyRacialCooldowns) {
             // DMZ's normal Strike defaults use a 5x XP gain multiplier. Older
@@ -102,7 +105,6 @@ public final class CustomStrikeAttacksConfig {
         }
         if (migrateLegacyRacialCooldowns) {
             migrateLegacyCooldown(merged, StrikeAttackTemplates.ANDROID_ABSORPTION, 1200);
-            migrateLegacyCooldown(merged, StrikeAttackTemplates.SLEEP_RECOVERY, 1800);
         }
         loaded.strikeAttacks = merged;
         return loaded;

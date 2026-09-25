@@ -1,17 +1,22 @@
 package com.dmzrevamp.mixin.client;
 
-import com.dmzrevamp.client.ScouterClientState;
 import com.dmzrevamp.client.LockOnCycleClientEvents;
+import com.dmzrevamp.client.ScouterClientState;
 import com.dragonminez.client.events.LockOnEvent;
+import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
-import net.minecraft.world.entity.player.Player;
+import com.dragonminez.common.stats.StatsProvider;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.LivingEntity;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.event.TickEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
 import java.util.Optional;
 
 @Mixin(value = LockOnEvent.class, remap = false)
@@ -37,10 +42,17 @@ public abstract class LockOnEventScouterMixin {
         return LockOnCycleClientEvents.canTarget(target, data);
     }
 
-
-    @Inject(method = "lambda$onClientTick$2", at = @At("HEAD"), cancellable = true, require = 0)
-    private static void dmzrevamp$keepScouterBackedLockWithoutKiSense(Player player, StatsData data, CallbackInfo ci) {
-        if (ScouterClientState.validateScouterLock(player, data)) {
+    @Inject(method = "onClientTick", at = @At("HEAD"), cancellable = true, require = 0)
+    private static void dmzrevamp$keepScouterBackedLockWithoutKiSense(TickEvent.ClientTickEvent event, CallbackInfo ci) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        Player player = Minecraft.getInstance().player;
+        if (player == null || LockOnEventAccessor.dmzrevamp$getLockedTarget() == null) {
+            return;
+        }
+        StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).orElse(null);
+        if (data != null && ScouterClientState.validateScouterLock(player, data)) {
             ci.cancel();
         }
     }

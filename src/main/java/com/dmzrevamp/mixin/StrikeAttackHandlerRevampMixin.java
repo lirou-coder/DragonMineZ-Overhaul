@@ -1,7 +1,6 @@
 package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.revamp.strike.RevampStrikeAttackData;
-import com.dmzrevamp.revamp.strike.SleepRecoveryEvents;
 import com.dmzrevamp.revamp.strike.NamekianRegenerationEvents;
 import com.dmzrevamp.revamp.strike.StrikeAttackEffectApplier;
 import com.dmzrevamp.revamp.strike.StrikeAttackTemplates;
@@ -86,20 +85,12 @@ public abstract class StrikeAttackHandlerRevampMixin {
     }
 
     @Redirect(
-            method = "lambda$startStrike$4",
-            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/techniques/StrikeAttackData;getDamageMultiplier()F"),
-            remap = false,
-            require = 1
-    )
-    private static float dmzrevamp$useConfiguredCustomStrikeDamage(StrikeAttackData strike) {
-        if (strike instanceof RevampStrikeAttackData revamp && revamp.dmzrevamp$isCustomStrike()) {
-            return strike.getActualDamageMultiplier();
-        }
-        return strike.getDamageMultiplier();
-    }
-
-    @Redirect(
-            method = "lambda$requestStrike$0",
+            method = {
+                    "lambda$requestStrike$0",
+                    "startSlam",
+                    "startDimensionalPunch",
+                    "startDimensionalSlash"
+            },
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/techniques/StrikeAttackData;getAnimationId()Ljava/lang/String;"),
             remap = false
     )
@@ -151,9 +142,10 @@ public abstract class StrikeAttackHandlerRevampMixin {
     }
 
     @Redirect(
-            method = "lambda$failPending$6",
+            method = "lambda$failPending$*",
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/character/Cooldowns;setCooldown(Ljava/lang/String;I)V"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private static void dmzrevamp$skipCreativeCustomStrikeMissCooldown(Cooldowns cooldowns, String key, int ticks, @Coerce Object pendingStrike, ServerPlayer player, StatsData data) {
         if (player != null && player.getAbilities().instabuild && dmzrevamp$isCustomStrikeCooldown(data, key)) {
@@ -163,9 +155,10 @@ public abstract class StrikeAttackHandlerRevampMixin {
     }
 
     @Redirect(
-            method = "lambda$failPending$6",
+            method = "lambda$failPending$*",
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/character/Resources;addEnergy(F)V"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private static void dmzrevamp$skipCreativeCustomStrikeMissRefund(Resources resources, float amount, @Coerce Object pendingStrike, ServerPlayer player, StatsData data) {
         if (player != null && player.getAbilities().instabuild && resources != null && dmzrevamp$isCustomStrikeCooldown(data, dmzrevamp$pendingCooldownKey(pendingStrike))) {
@@ -175,7 +168,7 @@ public abstract class StrikeAttackHandlerRevampMixin {
     }
 
     @Inject(method = "requestStrike", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void dmzrevamp$handleInstantSleepRecovery(ServerPlayer player, int targetId, CallbackInfo ci) {
+    private static void dmzrevamp$handleCustomRacialStrikeRequest(ServerPlayer player, int targetId, CallbackInfo ci) {
         if (player == null) {
             return;
         }
@@ -190,40 +183,7 @@ public abstract class StrikeAttackHandlerRevampMixin {
             }
             if (StrikeAttackTemplates.NAMEKIAN_REGENERATION.equals(strike.getId())) {
                 dmzrevamp$startNamekianRegeneration(player, data, strike, ci);
-                return;
             }
-            if (!StrikeAttackTemplates.SLEEP_RECOVERY.equals(strike.getId())) return;
-            if (!data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) {
-                ci.cancel();
-                return;
-            }
-            String cooldownKey = "TechniqueCooldown_" + strike.getId();
-            if (data.getCooldowns().hasCooldown(cooldownKey)) {
-                ci.cancel();
-                return;
-            }
-            double cost = strike.getCalculatedCost(data);
-            if (!player.getAbilities().instabuild && data.getResources().getCurrentEnergy() < cost) {
-                ci.cancel();
-                return;
-            }
-            if (!player.getAbilities().instabuild) {
-                data.getResources().removeEnergy((float) Math.ceil(cost));
-                data.getCooldowns().setCooldown(cooldownKey, strike.getActualCooldown());
-            }
-            data.getStatus().setStrikeLocked(true);
-            data.getCooldowns().setCooldown(SleepRecoveryEvents.LOCK_COOLDOWN, 100);
-            SleepRecoveryEvents.markActive(player);
-            player.setDeltaMovement(Vec3.ZERO);
-            player.hurtMarked = true;
-            player.heal((float) Math.max(1.0D, cost * 0.5D));
-            dmzrevamp$play(player, MainSounds.KI_CHARGE_LOOP, 1.0F, 1.2F);
-            if (player.level() instanceof ServerLevel level) {
-                level.sendParticles(ParticleTypes.HEART, player.getX(), player.getY() + 1.2D, player.getZ(), 8, 0.45D, 0.5D, 0.45D, 0.05D);
-            }
-            NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION, 0, player.getId(), "base.meditation"), player);
-            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-            ci.cancel();
         });
     }
 

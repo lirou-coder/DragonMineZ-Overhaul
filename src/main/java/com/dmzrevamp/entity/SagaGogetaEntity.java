@@ -15,7 +15,7 @@ public final class SagaGogetaEntity {
         entity.setDBZStyle(0);
         if (ssj) {
             entity.setWildSense(true, 100);
-            entity.setZanzoken(true, 200);
+            entity.setZanzoken(DBSagasEntity.ZANZOKEN_TIER_ADVANCED, 200);
         } else {
             entity.setEvade(true, 60);
             entity.setWildSense(true, 100);

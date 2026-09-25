@@ -1,6 +1,6 @@
 # Strike Clashes
 
-Strike Clashes turn two opposing physical techniques into a direct contest. They use the familiar clash meter.
+Strike Clashes turn two opposing physical techniques into a direct contest. In Dragon Mine Z 2.2 they reuse the base mod's deterministic **ClashMeter**, so their HUD and input timing stay synchronized with the current Beam Clash implementation.
 
 ## Starting a Strike Clash
 
@@ -19,18 +19,18 @@ This warning gives the target a chance to recognize the incoming technique and a
 
 ## During the clash
 
-Press the clash input when the moving indicator enters the good area. Accurate presses earn more momentum, missed presses use the configured reduced efficiency, and unused momentum decays over time.
+Use the same clash input as a Ki Clash. Dragon Mine Z 2.2 generates changing meter cycles from a synchronized seed and grades each press as MISS, GOOD, or PERFECT. The server validates the press time and marker instead of trusting a separate Overhaul-only click packet.
 
-## Power and Speed
+Strike Clash keeps its own momentum gain and decay tuning, while the sweep timing and good/perfect window are owned by Dragon Mine Z 2.2 so the HUD and server cannot drift apart.
 
-Melee power can increase momentum gain:
+## Power
+
+Melee power can increase momentum gained from a successful input:
 
 - Players contribute their current Melee Damage.
 - Mobs contribute their Minecraft Attack Damage attribute.
 
-Speed can widen the good area for the faster participant. Players use their Speed value, which Dragon Mine Z stores internally as Strike Damage. Mobs use Attack Damage for this comparison. A larger good area makes accurate inputs more forgiving, but it never extends beyond the meter.
-
-Both influences and their strength can be configured in **StrikeClashConfigured.json**.
+The influence and its strength can be configured in **StrikeClashConfigured.json**. The old custom meter-speed, fixed good-area, miss-efficiency, and speed-based window settings are no longer used because Dragon Mine Z 2.2's ClashMeter must be simulated identically by client and server.
 
 ## Winning and losing
 
@@ -38,4 +38,4 @@ The losing fighter's technique is canceled and they receive Stun for two seconds
 
 The winning technique refreshes its damage from the player's current Melee Damage and receives the configured winner damage multiplier. This means a form or Release change that altered Melee Damage during the clash is reflected in the final hit.
 
-The meter speed, timing area, momentum rules, duration, warning delay, and winner multiplier can all be changed by the server and reloaded with **/dmzreload**.
+Momentum rules, duration, warning delay, melee influence, and winner multiplier can be changed by the server and reloaded with **/dmzreload**.

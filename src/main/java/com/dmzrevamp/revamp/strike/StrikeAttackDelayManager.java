@@ -68,8 +68,7 @@ public final class StrikeAttackDelayManager {
                 && revamp.dmzrevamp$isCustomStrike();
         if (!creativeCustomStrike && data.getResources().getCurrentEnergy() < cost) return false;
 
-        boolean racialRecovery = StrikeAttackTemplates.SLEEP_RECOVERY.equals(strike.getId())
-                || StrikeAttackTemplates.NAMEKIAN_REGENERATION.equals(strike.getId());
+        boolean racialRecovery = StrikeAttackTemplates.NAMEKIAN_REGENERATION.equals(strike.getId());
         if (!racialRecovery && (data.getSkills().getSkillLevel("kicontrol") <= 0
                 || data.getResources().getPowerRelease() < 5)) {
             return false;

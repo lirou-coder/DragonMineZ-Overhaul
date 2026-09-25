@@ -1,6 +1,6 @@
 # Racial Strike Abilities
 
-Dragon Mine Z: Overhaul registers special Strike techniques that belong to particular races or biological upgrades. Eligible characters receive missing techniques automatically after character creation and when joining the server.
+Dragon Mine Z: Overhaul grants race-exclusive combat techniques to particular races or biological upgrades. Android Absorption and Namekian Regeneration are Overhaul Strike techniques; on Dragon Mine Z 2.2, Majins receive DMZ's native Sleep Recovery Evasion instead. Eligible characters receive missing techniques automatically after character creation and when joining the server.
 
 These techniques are protected character abilities. They cannot be deleted like an ordinary custom technique, but they are removed when a character reset changes the player to an ineligible race and are granted again whenever eligibility returns.
 
@@ -12,9 +12,7 @@ The attack restrains its target and deals damage in three absorption hits. Half 
 
 ## Sleep Recovery
 
-Sleep Recovery is granted to Majins.
-
-It is a self-targeted recovery technique and does not require an enemy. The Majin becomes stationary during its recovery animation and converts the technique's Ki cost into healing.
+Sleep Recovery is granted to Majins using Dragon Mine Z 2.2's native Evasion technique (`sleep_recovery`). Overhaul no longer registers or executes its own Strike version of this technique; DMZ handles its activation, cost, cooldown, animation, and healing.
 
 ## Namekian Regeneration
 
@@ -26,6 +24,6 @@ If current Stamina is insufficient, all remaining Stamina is consumed and the ch
 
 ## Configuration
 
-The XP rules, Ki cost, damage multiplier, cast time, and cooldown of these techniques are exposed in **customStrikeAttacks.json** alongside player-created Overhaul Strikes. See [[Custom Strike Attacks]].
+The XP rules, Ki cost, damage multiplier, cast time, and cooldown for the Overhaul Strike techniques are exposed in **customStrikeAttacks.json** alongside player-created Overhaul Strikes. Sleep Recovery is not configured there because it is the native DMZ 2.2 Evasion. See [[Custom Strike Attacks]].
 
 Eligibility follows the character's active race or Overhaul racial skill, so compatible custom race configurations can still receive the appropriate technique.

@@ -7,6 +7,7 @@ import com.dmzrevamp.mixin.StrikeAttackHandlerStateAccessor;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.network.StrikeClashModeS2CPacket;
 import com.dragonminez.common.combat.clash.BeamClashManager;
+import com.dragonminez.common.combat.clash.ClashMeter;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainParticles;
@@ -98,7 +99,8 @@ public final class StrikeClashManager {
 
         Clash clash = new Clash(
                 new Participant(attacker, attackerStrike),
-                new Participant(target, opponentStrike)
+                new Participant(target, opponentStrike),
+                attacker.serverLevel()
         );
         abortPlayerStrike(clash.a);
         abortPlayerStrike(clash.b);
@@ -137,14 +139,23 @@ public final class StrikeClashManager {
         }
     }
 
-    /** Routes DMZ's existing clash input packet to this clash before BeamClash handles it. */
-    public static boolean handlePlayerPress(ServerPlayer player) {
+    /**
+     * Routes DMZ 2.2's native ClashMeter input to a Strike Clash before BeamClash handles it.
+     * The client sends the simulated press time and marker; the server resamples the same
+     * deterministic meter and accepts at most one contribution per cycle.
+     */
+    public static boolean handlePlayerPress(ServerPlayer player, float pressTime, float marker) {
         if (player == null) return false;
         for (Clash clash : ACTIVE) {
             Participant participant = clash.participant(player.getUUID());
             if (participant != null) {
-                participant.press(clash.other(participant));
-                playPunch(player);
+                float serverTime = (float) (player.level().getGameTime() - clash.startGameTime);
+                ClashMeter.Grade grade = participant.registerPlayerPress(
+                        clash.other(participant), pressTime, marker, serverTime,
+                        clash.realElapsedTicks(), player.latency);
+                if (grade == ClashMeter.Grade.PERFECT || grade == ClashMeter.Grade.GOOD) {
+                    playPunch(player);
+                }
                 return true;
             }
         }
@@ -170,6 +181,7 @@ public final class StrikeClashManager {
         Iterator<Clash> iterator = ACTIVE.iterator();
         while (iterator.hasNext()) {
             Clash clash = iterator.next();
+            if (clash.level != level) continue;
             Result result = clash.tick(level);
             if (result == Result.ONGOING) continue;
             clash.finish(result);
@@ -226,21 +238,22 @@ public final class StrikeClashManager {
     private static void sendState(Clash clash, Participant participant) {
         if (!(participant.entity instanceof ServerPlayer player)) return;
         Participant opponent = clash.other(participant);
-        float[] goodArea = participant.goodArea(opponent);
+        Vec3 point = clash.clashPoint();
         NetworkHandler.sendToPlayer(new BeamClashStateS2C(
                 true,
-                participant.meterPhase,
-                goodArea[0],
-                goodArea[1],
+                clash.startGameTime,
+                participant.meterSeed,
                 clash.advantageFor(participant),
                 auraColor(participant.entity),
-                opponent.entity.getId()
+                auraColor(opponent.entity),
+                opponent.entity.getId(),
+                point.x, point.y, point.z, 0
         ), player);
     }
 
     private static void notifyEnded(LivingEntity entity) {
         if (entity instanceof ServerPlayer player) {
-            NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(), player);
+            NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(0), player);
             sendMode(player, false);
         }
     }
@@ -279,15 +292,6 @@ public final class StrikeClashManager {
         }
         AttributeInstance attack = entity.getAttribute(Attributes.ATTACK_DAMAGE);
         return Math.max(1D, attack == null ? 1D : attack.getValue());
-    }
-
-    private static double speedFor(Participant participant) {
-        if (participant.entity instanceof ServerPlayer player) {
-            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
-            if (data != null) return Math.max(0.0001D, data.getStrikeDamage());
-        }
-        AttributeInstance attackDamage = participant.entity.getAttribute(Attributes.ATTACK_DAMAGE);
-        return Math.max(0.0001D, attackDamage == null ? 1D : attackDamage.getValue());
     }
 
     private static int visualAttackInterval(LivingEntity entity) {
@@ -368,14 +372,24 @@ public final class StrikeClashManager {
     private enum Result { ONGOING, A_WINS, B_WINS, DISSOLVED }
 
     private static final class Participant {
+        private static final float MARKER_MISMATCH = 0.06F;
+        private static final float MAX_LAG_TICKS = 12.0F;
+        private static final float LAG_GRACE_TICKS = 2.0F;
+        private static final int INPUT_STRIKE_LIMIT = 4;
+        private static final float INVALID_INPUT_DAMPEN = 0.4F;
+
         private final LivingEntity entity;
         private final Object strike;
         private final boolean wasNoAi;
         private final int lockedNpcComboTimer;
         private final double initialMeleeDamage;
-        private float meterPhase;
-        private float previousMeterPhase;
+        private final long meterSeed;
+        private final float npcAccuracy;
         private float momentum;
+        private int consumedCycle = -1;
+        private float lastPressTime = -Float.MAX_VALUE;
+        private int invalidInputStrikes;
+        private boolean inputDampened;
         private Vec3 lockedPosition;
         private int visualComboCount;
 
@@ -385,73 +399,102 @@ public final class StrikeClashManager {
             this.wasNoAi = entity instanceof Mob mob && mob.isNoAi();
             this.lockedNpcComboTimer = entity instanceof DBSagasEntity saga ? saga.comboTimer : 0;
             this.initialMeleeDamage = meleeDamage(entity);
-            this.meterPhase = entity.getRandom().nextFloat();
-            this.previousMeterPhase = meterPhase;
+            this.meterSeed = entity.getRandom().nextLong();
+            this.npcAccuracy = resolveNpcAccuracy(initialMeleeDamage, !(entity instanceof ServerPlayer));
         }
 
-        private void tickMeter(Participant opponent) {
+        private static float resolveNpcAccuracy(double attackPower, boolean npc) {
+            if (!npc) return 0F;
+            double t = Math.log10(Math.max(0D, attackPower) + 1D) / 3D;
+            return (float) Math.min(0.92D, 0.45D + t * 0.45D);
+        }
+
+        private void tickMeter(Participant opponent, int age) {
             StrikeClashConfigured.Config config = StrikeClashConfigured.get();
-            previousMeterPhase = meterPhase;
-            meterPhase += config.meterSpeedPerTick;
             momentum *= config.momentumDecayPerTick;
-            if (meterPhase >= 1F) meterPhase -= 1F;
-            if (!(entity instanceof ServerPlayer)) {
-                float[] area = goodArea(opponent);
-                float center = (area[0] + area[1]) * 0.5F;
-                if (previousMeterPhase < center && meterPhase >= center && meterPhase >= previousMeterPhase) {
-                    press(opponent);
-                }
-            }
+            if (entity instanceof ServerPlayer) return;
+
+            ClashMeter.Sample now = ClashMeter.sample(meterSeed, age);
+            if (now.cycle().index() <= consumedCycle || now.grade() == ClashMeter.Grade.MISS) return;
+            ClashMeter.Sample next = ClashMeter.sample(meterSeed, age + 1);
+            boolean closest = next.cycle().index() != now.cycle().index() || next.distance() >= now.distance();
+            if (!closest) return;
+
+            consumedCycle = now.cycle().index();
+            float jitter = 0.7F + entity.getRandom().nextFloat() * 0.3F;
+            addBurst(opponent, now.efficiency() * npcAccuracy * jitter);
         }
 
-        private void press(Participant opponent) {
-            float[] area = goodArea(opponent);
-            float efficiency = score(meterPhase, area[0], area[1]);
+        private ClashMeter.Grade registerPlayerPress(Participant opponent, float claimedTime, float claimedMarker,
+                                                     float serverTime, float realElapsed, int latencyMs) {
+            float tolerance = Math.min(MAX_LAG_TICKS, Math.max(0, latencyMs) / 50.0F + LAG_GRACE_TICKS);
+            float earliest = serverTime - tolerance;
+            float latest = Math.max(serverTime, realElapsed) + 1.0F + LAG_GRACE_TICKS;
+            float pressTime = claimedTime;
+
+            if (!Float.isFinite(pressTime)) {
+                noteInvalidInput();
+                pressTime = serverTime;
+            } else if (pressTime < earliest || pressTime > latest) {
+                noteInvalidInput();
+                pressTime = Mth.clamp(pressTime, earliest, latest);
+            }
+            if (pressTime <= lastPressTime) return null;
+            lastPressTime = pressTime;
+
+            ClashMeter.Sample sample = ClashMeter.sample(meterSeed, pressTime);
+            if (!Float.isFinite(claimedMarker) || Math.abs(sample.marker() - claimedMarker) > MARKER_MISMATCH) {
+                noteInvalidInput();
+            }
+            if (sample.cycle().index() <= consumedCycle) return null;
+            consumedCycle = sample.cycle().index();
+
+            if (sample.grade() != ClashMeter.Grade.MISS) {
+                float efficiency = sample.efficiency();
+                if (inputDampened) efficiency *= INVALID_INPUT_DAMPEN;
+                addBurst(opponent, efficiency);
+            }
+            return sample.grade();
+        }
+
+        private void noteInvalidInput() {
+            if (++invalidInputStrikes >= INPUT_STRIKE_LIMIT) inputDampened = true;
+        }
+
+        private void addBurst(Participant opponent, float efficiency) {
             StrikeClashConfigured.Config config = StrikeClashConfigured.get();
             double influence = 1D;
             if (config.meleeDMGInfluence) {
                 double ratio = meleeDamage(entity) / Math.max(0.0001D, meleeDamage(opponent.entity));
                 influence = Math.max(1D, 1D + (ratio - 1D) * config.meleeDMGInfluenceMultiplier);
             }
-            momentum += efficiency * BURST_PER_PRESS * config.momentumGainDefaultMultiplier * (float) influence;
-            meterPhase = 0F;
-            previousMeterPhase = 0F;
-        }
-
-        private float[] goodArea(Participant opponent) {
-            StrikeClashConfigured.Config config = StrikeClashConfigured.get();
-            float low = config.goodAreaLow;
-            float high = config.goodAreaHigh;
-            if (!config.goodAreaSpeedInfluence) return new float[]{low, high};
-            double ratio = speedFor(this) / Math.max(0.0001D, speedFor(opponent));
-            if (ratio <= 1D) return new float[]{low, high};
-            double factor = 1D + (ratio - 1D) * config.goodAreaSpeedInfluenceMultiplier;
-            return new float[]{
-                    Mth.clamp((float) (low / factor), 0F, low),
-                    Mth.clamp((float) (1D - (1D - high) / factor), high, 1F)
-            };
-        }
-
-        private static float score(float phase, float low, float high) {
-            StrikeClashConfigured.Config config = StrikeClashConfigured.get();
-            if (phase < low || phase > high) return config.offWindowMomentumEfficiency;
-            float center = (low + high) * 0.5F;
-            float half = Math.max(0.0001F, (high - low) * 0.5F);
-            return config.offWindowMomentumEfficiency
-                    + (1F - config.offWindowMomentumEfficiency)
-                    * Math.max(0F, 1F - Math.abs(phase - center) / half);
+            momentum += efficiency * BURST_PER_PRESS
+                    * config.momentumGainDefaultMultiplier * (float) influence;
         }
     }
 
     private static final class Clash {
         private final Participant a;
         private final Participant b;
+        private final ServerLevel level;
+        private final long startGameTime;
+        private final long startNanos = System.nanoTime();
         private float bias = 0.5F;
         private int age;
 
-        private Clash(Participant a, Participant b) {
+        private Clash(Participant a, Participant b, ServerLevel level) {
             this.a = a;
             this.b = b;
+            this.level = level;
+            this.startGameTime = level.getGameTime();
+        }
+
+        private float realElapsedTicks() {
+            return (System.nanoTime() - startNanos) / 50_000_000.0F;
+        }
+
+        private Vec3 clashPoint() {
+            return a.entity.getEyePosition().add(b.entity.getEyePosition()).scale(0.5D);
         }
 
         private boolean involves(UUID id) {
@@ -502,8 +545,8 @@ public final class StrikeClashManager {
             if (b.entity instanceof DBSagasEntity saga) saga.comboTimer = b.lockedNpcComboTimer;
             face(a.entity, b.entity);
             face(b.entity, a.entity);
-            a.tickMeter(b);
-            b.tickMeter(a);
+            a.tickMeter(b, age);
+            b.tickMeter(a, age);
 
             double powerA = meleeDamage(a.entity);
             double powerB = meleeDamage(b.entity);

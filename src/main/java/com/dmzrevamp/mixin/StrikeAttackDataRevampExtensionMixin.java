@@ -8,6 +8,7 @@ import com.dmzrevamp.revamp.strike.CustomStrikeType;
 import com.dmzrevamp.revamp.strike.RevampStrikeAttackData;
 import com.dmzrevamp.revamp.strike.StrikeAttackCategoryRules;
 import com.dmzrevamp.revamp.strike.StrikeAttackTemplates;
+import com.dmzrevamp.revamp.strike.StrikeAttackComputationContext;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
@@ -154,13 +155,6 @@ public abstract class StrikeAttackDataRevampExtensionMixin implements RevampStri
         }
         StrikeAttackData self = (StrikeAttackData) (Object) this;
         CustomStrikeAttacksConfig.StrikeSettings settings = CustomStrikeAttacksConfig.resolve(self);
-        if (StrikeAttackTemplates.SLEEP_RECOVERY.equals(self.getId())) {
-            double kiCostMultiplier = settings.kiCostMultiplier;
-            double maxKiBasedPower = data.getMaxEnergy() * self.getActualDamageMultiplier();
-            cir.setReturnValue(Math.max(5.0D, maxKiBasedPower * 0.35D * kiCostMultiplier / 2.0D)
-                    * com.dmzrevamp.revamp.classes.skills.CustomClassPassiveEvents.strikeCostMultiplier(data));
-            return;
-        }
         if (StrikeAttackTemplates.NAMEKIAN_REGENERATION.equals(self.getId())) {
             double kiCostMultiplier = settings.kiCostMultiplier;
             double defenseBasedPower = Math.max(0.0D, data.getDefense()) * self.getActualDamageMultiplier();
@@ -186,6 +180,16 @@ public abstract class StrikeAttackDataRevampExtensionMixin implements RevampStri
         }
         int cooldown = Math.max(1, Math.round((cir.getReturnValueI() + dmzrevamp$getExtraCooldownTicks()) * dmzrevamp$strikeType.cooldownMultiplier()));
         cir.setReturnValue(cooldown);
+    }
+
+    @Inject(method = "getDamageMultiplier", at = @At("RETURN"), cancellable = true, remap = false)
+    private void dmzrevamp$useActualCustomDamageWhileBuildingStrike(CallbackInfoReturnable<Float> cir) {
+        if (!StrikeAttackComputationContext.isActive() || !dmzrevamp$customStrike) {
+            return;
+        }
+        StrikeAttackData self = (StrikeAttackData) (Object) this;
+        float upgraded = cir.getReturnValueF() * self.getDamageLevelMultiplier();
+        cir.setReturnValue((float) (upgraded * CustomStrikeAttacksConfig.resolve(self).damageMultiplier));
     }
 
     @Inject(method = "getActualDamageMultiplier", at = @At("RETURN"), cancellable = true, remap = false)

@@ -59,11 +59,7 @@ public final class KiClashConfigured {
     }
 
     public static final class Config {
-        public float meterSpeedPerTick = 0.005F;
-        public float goodAreaLow = 0.78F;
-        public float goodAreaHigh = 0.96F;
         public float momentumGainDefaultMultiplier = 1.0F;
-        public float offWindowMomentumEfficiency = 0.18F;
         public float momentumDecayPerTick = 0.96F;
         public float innerAdvantageLow = 0.20F;
         public float innerAdvantageHigh = 0.80F;
@@ -82,11 +78,7 @@ public final class KiClashConfigured {
         public float MaxMomentumLossPerHelper = 0.60F;
 
         private Config sanitize() {
-            meterSpeedPerTick = finiteClamp(meterSpeedPerTick, 0.0001F, 1F, 0.01F);
-            goodAreaLow = finiteClamp(goodAreaLow, 0F, 1F, 0.78F);
-            goodAreaHigh = finiteClamp(goodAreaHigh, goodAreaLow, 1F, 0.96F);
             momentumGainDefaultMultiplier = finiteClamp(momentumGainDefaultMultiplier, 0F, Float.MAX_VALUE, 1F);
-            offWindowMomentumEfficiency = finiteClamp(offWindowMomentumEfficiency, 0F, 1F, 0.18F);
             momentumDecayPerTick = finiteClamp(momentumDecayPerTick, 0F, 1F, 0.96F);
             innerAdvantageLow = finiteClamp(innerAdvantageLow, 0F, 0.5F, 0.20F);
             innerAdvantageHigh = finiteClamp(innerAdvantageHigh, 0.5F, 1F, 0.80F);

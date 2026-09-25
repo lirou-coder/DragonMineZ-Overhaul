@@ -11,10 +11,10 @@ import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiDiskEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
-import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.techniques.KiAttackData;
+import com.dragonminez.common.init.MainEffects;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -42,6 +42,8 @@ public final class KiClashTeams {
     private static final Map<BeamClash, TeamState> STATES = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final Map<UUID, Helper> HELPERS = new java.util.HashMap<>();
     private static final Map<UUID, MovementLock> MOVEMENT_LOCKS = new java.util.HashMap<>();
+    /** Server-side guard matching DMZ 2.2's native LOSER_EXHAUST_TICKS window. */
+    private static final Map<UUID, Long> POST_CLASH_GUARDS = new java.util.HashMap<>();
     private static final Map<AbstractKiProjectile, SphereLock> SPHERE_LOCKS = new IdentityHashMap<>();
     private static final Map<AbstractKiProjectile, FrozenLifetime> FROZEN_LIFETIMES = new IdentityHashMap<>();
 
@@ -53,12 +55,25 @@ public final class KiClashTeams {
         }
     }
 
-    /** True only during the finite post-loss punishment, not during the clash movement hold. */
+    /**
+     * True only while the loser is inside DMZ 2.2's native Beam Clash exhaust window.
+     * No second stun/movement punishment is applied by the Overhaul.
+     */
     public static boolean isAbilityRestricted(LivingEntity entity) {
-        synchronized (MOVEMENT_LOCKS) {
-            MovementLock lock = MOVEMENT_LOCKS.get(entity.getUUID());
-            return lock != null && lock.untilTick != Long.MAX_VALUE
-                    && entity.level().getGameTime() < lock.untilTick;
+        synchronized (POST_CLASH_GUARDS) {
+            Long until = POST_CLASH_GUARDS.get(entity.getUUID());
+            if (until == null) return false;
+            if (entity.level().getGameTime() >= until || !entity.hasEffect(MainEffects.STUN.get())) {
+                POST_CLASH_GUARDS.remove(entity.getUUID());
+                return false;
+            }
+            return true;
+        }
+    }
+
+    public static void markNativeExhaustGuard(LivingEntity entity, int ticks) {
+        synchronized (POST_CLASH_GUARDS) {
+            POST_CLASH_GUARDS.put(entity.getUUID(), entity.level().getGameTime() + Math.max(1, ticks));
         }
     }
 
@@ -104,16 +119,13 @@ public final class KiClashTeams {
                 : List.of();
         synchronized (STATES) {
             for (TeamState state : STATES.values()) {
-                if (state.clash.a().owner().level() == level) {
-                    holdMovement(state.clash.a().owner());
-                    holdMovement(state.clash.b().owner());
-                    discoverHelpers(state, projectiles);
-                }
-                // DMZ advances its global ACTIVE_CLASHES list once for every
-                // ServerLevel END tick, not only for the clash's dimension.
-                // Helpers must use that same global clock or their meter runs
-                // N times slower, where N is the number of loaded dimensions.
-                tickHelpers(state);
+                // DMZ 2.2 advances a clash only from the ServerLevel that owns it.
+                // Helpers must follow that same clock or they decay/auto-press once per loaded dimension.
+                if (state.clash.level() != level) continue;
+                holdMovement(state.clash.a().owner());
+                holdMovement(state.clash.b().owner());
+                discoverHelpers(state, projectiles);
+                tickHelpers(state, level);
             }
         }
     }
@@ -124,9 +136,10 @@ public final class KiClashTeams {
      * later native snapshot for the same player would otherwise replace the
      * helper phase and make the meter appear to crawl or oscillate.
      */
-    public static void syncHelpers() {
+    public static void syncHelpers(ServerLevel level) {
         synchronized (STATES) {
             for (TeamState state : STATES.values()) {
+                if (state.clash.level() != level) continue;
                 for (Helper helper : state.helpers) {
                     if (helper.owner instanceof ServerPlayer player
                             && helper.owner.isAlive()
@@ -195,7 +208,8 @@ public final class KiClashTeams {
         return projectile.position().add(direction(projectile).scale(Math.max(0.1F, projectile.getClashBeamLength())));
     }
 
-    private static void tickHelpers(TeamState state) {
+    private static void tickHelpers(TeamState state, ServerLevel level) {
+        int age = (int) Math.max(0L, level.getGameTime() - state.clash.startGameTime());
         Iterator<Helper> iterator = state.helpers.iterator();
         while (iterator.hasNext()) {
             Helper helper = iterator.next();
@@ -206,17 +220,19 @@ public final class KiClashTeams {
             }
             preserveFullRender(helper.projectile);
             holdMovement(helper.owner);
-            setMomentum(helper.participant, momentum(helper.team));
-            helper.participant.tickMeter();
-            setMomentum(helper.participant, momentum(helper.team));
+            // Player helpers are evaluated only when their validated input arrives. NPC helpers still
+            // need a deterministic native 2.2 meter tick so their AI can contribute bursts.
+            if (!(helper.owner instanceof ServerPlayer)) helper.participant.tickMeter(age);
         }
     }
 
-    public static boolean handleHelperPress(ServerPlayer player) {
+    public static boolean handleHelperPress(ServerPlayer player, float pressTime, float marker) {
         Helper helper;
         synchronized (STATES) { helper = HELPERS.get(player.getUUID()); }
         if (helper == null) return false;
-        helper.participant.registerPlayerPress();
+        float serverTime = (float) (player.level().getGameTime() - helper.state.clash.startGameTime());
+        helper.participant.registerPlayerPress(pressTime, marker, serverTime,
+                helper.state.clash.realElapsedTicks(), player.latency);
         return true;
     }
 
@@ -225,7 +241,7 @@ public final class KiClashTeams {
         float adjusted = efficiency
                 * KiClashConfigured.get().momentumGainDefaultMultiplier
                 * kiDamageInfluence(source);
-        float delta = adjusted * 0.6F;
+        float delta = adjusted * BeamClash.BURST_PER_PERFECT_PRESS;
         TeamState state = findState(source);
         if (state == null) {
             setMomentum(source, momentum(source) + delta);
@@ -482,11 +498,17 @@ public final class KiClashTeams {
 
     private static void syncHelper(Helper helper, ServerPlayer player) {
         ClashParticipant opponent = helper.state.clash.a() == helper.team ? helper.state.clash.b() : helper.state.clash.a();
-        NetworkHandler.sendToPlayer(
-                new BeamClashStateS2C(true, helper.participant.meterPhase(),
-                        KiClashConfigured.get().goodAreaLow, KiClashConfigured.get().goodAreaHigh,
-                        helper.state.clash.advantageFor(helper.team.owner()),
-                        helper.projectile.getColorBorder(), opponent.owner().getId()), player);
+        Vec3 point = helper.state.clash.clashPoint();
+        NetworkHandler.sendToPlayer(new BeamClashStateS2C(
+                true,
+                helper.state.clash.startGameTime(),
+                helper.participant.meterSeed(),
+                helper.state.clash.advantageFor(helper.team.owner()),
+                helper.projectile.getColorBorder(),
+                opponent.beam().getColorBorder(),
+                opponent.owner().getId(),
+                point.x, point.y, point.z, 0
+        ), player);
     }
 
     /** DMZ renderers fade from tickCount/maxLife, so maxLife itself stays frozen far ahead. */
@@ -542,7 +564,7 @@ public final class KiClashTeams {
         releaseFrozenLifetime(helper.projectile);
         helper.projectile.clearClashLock();
         if (helper.owner instanceof ServerPlayer player) {
-            NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(), player);
+            NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(0), player);
         }
     }
 
@@ -556,38 +578,13 @@ public final class KiClashTeams {
         synchronized (STATES) { if (HELPERS.containsKey(event.getEntity().getUUID())) event.setCanceled(true); }
     }
 
-    /** Rejects Ki attacks spawned by a punished player or mob, including native AI techniques. */
+    /** Defense-in-depth for the native post-clash STUN window, including AI-spawned techniques. */
     @SubscribeEvent
     public static void blockRestrictedKiAttackSpawn(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() || !(event.getEntity() instanceof AbstractKiProjectile projectile)) return;
         if (projectile.getOwner() instanceof LivingEntity owner && isAbilityRestricted(owner)) {
             event.setCanceled(true);
         }
-    }
-
-    public static void immobilizeAfterLoss(LivingEntity entity, int ticks) {
-        synchronized (MOVEMENT_LOCKS) {
-            MovementLock current = MOVEMENT_LOCKS.get(entity.getUUID());
-            boolean wasNoAi = current != null ? current.wasNoAi : entity instanceof Mob mob && mob.isNoAi();
-            MOVEMENT_LOCKS.put(entity.getUUID(), new MovementLock(entity,
-                    current == null ? entity.position() : current.anchor,
-                    entity.level().getGameTime() + Math.max(1, ticks), wasNoAi));
-            if (entity instanceof Mob mob) mob.setNoAi(true);
-        }
-        if (entity instanceof ServerPlayer player) {
-            StatsProvider.get(StatsCapability.INSTANCE, player)
-                    .ifPresent(data -> {
-                        suppressActiveAbilities(data);
-                        NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
-                    });
-        }
-    }
-
-    private static void suppressActiveAbilities(com.dragonminez.common.stats.StatsData data) {
-        data.getTechniques().clearTechniqueCharge();
-        data.getStatus().setActionCharging(false);
-        data.getStatus().setChargingKi(false);
-        data.getStatus().setBlocking(false);
     }
 
     public static void releaseMovement(LivingEntity entity) {
@@ -598,20 +595,14 @@ public final class KiClashTeams {
     }
 
     private static void releaseActiveMovement(LivingEntity entity) {
-        synchronized (MOVEMENT_LOCKS) {
-            MovementLock lock = MOVEMENT_LOCKS.get(entity.getUUID());
-            if (lock != null && lock.untilTick == Long.MAX_VALUE) {
-                MOVEMENT_LOCKS.remove(entity.getUUID());
-                restoreMobAi(lock);
-            }
-        }
+        releaseMovement(entity);
     }
 
     private static void holdMovement(LivingEntity entity) {
         synchronized (MOVEMENT_LOCKS) {
             MovementLock current = MOVEMENT_LOCKS.get(entity.getUUID());
             MOVEMENT_LOCKS.put(entity.getUUID(), new MovementLock(entity,
-                    current == null ? entity.position() : current.anchor, Long.MAX_VALUE,
+                    current == null ? entity.position() : current.anchor,
                     current != null ? current.wasNoAi : entity instanceof Mob mob && mob.isNoAi()));
         }
     }
@@ -624,18 +615,8 @@ public final class KiClashTeams {
     public static void lockMovement(LivingEvent.LivingTickEvent event) {
         LivingEntity entity = event.getEntity();
         MovementLock lock;
-        synchronized (MOVEMENT_LOCKS) {
-            lock = MOVEMENT_LOCKS.get(entity.getUUID());
-            if (lock != null && lock.untilTick != Long.MAX_VALUE && entity.level().getGameTime() >= lock.untilTick) {
-                MOVEMENT_LOCKS.remove(entity.getUUID());
-                restoreMobAi(lock);
-                lock = null;
-            }
-        }
+        synchronized (MOVEMENT_LOCKS) { lock = MOVEMENT_LOCKS.get(entity.getUUID()); }
         if (lock == null) return;
-        if (lock.untilTick != Long.MAX_VALUE && entity instanceof ServerPlayer player) {
-            StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(KiClashTeams::suppressActiveAbilities);
-        }
         entity.setDeltaMovement(Vec3.ZERO);
         entity.teleportTo(lock.anchor.x, lock.anchor.y, lock.anchor.z);
         entity.fallDistance = 0F;
@@ -683,11 +664,10 @@ public final class KiClashTeams {
         Helper(TeamState state, ClashParticipant team, LivingEntity owner, AbstractKiProjectile projectile) {
             this.state = state; this.team = team; this.owner = owner; this.projectile = projectile;
             this.participant = new ClashParticipant(projectile, owner);
-            setMomentum(this.participant, momentum(team));
         }
     }
 
-    private record MovementLock(LivingEntity entity, Vec3 anchor, long untilTick, boolean wasNoAi) {}
+    private record MovementLock(LivingEntity entity, Vec3 anchor, boolean wasNoAi) {}
     private record FrozenLifetime(int originalRemaining) {}
     private static final class SphereLock {
         final Vec3 direction;

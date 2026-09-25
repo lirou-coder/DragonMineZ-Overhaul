@@ -31,6 +31,7 @@ import java.util.Set;
 
 public final class DmzClassConfigManager {
     public static final String RACE_DEFAULT_CLASS = "race";
+    private static final double CURVED_SCALING_MAX_RATIO = 4.0D;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CLASSES_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez").resolve("classes");
@@ -413,8 +414,10 @@ public final class DmzClassConfigManager {
             JsonObject json = element.getAsJsonObject();
             normalizeCustomPassiveBoolean(json);
             RaceStatsConfig.ClassStats parsedStats = GSON.fromJson(json, RaceStatsConfig.ClassStats.class);
-            Double loadedVitalityScaling = parsedStats != null && parsedStats.getStatScaling() != null
-                    ? parsedStats.getStatScaling().getVitalityScaling() : null;
+            RaceStatsConfig.StatScaling parsedScaling = parsedStats != null ? parsedStats.getStatScaling() : null;
+            Double loadedVitalityScaling = parsedScaling != null ? parsedScaling.getVitalityScaling() : null;
+            boolean missingDefenseScalingMax = parsedScaling != null && parsedScaling.getDefenseScalingMax() == null;
+            boolean missingVitalityScalingMax = parsedScaling != null && parsedScaling.getVitalityScalingMax() == null;
             RaceStatsConfig.ClassStats stats = sanitize(parsedStats);
             boolean roundedVitalityScaling = loadedVitalityScaling != null
                     && Math.abs(loadedVitalityScaling - stats.getStatScaling().getVitalityScaling()) > 1.0E-9D;
@@ -438,7 +441,8 @@ public final class DmzClassConfigManager {
             boolean legacyNamedColor = isNamedDisplayColor(readString(json, DISPLAY_COLOR_KEY, ""));
             boolean decimalPassiveEnums = hasDecimalCustomPassiveEnums(json);
             if (!RaceStatsConfig.CURRENT_VERSION.equals(readString(json, CONFIG_VERSION_KEY, ""))
-                    || legacyNamedColor || decimalPassiveEnums || legacyPotentialist || roundedVitalityScaling) {
+                    || legacyNamedColor || decimalPassiveEnums || legacyPotentialist || roundedVitalityScaling
+                    || missingDefenseScalingMax || missingVitalityScalingMax) {
                 try {
                     saveClassConfig(path, stats, metadata);
                 } catch (IOException ignored) {
@@ -600,7 +604,13 @@ public final class DmzClassConfigManager {
         mergedScaling.setStrikePowerScaling(sum(raceScaling != null ? raceScaling.getStrikePowerScaling() : null, classScaling != null ? classScaling.getStrikePowerScaling() : null));
         mergedScaling.setStaminaScaling(sum(raceScaling != null ? raceScaling.getStaminaScaling() : null, classScaling != null ? classScaling.getStaminaScaling() : null));
         mergedScaling.setDefenseScaling(sum(raceScaling != null ? raceScaling.getDefenseScaling() : null, classScaling != null ? classScaling.getDefenseScaling() : null));
+        mergedScaling.setDefenseScalingMax(sum(
+                resolvedCurveMax(raceScaling != null ? raceScaling.getDefenseScaling() : null, raceScaling != null ? raceScaling.getDefenseScalingMax() : null),
+                resolvedCurveMax(classScaling != null ? classScaling.getDefenseScaling() : null, classScaling != null ? classScaling.getDefenseScalingMax() : null)));
         mergedScaling.setVitalityScaling(sum(raceScaling != null ? raceScaling.getVitalityScaling() : null, classScaling != null ? classScaling.getVitalityScaling() : null));
+        mergedScaling.setVitalityScalingMax(sum(
+                resolvedCurveMax(raceScaling != null ? raceScaling.getVitalityScaling() : null, raceScaling != null ? raceScaling.getVitalityScalingMax() : null),
+                resolvedCurveMax(classScaling != null ? classScaling.getVitalityScaling() : null, classScaling != null ? classScaling.getVitalityScalingMax() : null)));
         mergedScaling.setKiPowerScaling(sum(raceScaling != null ? raceScaling.getKiPowerScaling() : null, classScaling != null ? classScaling.getKiPowerScaling() : null));
         mergedScaling.setEnergyScaling(sum(raceScaling != null ? raceScaling.getEnergyScaling() : null, classScaling != null ? classScaling.getEnergyScaling() : null));
         merged.setStatScaling(mergedScaling);
@@ -630,9 +640,18 @@ public final class DmzClassConfigManager {
         if (classStats.getStatScaling() == null) {
             classStats.setStatScaling(new RaceStatsConfig.StatScaling());
         }
-        Double vitalityScaling = classStats.getStatScaling().getVitalityScaling();
+        RaceStatsConfig.StatScaling scaling = classStats.getStatScaling();
+        Double defenseScaling = scaling.getDefenseScaling();
+        Double vitalityScaling = scaling.getVitalityScaling();
+        if (defenseScaling != null && scaling.getDefenseScalingMax() == null) {
+            scaling.setDefenseScalingMax(defenseScaling * CURVED_SCALING_MAX_RATIO);
+        }
         if (vitalityScaling != null) {
-            classStats.getStatScaling().setVitalityScaling(roundToOneDecimal(vitalityScaling));
+            vitalityScaling = roundToOneDecimal(vitalityScaling);
+            scaling.setVitalityScaling(vitalityScaling);
+            if (scaling.getVitalityScalingMax() == null) {
+                scaling.setVitalityScalingMax(vitalityScaling * CURVED_SCALING_MAX_RATIO);
+            }
         }
         return classStats;
     }
@@ -700,8 +719,11 @@ public final class DmzClassConfigManager {
         scaling.setStrengthScaling(strengthScaling);
         scaling.setStrikePowerScaling(strikePowerScaling);
         scaling.setDefenseScaling(defenseScaling);
+        scaling.setDefenseScalingMax(defenseScaling * CURVED_SCALING_MAX_RATIO);
         scaling.setStaminaScaling(staminaScaling);
-        scaling.setVitalityScaling(roundToOneDecimal(vitalityScaling));
+        double roundedVitalityScaling = roundToOneDecimal(vitalityScaling);
+        scaling.setVitalityScaling(roundedVitalityScaling);
+        scaling.setVitalityScalingMax(roundedVitalityScaling * CURVED_SCALING_MAX_RATIO);
         scaling.setKiPowerScaling(kiPowerScaling);
         scaling.setEnergyScaling(energyScaling);
         classStats.setStatScaling(scaling);
@@ -715,6 +737,13 @@ public final class DmzClassConfigManager {
         classStats.setTpGainMultiplier(0.0D);
         classStats.setPassive(defaultPassive(""));
         return classStats;
+    }
+
+    private static Double resolvedCurveMax(Double minScaling, Double maxScaling) {
+        if (maxScaling != null && Double.isFinite(maxScaling)) {
+            return maxScaling;
+        }
+        return minScaling != null && Double.isFinite(minScaling) ? minScaling * CURVED_SCALING_MAX_RATIO : null;
     }
 
     private static double roundToOneDecimal(double value) {

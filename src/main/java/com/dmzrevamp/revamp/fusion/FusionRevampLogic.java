@@ -108,6 +108,34 @@ public final class FusionRevampLogic {
                 : ownPrestigeScale + getBaseRaceClassScale(partnerData, normalizedStat) * PrestigeSystem.scaleMultiplier(partnerData);
     }
 
+    public static double addPartnerCurveMaxScale(StatsData data, String stat, double originalScale) {
+        if (data == null) {
+            return originalScale;
+        }
+        String normalizedStat = FusionsRevampedConfig.normalizeStat(stat);
+        double ownBaseScale = ("VIT".equals(normalizedStat) || "DEF".equals(normalizedStat))
+                ? getBaseRaceClassCurveMaxScale(data, normalizedStat) : originalScale;
+        double ownPrestigeScale = ownBaseScale * PrestigeSystem.scaleMultiplier(data);
+        FusionsRevampedConfig.Config config = FusionsRevampedConfig.get();
+        if (!config.fusionRevamped.enabled || !config.fusionRevamped.scaleAddition || data.getPlayer() == null) {
+            return ownPrestigeScale;
+        }
+
+        if (!("VIT".equals(normalizedStat) || "DEF".equals(normalizedStat))
+                || !config.fusionRevamped.boosts(normalizedStat) || !data.getStatus().isFused()) {
+            return ownPrestigeScale;
+        }
+
+        double storedScaleAddition = getStoredScaleAddition(data, normalizedStat + "_MAX");
+        if (storedScaleAddition > 0D) {
+            return ownPrestigeScale + storedScaleAddition;
+        }
+
+        StatsData partnerData = getFusionPartnerData(data);
+        return partnerData == null ? ownPrestigeScale
+                : ownPrestigeScale + getBaseRaceClassCurveMaxScale(partnerData, normalizedStat) * PrestigeSystem.scaleMultiplier(partnerData);
+    }
+
     public static double mirroredTotalMultiplierOrOriginal(StatsData data, String stat, double originalMultiplier) {
         if (data == null || !data.getStatus().isFused() || data.getStatus().isFusionLeader()) {
             return originalMultiplier;
@@ -363,6 +391,10 @@ public final class FusionRevampLogic {
             String stat = FusionsRevampedConfig.normalizeStat(rawStat);
             leaderScales.putDouble(stat, getBaseRaceClassScale(partnerData, stat) * PrestigeSystem.scaleMultiplier(partnerData));
             partnerScales.putDouble(stat, getBaseRaceClassScale(leaderData, stat) * PrestigeSystem.scaleMultiplier(leaderData));
+            if ("VIT".equals(stat) || "DEF".equals(stat)) {
+                leaderScales.putDouble(stat + "_MAX", getBaseRaceClassCurveMaxScale(partnerData, stat) * PrestigeSystem.scaleMultiplier(partnerData));
+                partnerScales.putDouble(stat + "_MAX", getBaseRaceClassCurveMaxScale(leaderData, stat) * PrestigeSystem.scaleMultiplier(leaderData));
+            }
         }
         putScaleTag(leaderData, leaderScales);
         putScaleTag(partnerData, partnerScales);
@@ -420,6 +452,22 @@ public final class FusionRevampLogic {
             default -> 1D;
         };
         return value == null || !Double.isFinite(value) ? 1D : value;
+    }
+
+    private static double getBaseRaceClassCurveMaxScale(StatsData data, String stat) {
+        RaceStatsConfig raceConfig = ConfigManager.getRaceStats(NoeaCompat.realFusionRace(data));
+        RaceStatsConfig.ClassStats classStats = raceConfig != null ? raceConfig.getClassStats(data.getCharacter().getCharacterClass()) : null;
+        RaceStatsConfig.StatScaling scaling = classStats != null ? classStats.getStatScaling() : null;
+        if (scaling == null) {
+            return getBaseRaceClassScale(data, stat);
+        }
+        Double min = "DEF".equals(stat) ? scaling.getDefenseScaling() : scaling.getVitalityScaling();
+        Double max = "DEF".equals(stat) ? scaling.getDefenseScalingMax() : scaling.getVitalityScalingMax();
+        if (max != null && Double.isFinite(max)) {
+            return max;
+        }
+        double resolvedMin = min == null || !Double.isFinite(min) ? getBaseRaceClassScale(data, stat) : min;
+        return resolvedMin * 4.0D;
     }
 
     private static int getBaseStatValue(StatsData data, String stat) {

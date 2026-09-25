@@ -5,6 +5,7 @@ import com.dmzrevamp.mixin.client.LockOnEventAccessor;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.network.LocateMasterStructureC2SPacket;
 import com.dragonminez.client.events.LockOnEvent;
+import com.dragonminez.client.systems.taiyoken.TaiyokenBlindState;
 import com.dragonminez.common.init.MainSounds;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.util.CuriosUtil;
@@ -17,6 +18,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -26,6 +28,14 @@ public final class ScouterClientState {
     private static final int SCOUTER_YELLOW = 0xFFFF55;
     private static final double SCOUTER_LOCK_RANGE = 50.0D;
     private static final int MASTER_SEARCH_RESYNC_TICKS = 100;
+    private static final float SCOUTER_FRAME_WIDTH = 70.0F;
+    private static final float SCOUTER_CENTER_X = 41.0F;
+    private static final float SCOUTER_CENTER_Y = 19.0F;
+    private static final float SCOUTER_RETICLE_SIZE = 18.0F;
+    private static final float SCOUTER_ARROW_SIZE = 5.0F;
+    private static final float SCOUTER_ARROW_GAP = 2.0F;
+    private static final float SCOUTER_NUMBERS_RIGHT = 30.0F;
+    private static final float SCOUTER_NUMBERS_Y = 17.0F;
 
     private static Mode mode = Mode.OFF;
     private static BlockPos masterTarget;
@@ -112,27 +122,25 @@ public final class ScouterClientState {
         masterTarget = target;
     }
 
-    public static void drawBattlePowerText(GuiGraphics graphics, String value) {
+    public static void drawBattlePowerText(GuiGraphics graphics, String value, boolean mirrored) {
         Font font = Minecraft.getInstance().font;
-        String text = value;
         float scale = 0.45F;
-        float centerX = 18.0F;
-        float y = -5.0F;
+        float textWidth = font.width(value) * scale;
+        float localX = mirrored ? SCOUTER_FRAME_WIDTH - SCOUTER_NUMBERS_RIGHT : SCOUTER_NUMBERS_RIGHT - textWidth;
         graphics.pose().pushPose();
         graphics.pose().scale(scale, scale, 1.0F);
-        int x = Math.round((centerX - font.width(text) * scale / 2.0F) / scale);
-        graphics.drawString(font, text, x, Math.round(y / scale), SCOUTER_YELLOW, false);
+        graphics.drawString(font, value, Math.round(localX / scale), Math.round(SCOUTER_NUMBERS_Y / scale), SCOUTER_YELLOW, false);
         graphics.pose().popPose();
     }
 
-    public static void renderMasterSearch(GuiGraphics graphics, ResourceLocation scouterTexture) {
+    public static void renderMasterSearch(GuiGraphics graphics, ResourceLocation scouterTexture, boolean mirrored) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || masterTarget == null) {
             return;
         }
 
         int direction = directionIndex(player, Vec3.atCenterOf(masterTarget));
-        drawDirection(graphics, scouterTexture, direction);
+        drawDirection(graphics, scouterTexture, direction, mirrored);
     }
 
     public static void toggleScouterLock(Player player, StatsData data) {
@@ -158,6 +166,11 @@ public final class ScouterClientState {
         }
         if (!scouterBackedLock) {
             return false;
+        }
+        if (TaiyokenBlindState.isActive()) {
+            LockOnEvent.unlock();
+            scouterBackedLock = false;
+            return true;
         }
 
         LivingEntity target = LockOnEventAccessor.dmzrevamp$getLockedTarget();
@@ -187,10 +200,10 @@ public final class ScouterClientState {
         if (cachedScouterPlayer == player && cachedScouterTick == player.tickCount) {
             return cachedHasScouter;
         }
-        var stack = CuriosUtil.getFirstStack(player, "head_tech");
+        ItemStack stack = CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
         cachedScouterPlayer = player;
         cachedScouterTick = player.tickCount;
-        cachedHasScouter = !stack.isEmpty() && stack.getItem().getDescriptionId().contains("scouter");
+        cachedHasScouter = !stack.isEmpty();
         return cachedHasScouter;
     }
 
@@ -247,18 +260,25 @@ public final class ScouterClientState {
         return 7;
     }
 
-    private static void drawDirection(GuiGraphics graphics, ResourceLocation texture, int direction) {
+    private static void drawDirection(GuiGraphics graphics, ResourceLocation texture, int direction, boolean mirrored) {
+        float centerX = mirrored ? SCOUTER_FRAME_WIDTH - SCOUTER_CENTER_X : SCOUTER_CENTER_X;
+        float reach = SCOUTER_RETICLE_SIZE / 2.0F + SCOUTER_ARROW_GAP;
+        float half = SCOUTER_ARROW_SIZE / 2.0F;
         if (direction == 0 || direction == 1 || direction == 7) {
-            graphics.blit(texture, 40, -16, 26.0F, 75.0F, 5, 5, 128, 128);
+            graphics.blit(texture, Math.round(centerX - half), Math.round(SCOUTER_CENTER_Y - reach - SCOUTER_ARROW_SIZE),
+                    26.0F, 75.0F, 5, 5, 128, 128);
         }
         if (direction == 1 || direction == 2 || direction == 3) {
-            graphics.blit(texture, 50, -8, 14.0F, 75.0F, 5, 5, 128, 128);
+            graphics.blit(texture, Math.round(centerX + reach), Math.round(SCOUTER_CENTER_Y - half),
+                    14.0F, 75.0F, 5, 5, 128, 128);
         }
         if (direction == 3 || direction == 4 || direction == 5) {
-            graphics.blit(texture, 40, 0, 34.0F, 75.0F, 5, 5, 128, 128);
+            graphics.blit(texture, Math.round(centerX - half), Math.round(SCOUTER_CENTER_Y + reach),
+                    34.0F, 75.0F, 5, 5, 128, 128);
         }
         if (direction == 5 || direction == 6 || direction == 7) {
-            graphics.blit(texture, 30, -8, 19.0F, 75.0F, 5, 5, 128, 128);
+            graphics.blit(texture, Math.round(centerX - reach - SCOUTER_ARROW_SIZE), Math.round(SCOUTER_CENTER_Y - half),
+                    19.0F, 75.0F, 5, 5, 128, 128);
         }
     }
 

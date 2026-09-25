@@ -327,9 +327,9 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     }
 
     @Inject(method = "updatePanelWidgetOffsets", at = @At("RETURN"), remap = false, require = 0)
-    private void dmzrevamp$slidePrestigeButtonWithRightPanel(int leftOffset, int rightOffset, CallbackInfo ci) {
+    private void dmzrevamp$slidePrestigeButtonWithRightPanel(float leftOffset, float rightOffset, CallbackInfo ci) {
         if (dmzrevamp$prestigeButton != null) {
-            dmzrevamp$prestigeButton.setX(getUiWidth() - 158 + 35 + rightOffset);
+            dmzrevamp$prestigeButton.setX(Math.round(getUiWidth() - 158 + 35 + rightOffset));
         }
     }
 
@@ -481,12 +481,6 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         return DmzRevampHelper.getMaxSpeedValue(data);
     }
 
-    @ModifyConstant(method = "initStatButtons", constant = @Constant(stringValue = "SKP"), remap = false, require = 0)
-    // Handles the renameSkpButton logic for this class.
-    private String dmzrevamp$renameSkpButton(String original) {
-        return Component.translatable("gui.dragonminez.character_stats.spd").getString();
-    }
-
     @Redirect(
             method = "renderStatsInfo",
             at = @At(
@@ -589,23 +583,6 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
             case 10000 -> 100000;
             default -> 1;
         };
-    }
-
-    @Redirect(
-            method = "lambda$createStatButton$2",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Ljava/lang/String;toUpperCase()Ljava/lang/String;"
-            ),
-            remap = false
-    )
-    // Handles the mapSpdButtonBackToSkp logic for this class.
-    private String dmzrevamp$mapSpdButtonBackToSkp(String statName) {
-        String localizedSpd = Component.translatable("gui.dragonminez.character_stats.spd").getString();
-        if ("SPD".equalsIgnoreCase(statName) || localizedSpd.equalsIgnoreCase(statName)) {
-            return "SKP";
-        }
-        return statName.toUpperCase();
     }
 
     @ModifyConstant(

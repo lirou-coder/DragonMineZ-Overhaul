@@ -128,8 +128,8 @@ repositories {
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver
 }
 
-def dmzJar = file('../reference mods/dragonminez-2.1.3.jar')
-def dmzApiJar = layout.buildDirectory.file('compat/dragonminez-2.1.3-api.jar')
+def dmzJar = file('../reference mods/dragonminez-2.2-alpha.jar')
+def dmzApiJar = layout.buildDirectory.file('compat/dragonminez-2.2-alpha-api.jar')
 
 tasks.register('prepareDmzApiJar') {
     inputs.file(dmzJar)
@@ -196,7 +196,7 @@ dependencies {
     // Production mod jars must be remapped to the official mappings used by
     // the Forge development runtime. Loading these directly from run/mods
     // leaves obfuscated mixin shadows (m_... names) and crashes at startup.
-    runtimeOnly fg.deobf('local:dragonminez:2.1.3')
+    runtimeOnly fg.deobf('local:dragonminez:2.2-alpha')
     runtimeOnly fg.deobf('local:curios-forge:5.14.1+1.20.1')
     runtimeOnly fg.deobf('local:geckolib-forge-1.20.1:4.8.3')
     runtimeOnly fg.deobf('local:TerraBlender-forge-1.20.1:3.0.1.10')

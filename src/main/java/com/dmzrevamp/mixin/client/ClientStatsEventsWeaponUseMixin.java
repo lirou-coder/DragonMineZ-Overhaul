@@ -20,18 +20,20 @@ public abstract class ClientStatsEventsWeaponUseMixin {
     }
 
     @Redirect(
-            method = "lambda$onClientTick$3",
+            method = {"lambda$onClientTick$3", "lambda$onClientTick$4", "lambda$onClientTick$5"},
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;m_41619_()Z"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private static boolean dmzrevamp$treatDmzWeaponsAsEmptyForBlocking(ItemStack stack) {
         return HeldItemTechniqueUse.canBlockWithHeldItem(stack);
     }
 
     @Redirect(
-            method = "lambda$onClientTick$3",
+            method = {"lambda$onClientTick$3", "lambda$onClientTick$4", "lambda$onClientTick$5"},
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/combat/logic/player/PlayerAttackHelper;isKiWeaponActive(Lnet/minecraft/world/entity/player/Player;)Z"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private static boolean dmzrevamp$allowBlockingWithActiveKiWeapon(Player player) {
         // These checks only gate guarding. The Ki Weapon remains active for

@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(value = ClientStatsEvents.class, remap = false)
 public abstract class ClientStatsEventsScouterMixin {
     @Redirect(
-            method = "lambda$onClientTick$3",
+            method = {"lambda$onClientTick$3", "lambda$onClientTick$4", "lambda$onClientTick$5"},
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/client/gui/hud/ScouterHUD;setRenderingInfo(Z)V"),
             require = 0
     )

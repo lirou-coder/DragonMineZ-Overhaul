@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -80,7 +81,7 @@ public record LocateMasterStructureC2SPacket() {
     }
 
     private static boolean hasScouter(ServerPlayer player) {
-        var stack = com.dragonminez.common.util.CuriosUtil.getFirstStack(player, "head_tech");
-        return !stack.isEmpty() && stack.getItem().getDescriptionId().contains("scouter");
+        ItemStack stack = com.dragonminez.common.util.CuriosUtil.getFirstStackForItem(player, "head_tech", "scouter");
+        return !stack.isEmpty();
     }
 }

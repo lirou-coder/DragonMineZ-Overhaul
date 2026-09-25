@@ -6,64 +6,30 @@ import com.dragonminez.common.combat.clash.ClashParticipant;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
-import org.spongepowered.asm.mixin.injection.ModifyConstant;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ClashParticipant.class)
 public abstract class ClashParticipantConfiguredMixin implements com.dmzrevamp.revamp.ki.ClashParticipantAccess {
-    @ModifyArg(
-            method = "<init>",
-            at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(DD)D"),
-            index = 1,
-            remap = false,
-            require = 0
-    )
-    private double dmzrevamp$neutralizeNativeKiDamageInfluence(double projectileDamage) {
-        // The complete Overhaul clash system applies Ki damage exactly once in KiClashTeams.
-        // Keeping DMZ's captured statPower here would also improve NPC accuracy and double the advantage.
-        // Modify Math.max's argument instead of redirecting getKiDamage directly: Ragnarok also
-        // redirects that invocation for planet clashes, and two redirects cannot own the same call.
-        return 1D;
-    }
     @Accessor("momentum")
     public abstract float dmzrevamp$getMomentum();
 
     @Accessor("momentum")
     public abstract void dmzrevamp$setMomentum(float momentum);
 
+    /** Share every native 2.2 GOOD/PERFECT/NPC burst with the whole Overhaul team. */
     @Inject(method = "addBurst", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$shareTeamBurst(float efficiency, CallbackInfo ci) {
         KiClashTeams.applyMomentumBurst((ClashParticipant) (Object) this, efficiency);
         ci.cancel();
     }
-    @ModifyConstant(method = "tickMeter", constant = @Constant(floatValue = 0.01F), remap = false)
-    private float dmzrevamp$meterSpeed(float original) { return KiClashConfigured.get().meterSpeedPerTick; }
 
-    @ModifyConstant(method = "tickMeter", constant = @Constant(floatValue = 0.96F), remap = false)
+    /** Keep Overhaul's configurable decay/helper reduction while targeting DMZ 2.2's 0.94 baseline. */
+    @ModifyConstant(method = "tickMeter", constant = @Constant(floatValue = 0.94F), remap = false)
     private float dmzrevamp$momentumDecay(float original) {
-        return KiClashTeams.adjustedMomentumDecay((ClashParticipant) (Object) this, KiClashConfigured.get().momentumDecayPerTick);
-    }
-
-    @ModifyConstant(method = "botConsistencyPenalty", constant = @Constant(floatValue = 0.78F), remap = false)
-    private static float dmzrevamp$goodLow(float original) { return KiClashConfigured.get().goodAreaLow; }
-
-    @ModifyConstant(method = "botConsistencyPenalty", constant = @Constant(floatValue = 0.96F), remap = false)
-    private static float dmzrevamp$goodHigh(float original) { return KiClashConfigured.get().goodAreaHigh; }
-
-    @Inject(method = "scoreEfficiency", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void dmzrevamp$configuredScore(float phase, CallbackInfoReturnable<Float> cir) {
-        var config = KiClashConfigured.get();
-        if (phase < config.goodAreaLow || phase > config.goodAreaHigh) {
-            cir.setReturnValue(config.offWindowMomentumEfficiency);
-            return;
-        }
-        float center = (config.goodAreaLow + config.goodAreaHigh) * 0.5F;
-        float half = Math.max(0.0001F, (config.goodAreaHigh - config.goodAreaLow) * 0.5F);
-        cir.setReturnValue(config.offWindowMomentumEfficiency
-                + (1F - config.offWindowMomentumEfficiency) * Math.max(0F, 1F - Math.abs(phase - center) / half));
+        return KiClashTeams.adjustedMomentumDecay((ClashParticipant) (Object) this,
+                KiClashConfigured.get().momentumDecayPerTick);
     }
 }

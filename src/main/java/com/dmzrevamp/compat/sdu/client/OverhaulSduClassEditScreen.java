@@ -84,7 +84,9 @@ public final class OverhaulSduClassEditScreen extends RaceClassStatsScreen {
         scaling.setStrikePowerScaling(source.skpScaling);
         scaling.setStaminaScaling(source.stmScaling);
         scaling.setDefenseScaling(source.defScaling);
+        scaling.setDefenseScalingMax(source.defScaling * 4.0D);
         scaling.setVitalityScaling(source.vitScaling);
+        scaling.setVitalityScalingMax(source.vitScaling * 4.0D);
         scaling.setKiPowerScaling(source.pwrScaling);
         scaling.setEnergyScaling(source.eneScaling);
         target.setStatScaling(scaling);

@@ -137,10 +137,6 @@ public final class DmzRevampConfig {
             .comment("Multiplier for Overhaul custom Dynamic Growth actions that are not unit-based movement, such as block, parry, dodge, counter and gravity training.")
             .defineInRange("dynamicGrowth.customActions.otherActionMultiplier", 0.5D, 0D, 100D);
 
-    public static final ForgeConfigSpec.IntValue MAX_MASTER_WEIGHT = BUILDER
-            .comment("Maximum weight value that master NPCs can give to a player.")
-            .defineInRange("training.maxMasterWeight", 1_000_000_000, 1, 1_000_000_000);
-
     public static final ForgeConfigSpec.DoubleValue KI_OVERCHARGE_DESTRUCTION_MULTIPLIER_CAP = BUILDER
             .comment("Maximum final destruction/explosion multiplier allowed for overcharged Ki attacks. 2.0 = up to two times normal destruction.")
             .defineInRange("kiAttacks.overchargeDestructionMultiplierCap", 2D, 1D, 100D);

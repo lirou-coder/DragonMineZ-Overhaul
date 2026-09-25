@@ -11,11 +11,11 @@ The Overhaul compares your facing direction with the directions of the two origi
 - Looking roughly the same way as one fighter places you on that fighter's team.
 - Looking roughly opposite places you on the opposing team.
 
-Each participant receives the normal clash meter and timing speed. A later participant is not treated as a slower spectator: they enter as a full member whose momentum is synchronized with the team.
+Each helper receives their own Dragon Mine Z 2.2 **ClashMeter** seed while sharing the original clash's start time. Player helper inputs are validated by the same native timing path used by the two original fighters. NPC helpers use the same deterministic meter AI as native clash participants.
 
 ## Shared momentum
 
-Everyone on the same team works on one momentum value. When any member earns momentum, the updated value is shared with every teammate.
+Everyone on the same team works on one momentum value. When any member earns momentum from a GOOD or PERFECT input, the updated value is shared with every teammate.
 
 Additional teammates also reduce the team's passive momentum loss. The reduction per helper and its maximum cap are configurable.
 

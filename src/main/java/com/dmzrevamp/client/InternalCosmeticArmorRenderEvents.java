@@ -1,11 +1,8 @@
 package com.dmzrevamp.client;
 
 import com.dmzrevamp.DmzRevampMod;
-import com.dmzrevamp.revamp.cosmetic.InternalCosmeticArmorRows;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderArmEvent;
 import net.minecraftforge.client.event.RenderHandEvent;

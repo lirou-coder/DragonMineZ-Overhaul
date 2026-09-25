@@ -12,7 +12,7 @@ import java.util.List;
 public abstract class DMZHairLayerHelmetListModeMixin {
     // Changes the DMZ helmet hair list from whitelist behavior to blacklist behavior when configured.
     @Redirect(
-            method = "renderHair",
+            method = "shouldRenderHair",
             at = @At(value = "INVOKE", target = "Ljava/util/List;contains(Ljava/lang/Object;)Z"),
             remap = false
     )

@@ -8,7 +8,7 @@ import com.dragonminez.common.network.C2S.InstantTransmissionTravelC2S;
 import com.dragonminez.common.network.C2S.InstantTransmissionTravelToPlayerC2S;
 import com.dragonminez.common.network.C2S.SokidanControlC2S;
 import com.dragonminez.common.network.C2S.StrikeAttackC2S;
-import com.dragonminez.common.network.C2S.TaiyokenCastC2S;
+import com.dragonminez.common.network.C2S.EvasionCastC2S;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 @Mixin({StrikeAttackC2S.class, DashC2S.class, ExecuteActionC2S.class,
         InstantTransmissionTapC2S.class, InstantTransmissionTravelC2S.class,
         InstantTransmissionTravelToPlayerC2S.class, SokidanControlC2S.class,
-        TaiyokenCastC2S.class})
+        EvasionCastC2S.class})
 public abstract class PostClashStrikeAttackPacketMixin {
     @Inject(method = "handle", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$blockWhilePunished(Supplier<NetworkEvent.Context> contextSupplier, CallbackInfo ci) {

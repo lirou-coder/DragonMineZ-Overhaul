@@ -663,7 +663,6 @@ public abstract class SkillsMenuScreenMixin {
         }
         String id = technique.getId();
         return StrikeAttackTemplates.ANDROID_ABSORPTION.equals(id)
-                || StrikeAttackTemplates.SLEEP_RECOVERY.equals(id)
                 || StrikeAttackTemplates.NAMEKIAN_REGENERATION.equals(id);
     }
 

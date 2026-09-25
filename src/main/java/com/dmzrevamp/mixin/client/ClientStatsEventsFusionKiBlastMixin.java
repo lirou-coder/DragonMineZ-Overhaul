@@ -19,18 +19,20 @@ public abstract class ClientStatsEventsFusionKiBlastMixin {
     }
 
     @Redirect(
-            method = "lambda$onClientTick$3",
+            method = {"lambda$onClientTick$3", "lambda$onClientTick$4", "lambda$onClientTick$5"},
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/character/Status;isFused()Z"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private static boolean dmzrevamp$allowBasicKiBlastWhileFused(Status status) {
         return false;
     }
 
     @Redirect(
-            method = "lambda$onClientTick$3",
+            method = {"lambda$onClientTick$3", "lambda$onClientTick$4", "lambda$onClientTick$5"},
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/character/Status;isFusionLeader()Z"),
-            remap = false
+            remap = false,
+            require = 0
     )
     private static boolean dmzrevamp$allowBasicKiBlastForFusionLeader(Status status) {
         return false;

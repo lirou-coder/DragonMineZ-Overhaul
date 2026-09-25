@@ -2,6 +2,7 @@ package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.compat.DmzSkillProgressionCompat;
 import com.dmzrevamp.revamp.prestige.PrestigeDataAccess;
+import com.dmzrevamp.revamp.strike.RaceExclusiveStrikeEvents;
 import com.dmzrevamp.revamp.strike.StrikeAttackTemplates;
 import com.dmzrevamp.racial.impl.NamekianRevampRacialSkill;
 import com.dragonminez.common.stats.StatsData;
@@ -64,7 +65,7 @@ public abstract class StatsDataPrestigeDataMixin implements PrestigeDataAccess {
         // even when the command is configured to preserve ordinary skills.
         // The racial passive skills themselves still obey DMZ's keepSkills option.
         data.getTechniques().removeTechnique(StrikeAttackTemplates.ANDROID_ABSORPTION);
-        data.getTechniques().removeTechnique(StrikeAttackTemplates.SLEEP_RECOVERY);
+        data.getTechniques().removeTechnique(RaceExclusiveStrikeEvents.SLEEP_RECOVERY_ID);
         data.getTechniques().removeTechnique(StrikeAttackTemplates.NAMEKIAN_REGENERATION);
         NamekianRevampRacialSkill.resetAssimilation(player, data);
         if (!keepSkills) {

@@ -7,7 +7,10 @@ import com.dragonminez.common.network.S2C.ProgressionSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.techniques.EvasionAttackData;
+import com.dragonminez.common.stats.techniques.PredefinedTechniques;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
+import com.dragonminez.common.stats.techniques.TechniqueData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -21,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class RaceExclusiveStrikeEvents {
+    public static final String SLEEP_RECOVERY_ID = "sleep_recovery";
     private static final boolean SAIRENS_WORLD_LOADED = ModList.get().isLoaded("sairens_dmz_world");
     private static final Map<UUID, Eligibility> LAST_ELIGIBILITY = new ConcurrentHashMap<>();
     private RaceExclusiveStrikeEvents() {
@@ -63,9 +67,7 @@ public final class RaceExclusiveStrikeEvents {
             if (eligibility.androidAbsorption) {
                 changed |= grant(data, StrikeAttackTemplates.ANDROID_ABSORPTION);
             }
-            if (eligibility.sleepRecovery) {
-                changed |= grant(data, StrikeAttackTemplates.SLEEP_RECOVERY);
-            }
+            changed |= migrateSleepRecovery(data, eligibility.sleepRecovery);
             if (eligibility.namekianRegeneration) {
                 changed |= grant(data, StrikeAttackTemplates.NAMEKIAN_REGENERATION);
             }
@@ -73,6 +75,33 @@ public final class RaceExclusiveStrikeEvents {
                 NetworkHandler.sendToTrackingEntityAndSelf(new ProgressionSyncS2C(player), player);
             }
         });
+    }
+
+    /**
+     * DMZ 2.2 moved Sleep Recovery into the native Evasion system. Replace any
+     * pre-2.2 Overhaul Strike save with the native Evasion template while
+     * preserving the equipped slot that already references the same id.
+     */
+    private static boolean migrateSleepRecovery(StatsData data, boolean eligible) {
+        TechniqueData current = data.getTechniques().getUnlockedTechniques().get(SLEEP_RECOVERY_ID);
+        if (!eligible) {
+            if (current instanceof StrikeAttackData) {
+                data.getTechniques().removeTechnique(SLEEP_RECOVERY_ID);
+                return true;
+            }
+            return false;
+        }
+        if (current instanceof EvasionAttackData) {
+            return false;
+        }
+        TechniqueData nativeSleep = PredefinedTechniques.copyOf(SLEEP_RECOVERY_ID);
+        if (!(nativeSleep instanceof EvasionAttackData)) {
+            return false;
+        }
+        // unlockTechnique replaces an existing object with the same id and does
+        // not clear equipped slot strings, so legacy Majin loadouts are migrated.
+        data.getTechniques().unlockTechnique(nativeSleep);
+        return true;
     }
 
     private static Eligibility eligibility(StatsData data) {
@@ -102,7 +131,7 @@ public final class RaceExclusiveStrikeEvents {
         private boolean hasAllRequired(StatsData data) {
             var unlocked = data.getTechniques().getUnlockedTechniques();
             return (!androidAbsorption || unlocked.containsKey(StrikeAttackTemplates.ANDROID_ABSORPTION))
-                    && (!sleepRecovery || unlocked.containsKey(StrikeAttackTemplates.SLEEP_RECOVERY))
+                    && (!sleepRecovery || unlocked.get(SLEEP_RECOVERY_ID) instanceof EvasionAttackData)
                     && (!namekianRegeneration || unlocked.containsKey(StrikeAttackTemplates.NAMEKIAN_REGENERATION));
         }
     }

@@ -45,35 +45,24 @@ public final class StrikeClashConfigured {
 
     public static final class Config {
         public boolean enabled = true;
-        public float meterSpeedPerTick = 0.005F;
-        public float goodAreaLow = 0.78F;
-        public float goodAreaHigh = 0.96F;
         public float momentumGainDefaultMultiplier = 1.0F;
-        public float offWindowMomentumEfficiency = 0.18F;
         public float momentumDecayPerTick = 0.96F;
         public float innerAdvantageLow = 0.20F;
         public float innerAdvantageHigh = 0.80F;
         public int maxClashDurationTicks = 600;
         public boolean meleeDMGInfluence = true;
         public float meleeDMGInfluenceMultiplier = 0.75F;
-        public boolean goodAreaSpeedInfluence = true;
-        public float goodAreaSpeedInfluenceMultiplier = 1.0F;
         public float winnerDamageIncreaseMultiplier = 1.2F;
         public boolean strikeAttackHasDelay = true;
         public int strikeAttackDelayTicks = 10;
 
         private Config sanitize() {
-            meterSpeedPerTick = finiteClamp(meterSpeedPerTick, 0.0001F, 1F, 0.01F);
-            goodAreaLow = finiteClamp(goodAreaLow, 0F, 1F, 0.78F);
-            goodAreaHigh = finiteClamp(goodAreaHigh, goodAreaLow, 1F, 0.96F);
             momentumGainDefaultMultiplier = finiteClamp(momentumGainDefaultMultiplier, 0F, Float.MAX_VALUE, 1F);
-            offWindowMomentumEfficiency = finiteClamp(offWindowMomentumEfficiency, 0F, 1F, 0.18F);
             momentumDecayPerTick = finiteClamp(momentumDecayPerTick, 0F, 1F, 0.96F);
             innerAdvantageLow = finiteClamp(innerAdvantageLow, 0F, 0.5F, 0.20F);
             innerAdvantageHigh = finiteClamp(innerAdvantageHigh, 0.5F, 1F, 0.80F);
             maxClashDurationTicks = Math.max(20, maxClashDurationTicks);
             meleeDMGInfluenceMultiplier = finiteClamp(meleeDMGInfluenceMultiplier, 0F, Float.MAX_VALUE, 0.75F);
-            goodAreaSpeedInfluenceMultiplier = finiteClamp(goodAreaSpeedInfluenceMultiplier, 0F, Float.MAX_VALUE, 1F);
             winnerDamageIncreaseMultiplier = finiteClamp(winnerDamageIncreaseMultiplier, 0F, Float.MAX_VALUE, 1.2F);
             strikeAttackDelayTicks = Math.max(0, strikeAttackDelayTicks);
             return this;
