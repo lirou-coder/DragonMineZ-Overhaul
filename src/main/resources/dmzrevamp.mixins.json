@@ -35,6 +35,7 @@
     "ConfigManagerSparkingCompatMixin",
     "DBSagasEntityRevampTransformFieldsMixin",
     "DBSagasEntityStrikeDelayMixin",
+    "DBSagasEntityComboTargetAccessor",
     "DBSagasEntityPrestigeDifficultyMixin",
     "EntitiesEventsPrestigeDifficultyMixin",
     "EntitiesConfigDefaultsMixin",

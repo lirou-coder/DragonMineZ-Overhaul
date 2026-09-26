@@ -30,6 +30,10 @@ public abstract class SagaComboManagerStrikeClashMixin {
             return;
         }
         if (user == null || target == null) return;
+        if (StrikeClashManager.tryStartNpcCombo(user, target)) {
+            ci.cancel();
+            return;
+        }
         DBSagasEntity.ComboType combo = DBSagasEntity.ComboType.fromId(comboId);
         if (combo == null || combo == DBSagasEntity.ComboType.SLEEP_RECOVERY) return;
 

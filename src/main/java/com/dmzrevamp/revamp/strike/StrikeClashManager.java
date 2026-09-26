@@ -4,9 +4,11 @@ import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.mixin.StrikeAttackActiveAccessor;
 import com.dmzrevamp.mixin.StrikeAttackHandlerStateAccessor;
+import com.dmzrevamp.mixin.DBSagasEntityComboTargetAccessor;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.network.StrikeClashModeS2CPacket;
 import com.dmzrevamp.revamp.ki.ConfiguredClashMeter;
+import com.dmzrevamp.revamp.battlepower.AccurateMobBattlePowerCalculator;
 import com.dragonminez.common.combat.clash.BeamClashManager;
 import com.dragonminez.common.combat.clash.ClashMeter;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
@@ -109,10 +111,43 @@ public final class StrikeClashManager {
         abortPlayerStrike(clash.b);
         clash.alignAndLock();
         ACTIVE.add(clash);
-        sendMode(clash.a, true);
-        sendMode(clash.b, true);
+        sendMode(clash.a, clash.b, true);
+        sendMode(clash.b, clash.a, true);
         stopPlayerTechniqueAnimation(clash.a.entity);
         stopPlayerTechniqueAnimation(clash.b.entity);
+        return true;
+    }
+
+    /** Starts a Strike Clash when two saga NPCs launch Combo Attacks at each other. */
+    public static boolean tryStartNpcCombo(DBSagasEntity attacker, LivingEntity target) {
+        if (!StrikeClashConfigured.get().enabled || attacker == null
+                || !(target instanceof DBSagasEntity opponent)
+                || attacker == opponent || !attacker.isAlive() || !opponent.isAlive()
+                || !attacker.isComboing() || !opponent.isComboing()
+                || isClashing(attacker.getUUID()) || isClashing(opponent.getUUID())
+                || BeamClashManager.isClashing(attacker.getUUID())
+                || BeamClashManager.isClashing(opponent.getUUID())) {
+            return false;
+        }
+
+        LivingEntity attackerTarget = ((DBSagasEntityComboTargetAccessor) attacker).dmzrevamp$getComboTarget();
+        LivingEntity opponentTarget = ((DBSagasEntityComboTargetAccessor) opponent).dmzrevamp$getComboTarget();
+        if (attackerTarget != opponent || opponentTarget != attacker) return false;
+
+        DBSagasEntity.ComboType attackerCombo = DBSagasEntity.ComboType.fromId(attacker.getComboId());
+        DBSagasEntity.ComboType opponentCombo = DBSagasEntity.ComboType.fromId(opponent.getComboId());
+        if (attackerCombo == null || opponentCombo == null
+                || attackerCombo == DBSagasEntity.ComboType.SLEEP_RECOVERY
+                || opponentCombo == DBSagasEntity.ComboType.SLEEP_RECOVERY
+                || !(attacker.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        Clash clash = new Clash(new Participant(attacker, null), new Participant(opponent, null), level);
+        clash.alignAndLock();
+        ACTIVE.add(clash);
+        sendMode(clash.a, clash.b, true);
+        sendMode(clash.b, clash.a, true);
         return true;
     }
 
@@ -226,9 +261,9 @@ public final class StrikeClashManager {
         return StrikeAttackHandlerStateAccessor.dmzrevamp$getActiveStrikes();
     }
 
-    private static void sendMode(Participant participant, boolean active) {
+    private static void sendMode(Participant participant, Participant opponent, boolean active) {
         LivingEntity entity = participant.entity;
-        float areaMultiplier = active ? participant.goodAreaMultiplier() : 1.0F;
+        float areaMultiplier = active ? participant.goodAreaMultiplier(opponent) : 1.0F;
         StrikeClashConfigured.Config config = StrikeClashConfigured.get();
         DmzRevampNetwork.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
                 new StrikeClashModeS2CPacket(entity.getId(), active, areaMultiplier,
@@ -311,6 +346,18 @@ public final class StrikeClashManager {
         }
         AttributeInstance movement = entity.getAttribute(Attributes.MOVEMENT_SPEED);
         return Math.max(0.0001D, movement == null ? 1D : movement.getValue() / 0.1D);
+    }
+
+    private static double battlePower(LivingEntity entity) {
+        if (entity instanceof ServerPlayer player) {
+            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+            if (data != null) {
+                double exact = data.getBattlePowerExact();
+                if (Double.isFinite(exact) && exact > 0D) return exact;
+            }
+        }
+        double exact = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(entity);
+        return Double.isFinite(exact) && exact > 0D ? exact : 1D;
     }
 
     private static int visualAttackInterval(LivingEntity entity) {
@@ -402,6 +449,7 @@ public final class StrikeClashManager {
         private final boolean wasNoAi;
         private final int lockedNpcComboTimer;
         private final double initialMeleeDamage;
+        private final double initialBattlePower;
         private final long meterSeed;
         private final float npcAccuracy;
         private float momentum;
@@ -418,6 +466,7 @@ public final class StrikeClashManager {
             this.wasNoAi = entity instanceof Mob mob && mob.isNoAi();
             this.lockedNpcComboTimer = entity instanceof DBSagasEntity saga ? saga.comboTimer : 0;
             this.initialMeleeDamage = meleeDamage(entity);
+            this.initialBattlePower = battlePower(entity);
             this.meterSeed = entity.getRandom().nextLong();
             this.npcAccuracy = resolveNpcAccuracy(initialMeleeDamage, !(entity instanceof ServerPlayer));
         }
@@ -433,7 +482,7 @@ public final class StrikeClashManager {
             momentum *= config.momentumDecayPerTick;
             if (entity instanceof ServerPlayer) return;
 
-            float areaMultiplier = goodAreaMultiplier();
+            float areaMultiplier = goodAreaMultiplier(opponent);
             ClashMeter.Sample now = ConfiguredClashMeter.sampleStrike(meterSeed, age, areaMultiplier);
             if (now.cycle().index() <= consumedCycle || now.grade() == ClashMeter.Grade.MISS) return;
             ClashMeter.Sample next = ConfiguredClashMeter.sampleStrike(meterSeed, age + 1, areaMultiplier);
@@ -463,7 +512,7 @@ public final class StrikeClashManager {
             lastPressTime = pressTime;
 
             ClashMeter.Sample sample = ConfiguredClashMeter.sampleStrike(
-                    meterSeed, pressTime, goodAreaMultiplier());
+                    meterSeed, pressTime, goodAreaMultiplier(opponent));
             if (!Float.isFinite(claimedMarker) || Math.abs(sample.marker() - claimedMarker) > MARKER_MISMATCH) {
                 noteInvalidInput();
             }
@@ -493,12 +542,18 @@ public final class StrikeClashManager {
                     * config.momentumGainDefaultMultiplier * (float) influence;
         }
 
-        private float goodAreaMultiplier() {
+        private float goodAreaMultiplier(Participant opponent) {
             StrikeClashConfigured.Config config = StrikeClashConfigured.get();
             if (!config.goodAreaSpeedInfluence) return 1.0F;
-            double currentSpeed = speed(entity);
-            if (!Double.isFinite(currentSpeed) || currentSpeed <= 1D) return 1.0F;
-            double multiplier = 1D + (currentSpeed - 1D) * config.goodAreaSpeedInfluenceMultiplier;
+            boolean againstNpc = (entity instanceof ServerPlayer) != (opponent.entity instanceof ServerPlayer);
+            double advantageValue;
+            if (againstNpc) {
+                advantageValue = initialBattlePower / Math.max(0.0001D, opponent.initialBattlePower);
+            } else {
+                advantageValue = speed(entity);
+            }
+            if (!Double.isFinite(advantageValue) || advantageValue <= 1D) return 1.0F;
+            double multiplier = 1D + (advantageValue - 1D) * config.goodAreaSpeedInfluenceMultiplier;
             return (float) Math.min(Float.MAX_VALUE, Math.max(1D, multiplier));
         }
     }
@@ -617,7 +672,7 @@ public final class StrikeClashManager {
             double y = (a.entity.getEyeY() + b.entity.getEyeY()) * 0.5D + (level.random.nextDouble() - 0.5D) * 2D;
             double z = (a.entity.getZ() + b.entity.getZ()) * 0.5D + Math.sin(angle) * radius;
             level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0,
-                    0D, 0D, 0D, 1D);
+                    1D, 1D, 1D, 1D);
         }
 
         private void playBasicAttackAnimation(Participant participant) {
