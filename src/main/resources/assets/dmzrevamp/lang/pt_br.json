@@ -10,6 +10,7 @@
   "gui.dmzrevamp.character_stats.res.desc": "Aumenta sua Stamina máxima e reduz o dano recebido de inimigos",
   "gui.dmzrevamp.character_stats.speed": "Velocidade",
   "gui.dmzrevamp.character_stats.prestige": "Prestígio",
+  "gui.dmzrevamp.tutorial.stats.prestige": "Alcance o nível máximo e conclua todas as sagas para realizar Prestígio. Isso reinicia tudo, mas você se torna mais forte e cresce mais rápido a cada Prestígio",
   "gui.dmzrevamp.character_stats.prestige.tooltip.desc": "Cada Prestígio rompe seus limites e aumenta sua força natural, mas também fortalece os inimigos que você poderá enfrentar.",
   "gui.dmzrevamp.character_stats.prestige.tooltip.scale": "Aumento de Escala: x%s",
   "gui.dmzrevamp.character_stats.prestige.tooltip.mastery": "Aumento de Maestria: x%s",

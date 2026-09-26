@@ -8,6 +8,7 @@
   "gui.dmzrevamp.character_stats.res.desc": "Aumenta tu aguante máximo y reduce el daño que recibes de los enemigos",
   "gui.dmzrevamp.character_stats.speed": "Velocidad",
   "gui.dmzrevamp.character_stats.prestige": "Prestigio",
+  "gui.dmzrevamp.tutorial.stats.prestige": "Alcanza el nivel máximo y completa todas las sagas para obtener Prestigio. Esto reinicia todo, pero te vuelves más fuerte y progresas más rápido con cada Prestigio",
   "gui.dmzrevamp.character_stats.prestige.tooltip.desc": "Cada Prestigio rompe tus límites y aumenta tu fuerza natural, pero también fortalece a los enemigos que podrías enfrentar.",
   "gui.dmzrevamp.character_stats.prestige.tooltip.scale": "Aumento de escala: x%s",
   "gui.dmzrevamp.character_stats.prestige.tooltip.mastery": "Aumento de maestría: x%s",

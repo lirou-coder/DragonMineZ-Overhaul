@@ -10,6 +10,7 @@
   "gui.dmzrevamp.character_stats.res.desc": "Increases your maximum Stamina and reduces the damage you take from enemies",
   "gui.dmzrevamp.character_stats.speed": "Speed",
   "gui.dmzrevamp.character_stats.prestige": "Prestige",
+  "gui.dmzrevamp.tutorial.stats.prestige": "Reach max lvl and finish all sagas to prestige. this resets everything, but you become stronger and grow faster each prestige",
   "gui.dmzrevamp.character_stats.prestige.tooltip.desc": "Each Prestige breaks your limits and increases your natural strength, but also empowers the enemies you may face.",
   "gui.dmzrevamp.character_stats.prestige.tooltip.scale": "Scale Increase: x%s",
   "gui.dmzrevamp.character_stats.prestige.tooltip.mastery": "Mastery Increase: x%s",

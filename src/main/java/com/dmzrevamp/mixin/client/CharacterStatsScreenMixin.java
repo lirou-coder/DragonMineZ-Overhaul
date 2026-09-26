@@ -11,6 +11,8 @@ import com.dmzrevamp.revamp.stats.LongTpCostHelper;
 import com.dragonminez.client.util.TextUtil;
 import com.dmzrevamp.revamp.DmzRevampHelper;
 import com.dragonminez.client.gui.character.CharacterStatsScreen;
+import com.dragonminez.client.gui.tutorial.TutorialRect;
+import com.dragonminez.client.gui.tutorial.TutorialStep;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -71,6 +73,51 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
 
     protected CharacterStatsScreenMixin(Component title) {
         super(title);
+    }
+
+    @Inject(method = "tutorialSteps", at = @At("RETURN"), remap = false)
+    private void dmzrevamp$customizeStatsTutorial(CallbackInfoReturnable<List<TutorialStep>> cir) {
+        List<TutorialStep> steps = cir.getReturnValue();
+        if (steps == null || steps.size() < 12) return;
+
+        steps.set(5, TutorialStep.of("gui.dmzrevamp.character_stats.spd.desc")
+                .title("gui.dmzrevamp.character_stats.spd")
+                .highlight(() -> List.of(
+                        dmzrevamp$tutorialStatRow(1),
+                        dmzrevamp$tutorialStatisticRows(1, 1)
+                ))
+                .build());
+
+        steps.set(6, TutorialStep.of("gui.dmzrevamp.character_stats.res.desc")
+                .title("gui.dragonminez.character_stats.res")
+                .highlight(() -> List.of(
+                        dmzrevamp$tutorialStatRow(2),
+                        dmzrevamp$tutorialStatisticRows(2, 3)
+                ))
+                .build());
+
+        if (LevelingRevampConfig.prestigeEnabled()) {
+            steps.add(TutorialStep.of("gui.dmzrevamp.tutorial.stats.prestige")
+                    .title("gui.dmzrevamp.character_stats.prestige")
+                    .highlightOne(this::dmzrevamp$tutorialPrestigeRow)
+                    .build());
+        }
+    }
+
+    @Unique
+    private TutorialRect dmzrevamp$tutorialStatRow(int row) {
+        return TutorialRect.of(24, getUiHeight() / 2.0F - 4 + row * 12, 118, 11);
+    }
+
+    @Unique
+    private TutorialRect dmzrevamp$tutorialStatisticRows(int firstRow, int lastRow) {
+        return TutorialRect.of(getUiWidth() - 140, getUiHeight() / 2.0F - 65 + firstRow * 12,
+                112, (lastRow - firstRow + 1) * 12 - 1);
+    }
+
+    @Unique
+    private TutorialRect dmzrevamp$tutorialPrestigeRow() {
+        return TutorialRect.of(getUiWidth() - 140, getUiHeight() / 2.0F + 42, 112, 11);
     }
 
     @Redirect(
