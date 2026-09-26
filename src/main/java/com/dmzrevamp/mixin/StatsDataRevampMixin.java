@@ -150,6 +150,20 @@ public abstract class StatsDataRevampMixin implements BattlePowerCacheControl {
         cir.setReturnValue(DmzRevampHelper.getCurrentSpeedNoFormsValue(data));
     }
 
+    @Inject(method = "getSpeed", at = @At("HEAD"), cancellable = true, remap = false)
+    private void dmzrevamp$useOverhaulSpeedForDmzSpeedSystems(CallbackInfoReturnable<Double> cir) {
+        double speed = DmzRevampHelper.getCurrentSpeedValue((StatsData) (Object) this);
+        cir.setReturnValue(Double.isFinite(speed) ? Math.max(0D, speed) : 0D);
+    }
+
+    @Inject(method = "getMovementSpeedMultiplier", at = @At("HEAD"), cancellable = true, remap = false)
+    private void dmzrevamp$disableNativeMovementSpeedBonus(CallbackInfoReturnable<Double> cir) {
+        // Ground/swim/flight bonuses are applied by DmzSpeedRevampEvents. Keeping this at
+        // one prevents DMZ's RES-based movement modifier from being added a second time,
+        // while StatsData#getSpeed still feeds native step assist and Speed Dodge.
+        cir.setReturnValue(1D);
+    }
+
     @Inject(method = "getMaxKiDamage", at = @At("HEAD"), cancellable = true, remap = false)
     // Gives Ki Power a base damage value of 1 plus scaled PWR, matching the new battle-power and technique math.
     private void dmzrevamp$addBaseKiDamage(CallbackInfoReturnable<Double> cir) {

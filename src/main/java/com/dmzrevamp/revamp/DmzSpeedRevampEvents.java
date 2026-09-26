@@ -2,7 +2,6 @@ package com.dmzrevamp.revamp;
 
 import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.DmzRevampMod;
-import com.dmzrevamp.revamp.speed.SpeedLimitData;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
@@ -42,13 +41,8 @@ public final class DmzSpeedRevampEvents {
     private static final UUID SPD_MOVE_SPEED_UUID = UUID.fromString("a7b80f30-b2d0-4a24-94fd-81d5d76f3b11");
     private static final UUID SPD_ATTACK_SPEED_UUID = UUID.fromString("8ca68ce2-6e0f-4f3d-bb0d-bf8d138f95f3");
     private static final UUID SPD_SWIM_SPEED_UUID = UUID.fromString("4f9f0e9f-06f2-4aa0-a8b9-a9daea3a2f92");
-    private static final UUID SPD_STEP_HEIGHT_UUID = UUID.fromString("6cf39c32-85b9-4a7e-a7b5-9a06dd3fbe8a");
     private static final UUID FLY_SPEED_UUID = UUID.fromString("47ba2127-fb49-4f7b-8f7c-8e16e830b8d3");
-    private static final UUID DMZ_SPRINT_SPEED_UUID = UUID.fromString("c4c4e8b0-5f21-4f16-9a2d-123456789abc");
-    // Vanilla's sprint modifier must remain outside Overhaul's Speed Limit.
-    private static final UUID VANILLA_SPRINT_SPEED_UUID = UUID.fromString("662a6b8d-da3e-4c1c-8813-96ea6097278d");
     public static final float DEFAULT_CREATIVE_FLY_SPEED = 0.05F;
-    private static final double STEP_HEIGHT_SPEED_INTERVAL_PERCENT = 100D;
     private static final double FLUID_RUN_TOTAL_SPEED_THRESHOLD_PERCENT = 500D;
     private static final double SEARCH_FAST_FLIGHT_THRESHOLD_SQR = 0.55D * 0.55D;
     private static final double FLUID_RUN_STEP_DISTANCE = 0.6D;
@@ -136,7 +130,9 @@ public final class DmzSpeedRevampEvents {
     public static double getMaxRunningMovementSpeedBonusPercent(ServerPlayer player, StatsData data) {
         double rawSpeedBonusPercent = getRawMovementSpeedBonusPercent(player, data);
         double movementSoftCappedBonusPercent = DmzRevampHelper.getMovementSoftCappedBonusPercent(player, rawSpeedBonusPercent);
-        return sanitizePercent(DmzRevampHelper.getRampedBonusPercent(player, movementSoftCappedBonusPercent, DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get(), true));
+        return sanitizePercent(DmzRevampHelper.getRampedBonusPercent(player,
+                applyPlayerSpeedLimit(data, movementSoftCappedBonusPercent),
+                DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get(), true));
     }
 
     // Calculates raw movement from the effective Speed value before soft caps and ramping.
@@ -175,9 +171,7 @@ public final class DmzSpeedRevampEvents {
         if (!DmzRevampConfig.ENABLE_SPD_MOVEMENT_SPEED_MODIFIERS.get()) {
             return 1D;
         }
-        double rawFlightBonus = hasPlayerSpeedLimit(data)
-                ? getOverhaulFlightBonusPercent(data, combatFlight)
-                : getRawFlightBonusPercent(player, data, combatFlight);
+        double rawFlightBonus = getOverhaulFlightBonusPercent(data, combatFlight);
         double allowedBonusPercent = applyPlayerSpeedLimit(data,
                 getFlightSoftCappedBonusPercent(player, rawFlightBonus, combatFlight));
         double effectiveBonusPercent = getRampedFlightBonusPercent(player, allowedBonusPercent, movementTicks, true, combatFlight);
@@ -202,9 +196,7 @@ public final class DmzSpeedRevampEvents {
         if (!DmzRevampConfig.ENABLE_SPD_MOVEMENT_SPEED_MODIFIERS.get()) {
             return 100D;
         }
-        double rawFlightBonus = hasPlayerSpeedLimit(data)
-                ? getOverhaulFlightBonusPercent(data, combatFlight)
-                : getRawFlightBonusPercent(player, data, combatFlight);
+        double rawFlightBonus = getOverhaulFlightBonusPercent(data, combatFlight);
         double allowedBonusPercent = applyPlayerSpeedLimit(data,
                 getFlightSoftCappedBonusPercent(player, rawFlightBonus, combatFlight));
         return 100D + Math.max(0D, allowedBonusPercent);
@@ -215,14 +207,12 @@ public final class DmzSpeedRevampEvents {
         if (!DmzRevampConfig.ENABLE_SPD_MOVEMENT_SPEED_MODIFIERS.get()) {
             return 0D;
         }
-        double rawSpeedBonusPercent = getRawMovementSpeedBonusPercent(player, data);
+        double rawSpeedBonusPercent = DmzRevampHelper.getScaledMovementSpeedBonusPercent(
+                data, DmzRevampHelper.getCurrentMovementSpeedValue(data))
+                * DmzRevampConfig.REVAMP_MOVEMENT_SPEED_BONUS_MULTIPLIER.get();
         double movementSoftCappedBonusPercent = DmzRevampHelper.getMovementSoftCappedBonusPercent(player, rawSpeedBonusPercent);
-        return sanitizePercent(DmzRevampHelper.getRampedBonusPercent(player, movementSoftCappedBonusPercent, rampTicks, true));
-    }
-
-    // Returns the value used by getStepHeightAdditionForSpeed.
-    public static double getStepHeightAdditionForSpeed(double movementSpeedBonusPercent) {
-        return Math.min(64D, Math.floor(Math.max(0D, movementSpeedBonusPercent) / STEP_HEIGHT_SPEED_INTERVAL_PERCENT));
+        return sanitizePercent(DmzRevampHelper.getRampedBonusPercent(
+                player, applyPlayerSpeedLimit(data, movementSoftCappedBonusPercent), rampTicks, true));
     }
 
     // Lets very fast sprinting players skim across water or lava instead of sinking immediately.
@@ -263,13 +253,13 @@ public final class DmzSpeedRevampEvents {
         emitFluidRunStepEffects(player, fluidState, surfaceY);
     }
 
-    // Syncs vanilla/Forge attributes with Overhaul's SPD rules for ground movement, attack speed, swimming, and step height.
+    // Syncs vanilla/Forge attributes with Overhaul's SPD rules for ground movement, attack speed and swimming.
+    // Step assist is deliberately left to DMZ 2.2, whose threshold/bonus now consume Overhaul Speed through StatsData#getSpeed.
     private static void applySpeedRevamp(ServerPlayer player, StatsData data) {
         AttributeInstance moveSpeed = player.getAttribute(Attributes.MOVEMENT_SPEED);
         AttributeInstance attackSpeed = player.getAttribute(Attributes.ATTACK_SPEED);
         AttributeInstance swimSpeed = player.getAttribute(ForgeMod.SWIM_SPEED.get());
-        AttributeInstance stepHeight = player.getAttribute(ForgeMod.STEP_HEIGHT_ADDITION.get());
-        if (moveSpeed == null || attackSpeed == null || swimSpeed == null || stepHeight == null) {
+        if (moveSpeed == null || attackSpeed == null || swimSpeed == null) {
             return;
         }
 
@@ -277,12 +267,9 @@ public final class DmzSpeedRevampEvents {
         // These derived stats are comparatively expensive; calculate each once for all movement branches in this tick.
         double currentSpeed = DmzRevampHelper.getCurrentMovementSpeedValue(data);
         double meleeDamage = DmzRevampHelper.getCurrentMovementMeleeDamage(data);
-        double externalMovementMultiplier = Math.max(1D, getExternalMovementSpeedMultiplier(moveSpeed));
-        double externalSwimMultiplier = Math.max(0.01D, getExternalSwimSpeedMultiplier(swimSpeed));
         double rawMovementSpeedBonusPercent = sanitizePercent(
                 DmzRevampHelper.getScaledMovementSpeedBonusPercent(data, currentSpeed)
-                        * DmzRevampConfig.REVAMP_MOVEMENT_SPEED_BONUS_MULTIPLIER.get()
-                        + Math.max(0D, (externalMovementMultiplier - 1D) * 100D));
+                        * DmzRevampConfig.REVAMP_MOVEMENT_SPEED_BONUS_MULTIPLIER.get());
         double rawAttackSpeedBonusPercent = sanitizeSignedPercent(DmzRevampHelper.getScaledAttackSpeedBonusPercent(data,
                 currentSpeed,
                 meleeDamage
@@ -291,9 +278,7 @@ public final class DmzSpeedRevampEvents {
                 currentSpeed,
                 meleeDamage
         ) * DmzRevampConfig.REVAMP_SWIM_SPEED_BONUS_MULTIPLIER.get());
-        double rawSwimSpeedBonusPercent = hasPlayerSpeedLimit(data)
-                ? overhaulSwimSpeedBonusPercent
-                : overhaulSwimSpeedBonusPercent + Math.max(0D, (externalSwimMultiplier - 1D) * 100D);
+        double rawSwimSpeedBonusPercent = overhaulSwimSpeedBonusPercent;
 
         double attackSpeedCapPercent = Math.max(0D, DmzRevampConfig.SPD_ATTACK_SPEED_INCREASE_CAP.get() * 100D * DmzRevampHelper.getGravityAttackSpeedFactor(player));
         if (rawAttackSpeedBonusPercent > attackSpeedCapPercent) {
@@ -313,7 +298,7 @@ public final class DmzSpeedRevampEvents {
         double movementSpeedBonusPercent = sanitizePercent(DmzRevampHelper.getRampedBonusPercent(
                 player, movementSoftCappedBonusPercent, state.speedRampTicks, true));
         state.effectiveMoveSpeedBonusPercent = movementSpeedBonusPercent;
-        double movementModifierAmount = ((1D + (movementSpeedBonusPercent / 100D)) / externalMovementMultiplier) - 1D;
+        double movementModifierAmount = movementSpeedBonusPercent / 100D;
         state.moveSpeedBonus = syncModifierAllowNegative(
                 moveSpeed,
                 SPD_MOVE_SPEED_UUID,
@@ -337,9 +322,7 @@ public final class DmzSpeedRevampEvents {
                 true,
                 DmzRevampConfig.REVAMP_SWIM_SPEED_BASE_CAP_PERCENT.get()
         ));
-        double swimModifierAmount = hasPlayerSpeedLimit(data)
-                ? rampedSwimBonusPercent / 100D
-                : ((1D + (rampedSwimBonusPercent / 100D)) / Math.max(1D, externalSwimMultiplier)) - 1D;
+        double swimModifierAmount = rampedSwimBonusPercent / 100D;
         state.swimSpeedBonus = syncModifier(
                 swimSpeed,
                 SPD_SWIM_SPEED_UUID,
@@ -348,14 +331,6 @@ public final class DmzSpeedRevampEvents {
                 state.swimSpeedBonus,
                 AttributeModifier.Operation.MULTIPLY_TOTAL,
                 true
-        );
-        state.stepHeightAddition = syncModifier(
-                stepHeight,
-                SPD_STEP_HEIGHT_UUID,
-                "DMZ SPD step height bonus",
-                getStepHeightAdditionForSpeed(movementSpeedBonusPercent),
-                state.stepHeightAddition,
-                AttributeModifier.Operation.ADDITION
         );
         applyFluidRun(player, 100D + movementSpeedBonusPercent);
     }
@@ -428,7 +403,6 @@ public final class DmzSpeedRevampEvents {
         removeModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SPD_MOVE_SPEED_UUID);
         removeModifier(player.getAttribute(Attributes.ATTACK_SPEED), SPD_ATTACK_SPEED_UUID);
         removeModifier(player.getAttribute(ForgeMod.SWIM_SPEED.get()), SPD_SWIM_SPEED_UUID);
-        removeModifier(player.getAttribute(ForgeMod.STEP_HEIGHT_ADDITION.get()), SPD_STEP_HEIGHT_UUID);
     }
 
     // Replaces the old flight modifier with the newly calculated multiplier.
@@ -615,20 +589,11 @@ public final class DmzSpeedRevampEvents {
         return movement.lengthSqr() > SEARCH_FAST_FLIGHT_THRESHOLD_SQR;
     }
 
-    // Returns the effective Speed bonus plus external movement modifiers that obey the revamp caps.
+    // Returns only the movement bonus owned by Overhaul.
     private static double getRawMovementSpeedBonusPercent(Player player, StatsData data) {
-        return sanitizePercent((DmzRevampHelper.getScaledMovementSpeedBonusPercent(data, DmzRevampHelper.getCurrentMovementSpeedValue(data))
-                * DmzRevampConfig.REVAMP_MOVEMENT_SPEED_BONUS_MULTIPLIER.get())
-                + getExternalMovementSpeedBonusPercent(player));
-    }
-
-    // Combines effective Speed and Ki Damage before flight caps are applied.
-    private static double getRawFlightBonusPercent(Player player, StatsData data, boolean combatFlight) {
-        double pairedSpeedBonus = DmzRevampHelper.getScaledPairedSpeedBonusPercent(data,
-                DmzRevampHelper.getCurrentMovementSpeedValue(data), DmzRevampHelper.getCurrentMovementKiDamage(data));
-        double bonus = (pairedSpeedBonus + getExternalMovementSpeedBonusPercent(player))
-                * getFlightBonusMultiplier(combatFlight);
-        return Math.max(0D, bonus);
+        return sanitizePercent(DmzRevampHelper.getScaledMovementSpeedBonusPercent(
+                data, DmzRevampHelper.getCurrentMovementSpeedValue(data))
+                * DmzRevampConfig.REVAMP_MOVEMENT_SPEED_BONUS_MULTIPLIER.get());
     }
 
     private static double getOverhaulFlightBonusPercent(StatsData data, boolean combatFlight) {
@@ -666,13 +631,9 @@ public final class DmzSpeedRevampEvents {
 
     private static double applyPlayerSpeedLimit(StatsData data, double bonusPercent) {
         if (data == null) return Math.max(0D, bonusPercent);
-        int totalPercentLimit = ((SpeedLimitData) data).dmzrevamp$getSpeedLimit();
-        return totalPercentLimit <= 0 ? Math.max(0D, bonusPercent)
-                : Math.min(Math.max(0D, bonusPercent), Math.max(0D, totalPercentLimit - 100D));
-    }
-
-    private static boolean hasPlayerSpeedLimit(StatsData data) {
-        return data != null && ((SpeedLimitData) data).dmzrevamp$getSpeedLimit() > 0;
+        int limitPercent = data.getResources().getFlightSpeedLimit();
+        double factor = Math.max(5D, Math.min(100D, limitPercent <= 0 ? 100D : limitPercent)) / 100D;
+        return Math.max(0D, bonusPercent) * factor;
     }
 
     private static double getFlightBaseCapPercent(boolean combatFlight) {
@@ -681,73 +642,11 @@ public final class DmzSpeedRevampEvents {
                 : DmzRevampConfig.REVAMP_SEARCH_FLIGHT_SPEED_BASE_CAP_PERCENT.get();
     }
 
-    // Returns the positive movement speed bonus added by external modifiers, excluding Overhaul and DMZ Sprint modifiers.
-    private static double getExternalMovementSpeedBonusPercent(Player player) {
-        AttributeInstance moveSpeed = player.getAttribute(Attributes.MOVEMENT_SPEED);
-        if (moveSpeed == null) {
-            return 0D;
-        }
-        return Math.max(0D, (getExternalMovementSpeedMultiplier(moveSpeed) - 1D) * 100D);
-    }
-
-    // Calculates the vanilla movement speed multiplier from external modifiers that should be folded into the SPD cap logic.
-    private static double getExternalMovementSpeedMultiplier(AttributeInstance moveSpeed) {
-        return getExternalAttributeMultiplier(moveSpeed, SPD_MOVE_SPEED_UUID, DMZ_SPRINT_SPEED_UUID, VANILLA_SPRINT_SPEED_UUID);
-    }
-
-    // Calculates the swim speed multiplier from external modifiers that should be folded into the SPD cap logic.
-    private static double getExternalSwimSpeedMultiplier(AttributeInstance swimSpeed) {
-        return getExternalAttributeMultiplier(swimSpeed, SPD_SWIM_SPEED_UUID);
-    }
-
-    // Calculates the final multiplier of an attribute while excluding modifiers owned by this mod or by exceptions.
-    private static double getExternalAttributeMultiplier(AttributeInstance moveSpeed, UUID... ignoredModifierIds) {
-        double base = moveSpeed.getBaseValue();
-        if (base <= 0D || !Double.isFinite(base)) {
-            return 1D;
-        }
-
-        double additive = 0D;
-        double multiplyBase = 0D;
-        double multiplyTotal = 1D;
-        for (AttributeModifier modifier : moveSpeed.getModifiers()) {
-            if (shouldIgnoreModifier(modifier, ignoredModifierIds)) {
-                continue;
-            }
-
-            if (modifier.getOperation() == AttributeModifier.Operation.ADDITION) {
-                additive += modifier.getAmount();
-            } else if (modifier.getOperation() == AttributeModifier.Operation.MULTIPLY_BASE) {
-                multiplyBase += modifier.getAmount();
-            } else if (modifier.getOperation() == AttributeModifier.Operation.MULTIPLY_TOTAL) {
-                multiplyTotal *= 1D + modifier.getAmount();
-            }
-        }
-
-        double externalValue = (base + additive + (base * multiplyBase)) * multiplyTotal;
-        if (!Double.isFinite(externalValue) || externalValue <= 0D) {
-            return 1D;
-        }
-        return Math.max(0.01D, externalValue / base);
-    }
-
-    // Returns true when a modifier should not be folded into the capped SPD calculation.
-    private static boolean shouldIgnoreModifier(AttributeModifier modifier, UUID... ignoredModifierIds) {
-        UUID id = modifier.getId();
-        for (UUID ignoredModifierId : ignoredModifierIds) {
-            if (ignoredModifierId.equals(id)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private static final class SpeedState {
         private double moveSpeedBonus = Double.NaN;
         private double effectiveMoveSpeedBonusPercent = Double.NaN;
         private double attackSpeedBonus = Double.NaN;
         private double swimSpeedBonus = Double.NaN;
-        private double stepHeightAddition = Double.NaN;
         private int speedRampTicks;
     }
 

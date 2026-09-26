@@ -1,26 +1,17 @@
 package com.dmzrevamp.revamp.combat;
 
 import com.dmzrevamp.DmzRevampMod;
-import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.revamp.DmzRevampHelper;
-import com.dmzrevamp.revamp.growth.DynamicGrowthRevampEvents;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainEffects;
-import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.Cooldowns;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -33,11 +24,6 @@ public final class SpdCombatScalingEvents {
     private static final Map<UUID, Map<String, PendingCooldownReduction>> PENDING_COOLDOWN_REDUCTIONS = new ConcurrentHashMap<>();
 
     private SpdCombatScalingEvents() {
-    }
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void evadePlayerDamage(LivingHurtEvent event) {
-        tryEvadePlayerDamage(event);
     }
 
     @SubscribeEvent
@@ -143,45 +129,6 @@ public final class SpdCombatScalingEvents {
         return 1D + getAttackSpeedIncrease(player);
     }
 
-    public static void tryEvadePlayerDamage(LivingHurtEvent event) {
-        if (!DmzRevampConfig.ENABLE_SPD_PLAYER_EVASION.get() || event.getAmount() <= 0F) {
-            return;
-        }
-        if (!(event.getEntity() instanceof ServerPlayer target) || !(event.getSource().getEntity() instanceof ServerPlayer attacker)) {
-            return;
-        }
-        if (target == attacker || target.level().isClientSide()) {
-            return;
-        }
-
-        StatsData targetData = getStats(target);
-        StatsData attackerData = getStats(attacker);
-        if (targetData == null || attackerData == null) {
-            return;
-        }
-
-        double attackerSpeed = Math.max(0D, DmzRevampHelper.getCurrentSpeedValue(attackerData));
-        double targetSpeed = Math.max(0D, DmzRevampHelper.getCurrentSpeedValue(targetData));
-        if (targetSpeed <= 0D || attackerSpeed <= 0D) {
-            return;
-        }
-
-        double maxChance = DmzRevampConfig.SPD_PLAYER_EVASION_MAX_CHANCE_PERCENT.get() / 100D;
-        double ratio = targetSpeed / attackerSpeed;
-        double chance = Math.max(0D, Math.min(maxChance, ((ratio - 5D) / 15D) * maxChance));
-        if (chance <= 0D || target.getRandom().nextDouble() >= chance) {
-            return;
-        }
-
-        event.setAmount(0F);
-        event.setCanceled(true);
-        target.invulnerableTime = Math.max(target.invulnerableTime, 10);
-        target.hurtTime = 0;
-        target.hurtDuration = 0;
-        playEvasionFeedback(target);
-        DynamicGrowthRevampEvents.awardPerfectDodge(target, attacker);
-    }
-
     private static StatsData getStats(Player player) {
         if (player == null) {
             return null;
@@ -201,16 +148,6 @@ public final class SpdCombatScalingEvents {
         } else if (Cooldowns.DOUBLEDASH_CD.equals(cooldownKey)) {
             player.addEffect(new MobEffectInstance(MainEffects.DOUBLEDASH_CD.get(), ticks, 0, false, false, true));
         }
-    }
-
-    private static void playEvasionFeedback(ServerPlayer target) {
-        int variant = target.getRandom().nextInt(2);
-        NetworkHandler.sendToTrackingEntityAndSelf(
-                new TriggerAnimationS2C(target.getUUID(), TriggerAnimationS2C.AnimationType.EVASION, variant, target.getId()),
-                target
-        );
-        SoundEvent sound = (variant == 0 ? MainSounds.EVASION1 : MainSounds.EVASION2).get();
-        target.level().playSound(null, target.getX(), target.getY(), target.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 
     private record PendingCooldownReduction(UUID playerId, String cooldownKey, double reduction, int ticksRemaining) {

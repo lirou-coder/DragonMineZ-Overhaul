@@ -6,14 +6,26 @@ import com.dmzrevamp.revamp.DmzSpeedRevampEvents;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.stats.character.Resources;
 import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(FlySkillEvent.class)
 public abstract class FlySkillEventRevampSpeedMixin {
+    @Redirect(
+            method = {"onClientTick", "initializeFlightVectorFromCurrentMotion"},
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/character/Resources;getFlightSpeedLimit()I"),
+            remap = false,
+            require = 0
+    )
+    private static int dmzrevamp$doNotLimitWholeSearchFlightSpeed(Resources resources) {
+        return 100;
+    }
+
     @Inject(method = "getFlySpeedScale", at = @At("RETURN"), cancellable = true, remap = false)
     private static void dmzrevamp$applyRevampSearchFlightSpeed(LocalPlayer player, CallbackInfoReturnable<Float> cir) {
         if (!DmzRevampConfig.ENABLE_SPD_MOVEMENT_SPEED_MODIFIERS.get()) {

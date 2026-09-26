@@ -7,6 +7,7 @@
   "attribute.dragonminez.strike_damage": "DMZ Speed",
   "gui.dmzrevamp.character_stats.spd": "SPD",
   "gui.dmzrevamp.character_stats.spd.desc": "Increases your Movement and Attack Speed while also lowering dash and attacks cooldown.",
+  "gui.dmzrevamp.character_stats.res.desc": "Increases your maximum Stamina and reduces the damage you take from enemies",
   "gui.dmzrevamp.character_stats.speed": "Speed",
   "gui.dmzrevamp.character_stats.prestige": "Prestige",
   "gui.dmzrevamp.character_stats.prestige.tooltip.desc": "Each Prestige breaks your limits and increases your natural strength, but also empowers the enemies you may face.",

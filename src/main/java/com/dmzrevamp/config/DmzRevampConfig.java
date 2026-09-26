@@ -145,14 +145,6 @@ public final class DmzRevampConfig {
             .comment("When true and dmzkiovercharge is not loaded, Ki attack cooldown from extended overcharge is capped to DMZ's normal 175 percent release limit.")
             .define("kiAttacks.capOverchargeCooldownToNormalDmzRelease", true);
 
-    public static final ForgeConfigSpec.BooleanValue ENABLE_SPD_PLAYER_EVASION = BUILDER
-            .comment("When true, player targets can evade player attacks based on SPD comparison.")
-            .define("combat.enableSpdPlayerEvasion", true);
-
-    public static final ForgeConfigSpec.DoubleValue SPD_PLAYER_EVASION_MAX_CHANCE_PERCENT = BUILDER
-            .comment("Maximum player evasion chance from SPD comparison. 50 = 50 percent.")
-            .defineInRange("combat.spdPlayerEvasionMaxChancePercent", 50D, 0D, 100D);
-
     public static final ForgeConfigSpec.BooleanValue ENABLE_KI_ATTACK_CATEGORY_EQUIP_LIMITS = BUILDER
             .comment("When true, limits how many Advanced and Ultimate Ki attacks can be equipped.")
             .define("kiAttacks.enableCategoryEquipLimits", true);

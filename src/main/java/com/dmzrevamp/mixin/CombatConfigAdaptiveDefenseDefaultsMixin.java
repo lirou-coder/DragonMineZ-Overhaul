@@ -19,6 +19,12 @@ public abstract class CombatConfigAdaptiveDefenseDefaultsMixin {
     private Double combatFlyBaseSpeed;
     @Shadow(remap = false)
     private Double combatFlySprintSpeed;
+    @Shadow(remap = false)
+    private Double speedDodgeRatioAtLevel1;
+    @Shadow(remap = false)
+    private Double speedDodgeRatioAtMaxLevel;
+    @Shadow(remap = false)
+    private Double speedDodgeMeditationChanceFloor;
 
     @Inject(method = "<init>", at = @At("RETURN"), remap = false)
     private void dmzrevamp$setAdaptiveDefenseDefaults(CallbackInfo ci) {
@@ -27,5 +33,8 @@ public abstract class CombatConfigAdaptiveDefenseDefaultsMixin {
         this.combatFlyBaseSpeed = 0.1D;
         this.combatFlySprintSpeed = 0.2D;
         this.accurateMobBattlePower = true;
+        this.speedDodgeRatioAtLevel1 = 10D;
+        this.speedDodgeRatioAtMaxLevel = 5D;
+        this.speedDodgeMeditationChanceFloor = 0.2D;
     }
 }

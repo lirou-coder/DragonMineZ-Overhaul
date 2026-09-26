@@ -6,6 +6,8 @@
   "gui.dragonminez.character_stats.spd": "VEL",
   "gui.dragonminez.character_stats.spd.desc": "§7Aumenta sua Velocidade de Movimento e de Ataque, além de reduzir a recarga de arrancadas e ataques.",
   "gui.dragonminez.character_stats.spd.desc_extra": "",
+  "gui.dragonminez.character_stats.res.desc": "Aumenta sua Stamina mÃ¡xima e reduz o dano recebido de inimigos",
+  "gui.action.dragonminez.flightspeed": "Limitar Velocidade",
   "gui.dragonminez.technique.affected_stat.skp": "VEL",
   "gui.dragonminez.technique.affected_stat.spd": "VEL",
   "gui.dragonminez.technique.cast_time": "Projéteis",

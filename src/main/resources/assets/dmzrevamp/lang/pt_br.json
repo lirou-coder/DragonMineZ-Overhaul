@@ -7,6 +7,7 @@
   "attribute.dragonminez.strike_damage": "DMZ Velocidade",
   "gui.dmzrevamp.character_stats.spd": "VEL",
   "gui.dmzrevamp.character_stats.spd.desc": "Aumenta sua Velocidade de Movimento e de Ataque, além de reduzir a recarga de arrancadas e ataques.",
+  "gui.dmzrevamp.character_stats.res.desc": "Aumenta sua Stamina máxima e reduz o dano recebido de inimigos",
   "gui.dmzrevamp.character_stats.speed": "Velocidade",
   "gui.dmzrevamp.character_stats.prestige": "Prestígio",
   "gui.dmzrevamp.character_stats.prestige.tooltip.desc": "Cada Prestígio rompe seus limites e aumenta sua força natural, mas também fortalece os inimigos que você poderá enfrentar.",

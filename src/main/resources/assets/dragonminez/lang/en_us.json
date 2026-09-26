@@ -6,6 +6,8 @@
   "gui.dragonminez.character_stats.spd": "SPD",
   "gui.dragonminez.character_stats.spd.desc": "§7Increases your Movement and Attack Speed while also lowering dash and attacks cooldown.",
   "gui.dragonminez.character_stats.spd.desc_extra": "",
+  "gui.dragonminez.character_stats.res.desc": "Increases your maximum Stamina and reduces the damage you take from enemies",
+  "gui.action.dragonminez.flightspeed": "Limit Speed",
   "gui.dragonminez.technique.affected_stat.skp": "SPD",
   "gui.dragonminez.technique.affected_stat.spd": "SPD",
   "gui.dragonminez.technique.cast_time": "Projectiles",

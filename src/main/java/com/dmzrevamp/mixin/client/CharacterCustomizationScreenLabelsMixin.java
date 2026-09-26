@@ -48,6 +48,10 @@ public abstract class CharacterCustomizationScreenLabelsMixin {
         if ("gui.dragonminez.character_stats.skp.desc".equals(key)) {
             return Component.translatable("gui.dragonminez.character_stats.spd.desc").withStyle(Style.EMPTY.withFont(DMZ_FONT));
         }
+        if ("gui.dragonminez.character_stats.res.desc".equals(key)) {
+            return Component.translatable("gui.dmzrevamp.character_stats.res.desc")
+                    .withStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(ChatFormatting.GRAY));
+        }
         return instance.tr(key, args);
     }
 
@@ -68,6 +72,10 @@ public abstract class CharacterCustomizationScreenLabelsMixin {
         }
         if ("gui.dragonminez.character_stats.skp.desc".equals(key)) {
             return Component.translatable("gui.dragonminez.character_stats.spd.desc")
+                    .withStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(ChatFormatting.GRAY));
+        }
+        if ("gui.dragonminez.character_stats.res.desc".equals(key)) {
+            return Component.translatable("gui.dmzrevamp.character_stats.res.desc")
                     .withStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(ChatFormatting.GRAY));
         }
         return Component.translatable(key).withStyle(Style.EMPTY.withFont(DMZ_FONT));

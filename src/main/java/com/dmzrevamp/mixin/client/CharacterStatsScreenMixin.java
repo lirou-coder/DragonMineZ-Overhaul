@@ -89,6 +89,10 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
             return Component.literal(DmzClassConfigManager.getDisplayName(statsData.getCharacter().getCharacterClass()))
                     .withStyle(style -> style.withFont(DMZ_FONT).withColor(TextColor.fromRgb(color & 0xFFFFFF)));
         }
+        if ("gui.dragonminez.character_stats.res.desc".equals(key)) {
+            return Component.translatable("gui.dmzrevamp.character_stats.res.desc")
+                    .withStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(ChatFormatting.GRAY));
+        }
         return instance.tr(key, args);
     }
 
@@ -500,6 +504,10 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
             return Component.translatable("gui.dragonminez.character_stats.spd.desc")
                     .withStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(ChatFormatting.GRAY));
         }
+        if ("gui.dragonminez.character_stats.res.desc".equals(key)) {
+            return Component.translatable("gui.dmzrevamp.character_stats.res.desc")
+                    .withStyle(Style.EMPTY.withFont(DMZ_FONT).withColor(ChatFormatting.GRAY));
+        }
         return Component.translatable(key).withStyle(Style.EMPTY.withFont(DMZ_FONT));
     }
 
@@ -697,6 +705,32 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     }
 
     @Redirect(
+            method = {"renderStatisticsInfoList", "renderStatisticsInfoHexagon"},
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/client/util/TextUtil;drawStringWithBorder(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIII)V"),
+            remap = false,
+            require = 0
+    )
+    private void dmzrevamp$hideNativeSpeedLabel(GuiGraphics graphics, Font font, Component text,
+                                                 int x, int y, int color, int borderColor) {
+        if (!dmzrevamp$isNativeSpeedStatistic(text)) {
+            TextUtil.drawStringWithBorder(graphics, font, text, x, y, color, borderColor);
+        }
+    }
+
+    @Redirect(
+            method = {"renderStatisticsInfoList", "renderStatisticsInfoHexagon"},
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/client/util/TextUtil;drawCenteredStringWithBorder(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;Lnet/minecraft/network/chat/Component;IIII)V"),
+            remap = false,
+            require = 0
+    )
+    private void dmzrevamp$hideNativeSpeedValue(GuiGraphics graphics, Font font, Component text,
+                                                 int x, int y, int color, int borderColor) {
+        if (!dmzrevamp$isNativeSpeedStatistic(text) && !text.getString().endsWith("%")) {
+            TextUtil.drawCenteredStringWithBorder(graphics, font, text, x, y, color, borderColor);
+        }
+    }
+
+    @Redirect(
             method = {
                     "renderStatisticsInfoList",
                     "renderStatisticsInfoHexagon"
@@ -710,6 +744,9 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     )
     // Handles the addStatisticExtraLines logic for this class.
     private void dmzrevamp$addStatisticExtraLines(GuiGraphics guiGraphics, Font font, int mouseX, int mouseY, int screenWidth, int screenHeight, Component title, List<Component> lines, List<Component> extraLines, int borderColor) {
+        if (dmzrevamp$isNativeSpeedStatistic(title)) {
+            return;
+        }
         List<Component> adjustedExtraLines = extraLines == null ? null : new ArrayList<>(extraLines);
         if (statsData != null) {
             adjustedExtraLines = addRevampStatisticLines(title, lines, adjustedExtraLines);
@@ -801,6 +838,22 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
                     "gui.dmzrevamp.character_stats.speed.cooldown_reduction",
                     smoothNumber(DmzRevampHelper.getSpdCooldownReduction(statsData) * 100D)
             ).withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.AQUA)));
+            int meditationLevel = statsData.getSkills().getSkillLevel("meditation");
+            var combatConfig = com.dragonminez.common.config.ConfigManager.getCombatConfig();
+            if (meditationLevel > 0 && combatConfig != null && combatConfig.getEnableSpeedDodge()) {
+                double pvpChance = com.dragonminez.server.events.players.combat.SpeedDodgeHandler
+                        .maxChance(meditationLevel, true, combatConfig);
+                double pveChance = com.dragonminez.server.events.players.combat.SpeedDodgeHandler
+                        .maxChance(meditationLevel, false, combatConfig);
+                adjusted.add(Component.translatable(
+                        "gui.dragonminez.character_stats.speed.dodge",
+                        formatOneDecimal(pvpChance * 100D) + "%",
+                        formatOneDecimal(pveChance * 100D) + "%"
+                ).withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.LIGHT_PURPLE)));
+            } else {
+                adjusted.add(Component.translatable("gui.dragonminez.character_stats.speed.dodge.locked")
+                        .withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.DARK_GRAY)));
+            }
         } else if (key.contains("ki_damage")) {
             adjusted.add(Component.translatable(
                     "gui.dmzrevamp.character_stats.ki_damage.ki_attack_speed",
@@ -845,7 +898,8 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
                     || normalizedKey.contains("infuse_damage")
                     || normalizedKey.contains("infusedamage")
                     || normalizedKey.contains("infusion_damage")
-                    || normalizedKey.contains("shift_hint")) {
+                    || normalizedKey.contains("shift_hint")
+                    || normalizedKey.contains("defense_penetration")) {
                 return true;
             }
         }
@@ -889,5 +943,10 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
             return translatable.getKey();
         }
         return null;
+    }
+
+    @Unique
+    private static boolean dmzrevamp$isNativeSpeedStatistic(Component component) {
+        return "gui.dragonminez.character_stats.speed".equals(translationKey(component));
     }
 }
