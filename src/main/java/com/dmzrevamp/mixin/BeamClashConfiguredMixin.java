@@ -1,10 +1,14 @@
 package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.config.KiClashConfigured;
+import com.dmzrevamp.network.DmzRevampNetwork;
+import com.dmzrevamp.network.KiClashMeterConfigS2CPacket;
 import com.dmzrevamp.revamp.ki.KiClashTeams;
 import com.dragonminez.common.combat.clash.BeamClash;
 import com.dragonminez.common.combat.clash.ClashParticipant;
 import net.minecraft.util.Mth;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,6 +24,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class BeamClashConfiguredMixin {
     @Shadow @Final private ClashParticipant a;
     @Shadow @Final private ClashParticipant b;
+
+    @Inject(method = "<init>", at = @At("TAIL"), remap = false)
+    private void dmzrevamp$syncMeterConfiguration(ClashParticipant first, ClashParticipant second,
+                                                  long startGameTime, CallbackInfo ci) {
+        KiClashConfigured.Config config = KiClashConfigured.get();
+        KiClashMeterConfigS2CPacket packet = new KiClashMeterConfigS2CPacket(
+                config.meterSpeedMultiplier, config.goodAreaSizeMultiplier,
+                config.perfectAreaFraction, config.goodMinimumEfficiency);
+        if (first.owner() instanceof ServerPlayer player) {
+            DmzRevampNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        }
+        if (second.owner() instanceof ServerPlayer player) {
+            DmzRevampNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        }
+    }
 
     /** Overhaul intentionally lets an inactive contest survive until maxClashDurationTicks. */
     @ModifyConstant(method = "tick", constant = @Constant(intValue = 140), remap = false)

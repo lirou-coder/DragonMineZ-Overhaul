@@ -45,6 +45,12 @@ public final class StrikeClashConfigured {
 
     public static final class Config {
         public boolean enabled = true;
+        /** Higher values make each seeded sweep cross the meter faster. */
+        public float meterSpeedMultiplier = 1.0F;
+        /** Base multiplier for DMZ 2.2's randomized 6.5%-9% good-area half width. */
+        public float goodAreaSizeMultiplier = 1.0F;
+        public float perfectAreaFraction = 0.35F;
+        public float goodMinimumEfficiency = 0.5F;
         public float momentumGainDefaultMultiplier = 1.0F;
         public float momentumDecayPerTick = 0.96F;
         public float innerAdvantageLow = 0.20F;
@@ -52,17 +58,25 @@ public final class StrikeClashConfigured {
         public int maxClashDurationTicks = 600;
         public boolean meleeDMGInfluence = true;
         public float meleeDMGInfluenceMultiplier = 0.75F;
+        public boolean goodAreaSpeedInfluence = true;
+        /** Weight applied to the faster participant's Speed ratio when widening its good area. */
+        public float goodAreaSpeedInfluenceMultiplier = 1.0F;
         public float winnerDamageIncreaseMultiplier = 1.2F;
         public boolean strikeAttackHasDelay = true;
         public int strikeAttackDelayTicks = 10;
 
         private Config sanitize() {
+            meterSpeedMultiplier = finiteClamp(meterSpeedMultiplier, 0.05F, 8F, 1F);
+            goodAreaSizeMultiplier = finiteClamp(goodAreaSizeMultiplier, 0.01F, 20F, 1F);
+            perfectAreaFraction = finiteClamp(perfectAreaFraction, 0F, 1F, 0.35F);
+            goodMinimumEfficiency = finiteClamp(goodMinimumEfficiency, 0F, 1F, 0.5F);
             momentumGainDefaultMultiplier = finiteClamp(momentumGainDefaultMultiplier, 0F, Float.MAX_VALUE, 1F);
             momentumDecayPerTick = finiteClamp(momentumDecayPerTick, 0F, 1F, 0.96F);
             innerAdvantageLow = finiteClamp(innerAdvantageLow, 0F, 0.5F, 0.20F);
             innerAdvantageHigh = finiteClamp(innerAdvantageHigh, 0.5F, 1F, 0.80F);
             maxClashDurationTicks = Math.max(20, maxClashDurationTicks);
             meleeDMGInfluenceMultiplier = finiteClamp(meleeDMGInfluenceMultiplier, 0F, Float.MAX_VALUE, 0.75F);
+            goodAreaSpeedInfluenceMultiplier = finiteClamp(goodAreaSpeedInfluenceMultiplier, 0F, Float.MAX_VALUE, 1F);
             winnerDamageIncreaseMultiplier = finiteClamp(winnerDamageIncreaseMultiplier, 0F, Float.MAX_VALUE, 1.2F);
             strikeAttackDelayTicks = Math.max(0, strikeAttackDelayTicks);
             return this;

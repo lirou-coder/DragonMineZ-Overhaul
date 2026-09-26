@@ -9,7 +9,7 @@ A Strike Clash can begin when a player's Strike Attack reaches an opponent who i
 - Against another player, both players must be performing Strike Attacks against each other.
 - Against a Dragon Mine Z saga mob, the mob must be performing a Combo Attack.
 
-All Strike Attacks are eligible. Unlike [[Ki Clash Overhaul]], there is no list of allowed technique types and Strike Clashes never accept helpers.
+Only an execution that actually captured and locked an opponent is eligible. Techniques such as Deadly Dance, Wolf Fang, and other attacks that can start without a target remain valid when they successfully capture one. An execution whose active Strike has no target cannot start or answer a Strike Clash. Unlike [[Ki Clash Overhaul]], Strike Clashes never accept helpers.
 
 ## Attack warning
 
@@ -21,16 +21,18 @@ This warning gives the target a chance to recognize the incoming technique and a
 
 Use the same clash input as a Ki Clash. Dragon Mine Z 2.2 generates changing meter cycles from a synchronized seed and grades each press as MISS, GOOD, or PERFECT. The server validates the press time and marker instead of trusting a separate Overhaul-only click packet.
 
-Strike Clash keeps its own momentum gain and decay tuning, while the sweep timing and good/perfect window are owned by Dragon Mine Z 2.2 so the HUD and server cannot drift apart.
+Strike Clash keeps its own momentum gain and decay tuning. Its **meterSpeedMultiplier**, **goodAreaSizeMultiplier**, **perfectAreaFraction**, and **goodMinimumEfficiency** settings now tune the corresponding parts of Dragon Mine Z 2.2's seeded meter. The server synchronizes the resulting parameters with the HUD so input validation cannot drift apart.
 
-## Power
+## Power and Speed
 
 Melee power can increase momentum gained from a successful input:
 
 - Players contribute their current Melee Damage.
 - Mobs contribute their Minecraft Attack Damage attribute.
 
-The influence and its strength can be configured in **StrikeClashConfigured.json**. The old custom meter-speed, fixed good-area, miss-efficiency, and speed-based window settings are no longer used because Dragon Mine Z 2.2's ClashMeter must be simulated identically by client and server.
+Speed directly multiplies the randomized good-area width of each participant. Players use their current DMZ Speed calculation; mobs use their movement-speed attribute relative to vanilla player speed. The result is clamped to the available space in the meter and therefore never extends outside the bar. This behavior and its weight are controlled by **goodAreaSpeedInfluence** and **goodAreaSpeedInfluenceMultiplier** in **StrikeClashConfigured.json**.
+
+The melee and speed influences and their strengths can be configured independently.
 
 ## Winning and losing
 

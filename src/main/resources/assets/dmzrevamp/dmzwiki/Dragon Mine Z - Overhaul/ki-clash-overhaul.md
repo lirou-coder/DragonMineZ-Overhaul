@@ -16,9 +16,9 @@ If one attack is enormously stronger than the other, the server can cancel the c
 
 The timing minigame itself is now the native Dragon Mine Z 2.2 **ClashMeter**. Each participant receives a deterministic meter seed. The server and client independently reproduce the same changing cycles, timing windows, direction, and marker position.
 
-A press can be graded **MISS**, **GOOD**, or **PERFECT**. The server validates the submitted press time and marker, accounts for latency, allows only one contribution per cycle, and applies Dragon Mine Z's anti-bot consistency checks. Because this timing simulation must stay identical on both sides, the Overhaul no longer replaces the meter speed or good-area shape.
+A press can be graded **MISS**, **GOOD**, or **PERFECT**. The server validates the submitted press time and marker, accounts for latency, allows only one contribution per cycle, and applies Dragon Mine Z's anti-bot consistency checks. The Overhaul preserves that seeded protocol while allowing **meterSpeedMultiplier**, **goodAreaSizeMultiplier**, **perfectAreaFraction**, and **goodMinimumEfficiency** to tune the new meter. The server sends these values to each participant so its validation and the client HUD use the same cycle.
 
-The Overhaul still controls its own momentum multiplier, momentum decay, win thresholds, maximum clash duration, team rules, and power influences through **KiClashConfigured.json**.
+The Overhaul also controls its momentum multiplier, momentum decay, win thresholds, maximum clash duration, team rules, and power influences through **KiClashConfigured.json**.
 
 ## PWR and Ki Damage influence
 

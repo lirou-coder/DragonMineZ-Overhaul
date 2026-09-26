@@ -6,6 +6,7 @@ import com.dmzrevamp.mixin.StrikeAttackActiveAccessor;
 import com.dmzrevamp.mixin.StrikeAttackHandlerStateAccessor;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.network.StrikeClashModeS2CPacket;
+import com.dmzrevamp.revamp.ki.ConfiguredClashMeter;
 import com.dragonminez.common.combat.clash.BeamClashManager;
 import com.dragonminez.common.combat.clash.ClashMeter;
 import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
@@ -61,7 +62,6 @@ public final class StrikeClashManager {
     private static final List<Clash> ACTIVE = new ArrayList<>();
     private static final Map<UUID, Float> WINNER_DAMAGE_BOOST = new HashMap<>();
     private static final Map<UUID, LivingEntity> WINNER_DAMAGE_ENTITY = new HashMap<>();
-
     @SuppressWarnings("unchecked")
     private static final RegistryObject<SoundEvent>[] PUNCH_SOUNDS = new RegistryObject[]{
             MainSounds.GOLPE1, MainSounds.GOLPE2, MainSounds.GOLPE3,
@@ -82,7 +82,9 @@ public final class StrikeClashManager {
         }
 
         Object attackerStrike = activeStrikes().get(attacker.getUUID());
-        if (!(attackerStrike instanceof StrikeAttackActiveAccessor)) {
+        if (!(attackerStrike instanceof StrikeAttackActiveAccessor attackerActive)
+                || attackerActive.dmzrevamp$getTargetId() == null
+                || !target.getUUID().equals(attackerActive.dmzrevamp$getTargetId())) {
             return false;
         }
 
@@ -90,6 +92,7 @@ public final class StrikeClashManager {
         if (target instanceof ServerPlayer targetPlayer) {
             opponentStrike = activeStrikes().get(targetPlayer.getUUID());
             if (!(opponentStrike instanceof StrikeAttackActiveAccessor targetActive)
+                    || targetActive.dmzrevamp$getTargetId() == null
                     || !attacker.getUUID().equals(targetActive.dmzrevamp$getTargetId())) {
                 return false;
             }
@@ -106,8 +109,8 @@ public final class StrikeClashManager {
         abortPlayerStrike(clash.b);
         clash.alignAndLock();
         ACTIVE.add(clash);
-        sendMode(clash.a.entity, true);
-        sendMode(clash.b.entity, true);
+        sendMode(clash.a, true);
+        sendMode(clash.b, true);
         stopPlayerTechniqueAnimation(clash.a.entity);
         stopPlayerTechniqueAnimation(clash.b.entity);
         return true;
@@ -223,9 +226,14 @@ public final class StrikeClashManager {
         return StrikeAttackHandlerStateAccessor.dmzrevamp$getActiveStrikes();
     }
 
-    private static void sendMode(LivingEntity entity, boolean active) {
+    private static void sendMode(Participant participant, boolean active) {
+        LivingEntity entity = participant.entity;
+        float areaMultiplier = active ? participant.goodAreaMultiplier() : 1.0F;
+        StrikeClashConfigured.Config config = StrikeClashConfigured.get();
         DmzRevampNetwork.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
-                new StrikeClashModeS2CPacket(entity.getId(), active));
+                new StrikeClashModeS2CPacket(entity.getId(), active, areaMultiplier,
+                        config.meterSpeedMultiplier, config.goodAreaSizeMultiplier,
+                        config.perfectAreaFraction, config.goodMinimumEfficiency));
     }
 
     private static void stopPlayerTechniqueAnimation(LivingEntity entity) {
@@ -254,7 +262,9 @@ public final class StrikeClashManager {
     private static void notifyEnded(LivingEntity entity) {
         if (entity instanceof ServerPlayer player) {
             NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(0), player);
-            sendMode(player, false);
+            DmzRevampNetwork.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player),
+                    new StrikeClashModeS2CPacket(player.getId(), false, 1.0F,
+                            1.0F, 1.0F, 0.35F, 0.5F));
         }
     }
 
@@ -292,6 +302,15 @@ public final class StrikeClashManager {
         }
         AttributeInstance attack = entity.getAttribute(Attributes.ATTACK_DAMAGE);
         return Math.max(1D, attack == null ? 1D : attack.getValue());
+    }
+
+    private static double speed(LivingEntity entity) {
+        if (entity instanceof ServerPlayer player) {
+            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+            if (data != null) return Math.max(0.0001D, data.getSpeed());
+        }
+        AttributeInstance movement = entity.getAttribute(Attributes.MOVEMENT_SPEED);
+        return Math.max(0.0001D, movement == null ? 1D : movement.getValue() / 0.1D);
     }
 
     private static int visualAttackInterval(LivingEntity entity) {
@@ -414,9 +433,10 @@ public final class StrikeClashManager {
             momentum *= config.momentumDecayPerTick;
             if (entity instanceof ServerPlayer) return;
 
-            ClashMeter.Sample now = ClashMeter.sample(meterSeed, age);
+            float areaMultiplier = goodAreaMultiplier();
+            ClashMeter.Sample now = ConfiguredClashMeter.sampleStrike(meterSeed, age, areaMultiplier);
             if (now.cycle().index() <= consumedCycle || now.grade() == ClashMeter.Grade.MISS) return;
-            ClashMeter.Sample next = ClashMeter.sample(meterSeed, age + 1);
+            ClashMeter.Sample next = ConfiguredClashMeter.sampleStrike(meterSeed, age + 1, areaMultiplier);
             boolean closest = next.cycle().index() != now.cycle().index() || next.distance() >= now.distance();
             if (!closest) return;
 
@@ -442,7 +462,8 @@ public final class StrikeClashManager {
             if (pressTime <= lastPressTime) return null;
             lastPressTime = pressTime;
 
-            ClashMeter.Sample sample = ClashMeter.sample(meterSeed, pressTime);
+            ClashMeter.Sample sample = ConfiguredClashMeter.sampleStrike(
+                    meterSeed, pressTime, goodAreaMultiplier());
             if (!Float.isFinite(claimedMarker) || Math.abs(sample.marker() - claimedMarker) > MARKER_MISMATCH) {
                 noteInvalidInput();
             }
@@ -470,6 +491,15 @@ public final class StrikeClashManager {
             }
             momentum += efficiency * BURST_PER_PRESS
                     * config.momentumGainDefaultMultiplier * (float) influence;
+        }
+
+        private float goodAreaMultiplier() {
+            StrikeClashConfigured.Config config = StrikeClashConfigured.get();
+            if (!config.goodAreaSpeedInfluence) return 1.0F;
+            double currentSpeed = speed(entity);
+            if (!Double.isFinite(currentSpeed) || currentSpeed <= 1D) return 1.0F;
+            double multiplier = 1D + (currentSpeed - 1D) * config.goodAreaSpeedInfluenceMultiplier;
+            return (float) Math.min(Float.MAX_VALUE, Math.max(1D, multiplier));
         }
     }
 
@@ -535,14 +565,16 @@ public final class StrikeClashManager {
         private Result tick(ServerLevel level) {
             if (!StrikeClashConfigured.get().enabled) return Result.DISSOLVED;
             if (!a.entity.isAlive() || !b.entity.isAlive()) return Result.DISSOLVED;
+            // Keep the NPC combo alive before testing it. DMZ 2.2 decrements comboTimer during
+            // the entity tick, which could otherwise dissolve the clash before its first meter hit.
+            if (a.entity instanceof DBSagasEntity saga) saga.comboTimer = a.lockedNpcComboTimer;
+            if (b.entity instanceof DBSagasEntity saga) saga.comboTimer = b.lockedNpcComboTimer;
             if (a.entity instanceof DBSagasEntity saga && !saga.isComboing()) return Result.DISSOLVED;
             if (b.entity instanceof DBSagasEntity saga && !saga.isComboing()) return Result.DISSOLVED;
 
             age++;
             lockAt(a.entity, a.lockedPosition);
             lockAt(b.entity, b.lockedPosition);
-            if (a.entity instanceof DBSagasEntity saga) saga.comboTimer = a.lockedNpcComboTimer;
-            if (b.entity instanceof DBSagasEntity saga) saga.comboTimer = b.lockedNpcComboTimer;
             face(a.entity, b.entity);
             face(b.entity, a.entity);
             a.tickMeter(b, age);
