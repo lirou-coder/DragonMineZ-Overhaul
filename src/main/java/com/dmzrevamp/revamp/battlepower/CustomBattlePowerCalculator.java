@@ -73,7 +73,7 @@ public final class CustomBattlePowerCalculator {
     }
 
     public static double calculateMobBattlePowerExact(double totalStats) {
-        return calculate(CustomBattlePowerConfig.get(), totalStats, 1D);
+        return Math.max(1D, calculate(CustomBattlePowerConfig.get(), totalStats, 1D));
     }
 
     public static double calculateScouterBreakBattlePower() {

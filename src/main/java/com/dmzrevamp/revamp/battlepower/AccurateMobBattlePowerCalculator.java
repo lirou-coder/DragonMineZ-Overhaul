@@ -40,14 +40,14 @@ public final class AccurateMobBattlePowerCalculator {
     public static double calculateCurvedBattlePowerExact(LivingEntity entity) {
         double totalPower = calculateTotalPower(entity);
         if (!Double.isFinite(totalPower) || totalPower <= 0D) {
-            return 0D;
+            return 1D;
         }
         return CustomBattlePowerCalculator.calculateMobBattlePowerExact(totalPower);
     }
 
     public static long calculateCurvedBattlePower(LivingEntity entity) {
         double exact = calculateCurvedBattlePowerExact(entity);
-        return exact >= Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(0L, (long) exact);
+        return exact >= Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(1L, (long) exact);
     }
 
     public static int toStoredVisibleBattlePower(long battlePower) {
