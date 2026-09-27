@@ -4,6 +4,9 @@ import com.dmzrevamp.DmzRevampMod;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -18,7 +21,7 @@ public final class DmzRevampAttributes {
             DeferredRegister.create(ForgeRegistries.ATTRIBUTES, DmzRevampMod.MODID);
 
     public static final RegistryObject<Attribute> MOB_DEFENSE = ATTRIBUTES.register("mob_defense",
-            () -> new RangedAttribute("attribute.name.dmzrevamp.mob_defense", 1D, 0D, Double.MAX_VALUE).setSyncable(true));
+            () -> new RangedAttribute("attribute.name.dmzrevamp.mob_defense", 0D, 0D, Double.MAX_VALUE).setSyncable(true));
 
     private DmzRevampAttributes() {}
 
@@ -37,7 +40,10 @@ public final class DmzRevampAttributes {
                 try {
                     @SuppressWarnings("unchecked") EntityType<? extends LivingEntity> livingType =
                             (EntityType<? extends LivingEntity>) type;
-                    event.add(livingType, MOB_DEFENSE.get());
+                    if (event.has(livingType, Attributes.ATTACK_DAMAGE)) {
+                        AttributeSupplier supplier = DefaultAttributes.getSupplier(livingType);
+                        event.add(livingType, MOB_DEFENSE.get(), supplier.getBaseValue(Attributes.ATTACK_DAMAGE));
+                    }
                 } catch (RuntimeException ignored) {
                     // Non-living types have no attribute supplier.
                 }

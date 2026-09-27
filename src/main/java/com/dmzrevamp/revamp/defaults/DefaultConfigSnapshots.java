@@ -9,6 +9,7 @@ import com.dragonminez.common.config.FormConfig;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Map;
 public final class DefaultConfigSnapshots {
     private static final Gson GSON = new GsonBuilder().create();
     private static final String FORM_ROOT = "data/dmzrevamp/defaults/forms/";
+    private static final String FALSE_FORM_DEFAULT = "races/saiyan/forms/falseform.json";
     private static final String QUEST_ROOT = "data/dmzrevamp/defaults/quests/";
     private static final Map<String, FormConfig> FORM_DEFAULTS = loadFormDefaults();
     private static final Map<String, JsonObject> QUEST_DEFAULTS = loadQuestDefaults();
@@ -60,7 +62,11 @@ public final class DefaultConfigSnapshots {
 
     private static Map<String, FormConfig> loadFormDefaults() {
         Map<String, FormConfig> defaults = new HashMap<>();
-        for (String path : readIndex(FORM_ROOT)) {
+        List<String> indexedForms = new ArrayList<>(readIndex(FORM_ROOT));
+        if (!indexedForms.contains(FALSE_FORM_DEFAULT)) {
+            indexedForms.add(FALSE_FORM_DEFAULT);
+        }
+        for (String path : indexedForms) {
             FormConfig config = readJson(FORM_ROOT + path, FormConfig.class);
             if (config != null) {
                 defaults.put(normalize(path), config);
