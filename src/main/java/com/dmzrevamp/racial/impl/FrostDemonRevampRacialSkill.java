@@ -10,13 +10,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class FrostDemonRevampRacialSkill implements CustomRacialSkill {
     @Override
     public String id() {
-        return "frostrevamp";
+        return "frostdemonrevamp";
     }
 
     @Override
     @OnlyIn(Dist.CLIENT)
     public Component getSkillTitle() {
-        return Component.literal("Dangerously Fast");
+        return Component.translatable("skill.dragonminez.racial_frostdemonrevamp");
     }
 
     @Override
@@ -33,6 +33,6 @@ public class FrostDemonRevampRacialSkill implements CustomRacialSkill {
 
     private Component createDescription() {
         int staminaPercent = (int) Math.round(DmzRevampRacialConfigs.frostDemon().attackStaminaCostReduction * 100D);
-        return Component.translatable("skill.dragonminez.racial_frostrevamp.desc", staminaPercent);
+        return Component.translatable("skill.dragonminez.racial_frostdemonrevamp.desc", staminaPercent);
     }
 }

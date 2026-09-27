@@ -36,7 +36,8 @@ public final class FrostDemonRevampEvents {
 
     private static void updateBoost(ServerPlayer player, StatsData data) {
         String racialId = CustomRacialActionHelper.getConfiguredRacialSkillId(data);
-        boolean frost = "frostrevamp".equalsIgnoreCase(racialId);
+        boolean frost = "frostdemonrevamp".equalsIgnoreCase(racialId)
+                || "frostrevamp".equalsIgnoreCase(racialId);
         boolean bioAndroid = "bioandroidrevamp".equalsIgnoreCase(racialId);
         if (!frost && !bioAndroid) {
             removeBoost(data);
@@ -84,7 +85,8 @@ public final class FrostDemonRevampEvents {
 
     public static float adjustAttackStaminaCost(StatsData data, float originalCost) {
         String racialId = CustomRacialActionHelper.getConfiguredRacialSkillId(data);
-        boolean frost = "frostrevamp".equalsIgnoreCase(racialId);
+        boolean frost = "frostdemonrevamp".equalsIgnoreCase(racialId)
+                || "frostrevamp".equalsIgnoreCase(racialId);
         boolean bioAndroid = "bioandroidrevamp".equalsIgnoreCase(racialId);
         if (!frost && !bioAndroid) {
             return originalCost;

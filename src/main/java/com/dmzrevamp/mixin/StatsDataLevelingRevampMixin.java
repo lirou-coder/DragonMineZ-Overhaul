@@ -42,12 +42,43 @@ public abstract class StatsDataLevelingRevampMixin {
 
     @Redirect(method = "calculatePostMitigationDamage", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/StatsData;getConfiguredMaxValue()I"), remap = false)
     private int dmzrevamp$useAttributeMaximumForDefenseCurve(StatsData data) {
-        return LevelingRevampConfig.levelsEnabled() ? PrestigeSystem.attributeFormulaMaximum() : data.getConfiguredMaxValue();
+        if (!LevelingRevampConfig.levelsEnabled()) return data.getConfiguredMaxValue();
+        var levels = LevelingRevampConfig.get().levelsAndAttributes;
+        return levels.maxAttribute == -1 ? levels.maxLevel : levels.maxAttribute;
     }
 
     @Redirect(method = "calculatePostMitigationDamage", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/StatsData;isMaxLevelValueInsteadOfStats()Z"), remap = false)
     private boolean dmzrevamp$avoidLevelTotalConversionForExplicitAttributeMaximum(StatsData data) {
-        return !LevelingRevampConfig.levelsEnabled() && data.isMaxLevelValueInsteadOfStats();
+        if (!LevelingRevampConfig.levelsEnabled()) return data.isMaxLevelValueInsteadOfStats();
+        return LevelingRevampConfig.get().levelsAndAttributes.maxAttribute == -1;
+    }
+
+    @Inject(method = "isMaxLevelValueInsteadOfStats", at = @At("HEAD"), cancellable = true, remap = false)
+    private void dmzrevamp$selectOverhaulMaximumMode(CallbackInfoReturnable<Boolean> cir) {
+        if (!LevelingRevampConfig.levelsEnabled()) return;
+        cir.setReturnValue(LevelingRevampConfig.get().levelsAndAttributes.maxAttribute == -1);
+    }
+
+    @Redirect(
+            method = {"getVitalityCurveKnee", "getDefenseCurveKnee"},
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/StatsData;getConfiguredMaxTotalStatsRaw()J"),
+            remap = false
+    )
+    private long dmzrevamp$useConfiguredMaxLevelForScalingCurves(StatsData data) {
+        if (!LevelingRevampConfig.levelsEnabled()) {
+            return (long) data.getConfiguredMaxValue() * 6L;
+        }
+        return (long) LevelingRevampConfig.get().levelsAndAttributes.maxLevel * 6L;
+    }
+
+    @Redirect(
+            method = {"getVitalityCurveKnee", "getDefenseCurveKnee"},
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/StatsData;getConfiguredMaxValue()I"),
+            remap = false
+    )
+    private int dmzrevamp$useConfiguredMaxAttributeForScalingCurves(StatsData data) {
+        if (!LevelingRevampConfig.levelsEnabled()) return data.getConfiguredMaxValue();
+        return Math.max(1, LevelingRevampConfig.get().levelsAndAttributes.maxAttribute);
     }
 
     @Inject(method = "getConfiguredMaxValue", at = @At("HEAD"), cancellable = true, remap = false)

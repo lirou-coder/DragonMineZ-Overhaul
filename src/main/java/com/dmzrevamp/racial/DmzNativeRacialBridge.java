@@ -20,7 +20,8 @@ public final class DmzNativeRacialBridge {
     }
 
     public static void register() {
-        RacialRegistry.register(new FrostBridge());
+        RacialRegistry.register(new FrostBridge("frostdemonrevamp"));
+        RacialRegistry.register(new FrostBridge("frostrevamp"));
         RacialRegistry.register(new HumanBridge());
         RacialRegistry.register(new SaiyanBridge());
         RacialRegistry.register(new NamekBridge());
@@ -28,7 +29,13 @@ public final class DmzNativeRacialBridge {
     }
 
     private static final class FrostBridge extends FrostDemonReserve {
-        @Override public String id() { return "frostrevamp"; }
+        private final String id;
+
+        private FrostBridge(String id) {
+            this.id = id;
+        }
+
+        @Override public String id() { return id; }
     }
 
     private static final class HumanBridge extends HumanAdaptation {

@@ -34,6 +34,8 @@
   "skill.dragonminez.racial_saiyanrevamp.desc": "Sobrevivir y curarte por completo de una experiencia cercana a la muerte otorga un aumento permanente de atributos equivalente al HP que perdiste, pero otorga menos atributos cuanto más se usa. Tiene un tiempo de reutilización de %1$s segundos.",
   "skill.dragonminez.racial_frostrevamp": "Peligrosamente Rápido",
   "skill.dragonminez.racial_frostrevamp.desc": "Tu velocidad y poder de ki aumentan cuanto menor sea tu HP. Tus ataques cuestan un %1$s%% menos de stamina",
+  "skill.dragonminez.racial_frostdemonrevamp": "Peligrosamente Rápido",
+  "skill.dragonminez.racial_frostdemonrevamp.desc": "Tu velocidad y poder de ki aumentan cuanto menor sea tu HP. Tus ataques cuestan un %1$s%% menos de stamina",
   "skill.dragonminez.racial_bioandroidrevamp": "el ADN Perfecto",
   "skill.dragonminez.racial_bioandroidrevamp.desc": "Tienes el Zenkai de los Saiyajin, la regeneración de HP de los Namekianos, la potenciación de Ki de los Humanos y el aumento de Velocidad y poder de ki de los Demonios del Frío, y todos estos efectos se multiplican por %1$s.",
   "skill.dragonminez.racial_majinrevamp": "Absorción Majin",

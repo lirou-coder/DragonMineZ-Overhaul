@@ -43,6 +43,8 @@
   "skill.dragonminez.racial_saiyanrevamp.desc": "Sobreviver e se recuperar totalmente de uma experiência de quase morte concede um bônus permanente baseado no HP perdido, com retornos menores após usos repetidos. Isso tem uma recarga de %1$s segundos. Após cada Zenkai, você pode levar seu poder ainda mais além, e a Fúria pode aumentá-lo ainda mais.",
   "skill.dragonminez.racial_frostrevamp": "Perigosamente Rápido",
   "skill.dragonminez.racial_frostrevamp.desc": "Sua Velocidade e Poder de Ki aumentam conforme seu HP diminui. Seus ataques custam %1$s%% menos Stamina. Em formas inferiores, você pode acumular poder e gastá-lo em formas superiores para obter um grande aumento de poder.",
+  "skill.dragonminez.racial_frostdemonrevamp": "Perigosamente Rápido",
+  "skill.dragonminez.racial_frostdemonrevamp.desc": "Sua Velocidade e Poder de Ki aumentam conforme seu HP diminui. Seus ataques custam %1$s%% menos Stamina. Em formas inferiores, você pode acumular poder e gastá-lo em formas superiores para obter um grande aumento de poder.",
   "skill.dragonminez.racial_bioandroidrevamp": "o DNA Perfeito",
   "skill.dragonminez.racial_bioandroidrevamp.desc": "Você tem acesso a %1$s%% das habilidades raciais de Humanos, Saiyajins, Namekuseijins e Demônios do Frio. Além disso, possui habilidades exclusivas conforme sua forma: Drenagem de Vida, autodestruição ou criação de versões Júnior de si mesmo.",
   "skill.dragonminez.racial_majinrevamp": "Absorção Majin",

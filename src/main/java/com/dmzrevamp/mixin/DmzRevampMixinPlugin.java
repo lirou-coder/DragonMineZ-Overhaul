@@ -63,7 +63,6 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         if (dmzSparkingLoaded && "com.dmzrevamp.mixin.QuestDefaultsRevampDefaultsMixin".equals(mixinClassName)) {
             return false;
         }
-        if ("com.dmzrevamp.mixin.ConfigManagerSparkingCompatMixin".equals(mixinClassName)) return dmzSparkingLoaded;
         if ("com.dmzrevamp.mixin.compat.DmzBetterFormsTierCompatMixin".equals(mixinClassName)) {
             return isModLoadedEarly("dmzbetterforms") && hasClass(targetClassName);
         }

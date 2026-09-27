@@ -41,10 +41,6 @@ public final class NoeaConfigCompat {
         seedSkills(dmz.resolve("skills.json"));
         List<String> overhaulForms = readOverhaulFormIndex();
         seedCompleteDmzForms(dmz, controlledDmzFormPaths(overhaulForms));
-        for (String race : RACES) {
-            mergeMissingResource(ROOT + "races/" + race + "/character.json",
-                    dmz.resolve("races").resolve(race).resolve("character.json"));
-        }
         try {
             for (String entry : overhaulForms) {
                 Path target = entry.startsWith("races/")
@@ -76,22 +72,6 @@ public final class NoeaConfigCompat {
                         ? entry
                         : "forms/" + Path.of(entry).getFileName().toString().replace('\\', '/'))
                 .collect(Collectors.toUnmodifiableSet());
-    }
-
-    private static void mergeMissingResource(String resource, Path target) {
-        try (InputStream stream = NoeaConfigCompat.class.getClassLoader().getResourceAsStream(resource)) {
-            if (stream == null) return;
-            JsonObject base = JsonParser.parseString(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
-            if (!Files.exists(target)) {
-                Files.createDirectories(target.getParent());
-                Files.writeString(target, GSON.toJson(base), StandardCharsets.UTF_8);
-                return;
-            }
-            JsonObject current = JsonParser.parseString(Files.readString(target, StandardCharsets.UTF_8)).getAsJsonObject();
-            if (mergeMissing(current, base)) Files.writeString(target, GSON.toJson(current), StandardCharsets.UTF_8);
-        } catch (Exception exception) {
-            LOGGER.warn("Could not merge complete character defaults into {}: {}", target, exception.getMessage());
-        }
     }
 
     private static void seedSkills(Path target) {

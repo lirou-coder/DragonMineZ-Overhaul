@@ -1,6 +1,5 @@
 package com.dmzrevamp.revamp.classes;
 
-import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
 import com.dmzrevamp.compat.SduCompat;
 import com.dmzrevamp.revamp.classes.skills.CustomClassPassives;
 import com.dragonminez.common.config.RaceStatsConfig;
@@ -31,7 +30,8 @@ import java.util.Set;
 
 public final class DmzClassConfigManager {
     public static final String RACE_DEFAULT_CLASS = "race";
-    private static final double CURVED_SCALING_MAX_RATIO = 4.0D;
+    private static final double DEFENSE_SCALING_MAX_RATIO = 2.0D;
+    private static final double VITALITY_SCALING_MAX_RATIO = 4.0D;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CLASSES_DIR = FMLPaths.CONFIGDIR.get().resolve("dragonminez").resolve("classes");
@@ -206,7 +206,6 @@ public final class DmzClassConfigManager {
         }
 
         String normalizedRace = normalize(raceId);
-        applyRaceRegenOverrides(normalizedRace, raceDefault);
         RaceStatsConfig.ClassStats finalRaceDefault = raceDefault;
         raceClasses.clear();
         CLASS_STATS.forEach((classId, classStats) -> {
@@ -274,36 +273,26 @@ public final class DmzClassConfigManager {
         }
 
         return switch (normalized) {
-            case "human" -> createRaceStats(2, 3, 1, 0, 2, 5, 0.5D, 0.5D, 0.4D, 0.6D, 0.9D, 0.7D, 2.0D);
-            case "android" -> createRaceStats(4, 3, 2, 2, 2, 0, 0.7D, 0.7D, 0.7D, 0.7D, 1.1D, 0.7D, 1.4D);
-            case "saiyan" -> createRaceStats(5, 3, 2, 1, 1, 1, 0.7D, 1.0D, 0.6D, 0.8D, 0.6D, 0.5D, 0.8D);
-            case "frostdemon" -> createRaceStats(0, 3, 1, 0, 5, 4, 0.1D, 0.7D, 0.5D, 0.3D, 0.5D, 1.0D, 2.0D);
-            case "namekian" -> createRaceStats(2, 2, 3, 2, 2, 2, 0.8D, 0.3D, 1.0D, 0.9D, 1.5D, 0.4D, 1.4D);
-            case "majin" -> createRaceStats(3, 2, 2, 1, 2, 3, 0.7D, 0.6D, 1.0D, 0.6D, 1.2D, 0.5D, 1.6D);
-            case "bioandroid" -> createRaceStats(2, 3, 1, 1, 2, 3, 0.5D, 0.6D, 0.6D, 0.6D, 0.9D, 0.4D, 1.6D);
+            case "human" -> withRegen(createRaceStats(2, 3, 1, 0, 2, 5, 0.500D, 0.575D, 0.480D, 0.920D, 1.140D, 0.725D, 1.850D),
+                    1.35D, 0.045D, 5.55D, 0.115D, 10.45D, 0.095D);
+            case "saiyan" -> withRegen(createRaceStats(5, 3, 2, 1, 1, 1, 0.640D, 0.900D, 0.620D, 1.110D, 0.960D, 0.575D, 0.980D),
+                    1.25D, 0.040D, 4.75D, 0.095D, 11.75D, 0.110D);
+            case "frostdemon" -> withRegen(createRaceStats(0, 3, 1, 0, 5, 4, 0.220D, 0.705D, 0.550D, 0.635D, 0.870D, 0.950D, 1.850D),
+                    1.10D, 0.035D, 6.85D, 0.145D, 9.25D, 0.080D);
+            case "namekian" -> withRegen(createRaceStats(2, 2, 3, 2, 2, 2, 0.710D, 0.445D, 0.900D, 1.205D, 1.500D, 0.500D, 1.415D),
+                    1.60D, 0.055D, 5.25D, 0.105D, 10.50D, 0.100D);
+            case "majin" -> withRegen(createRaceStats(3, 2, 2, 1, 2, 3, 0.640D, 0.640D, 0.900D, 0.920D, 1.320D, 0.575D, 1.560D),
+                    1.90D, 0.065D, 4.75D, 0.095D, 9.50D, 0.080D);
+            case "bioandroid" -> withRegen(createRaceStats(2, 3, 1, 1, 2, 3, 0.640D, 0.705D, 0.690D, 1.015D, 1.230D, 0.725D, 1.415D),
+                    1.30D, 0.045D, 5.60D, 0.115D, 10.50D, 0.095D);
+            case "glind" -> withRegen(createRaceStats(0, 2, 2, 1, 5, 3, 0.36D, 0.64D, 0.55D, 0.825D, 1.14D, 0.95D, 1.705D),
+                    1.30D, 0.045D, 6.50D, 0.140D, 9.75D, 0.085D);
             default -> createGenericRaceDefaultStats();
         };
     }
 
     private static RaceStatsConfig.ClassStats createGenericRaceDefaultStats() {
-        return createRaceStats(5, 5, 5, 5, 5, 5, 0.6D, 0.6D, 0.6D, 0.6D, 0.9D, 0.6D, 1.2D);
-    }
-
-    private static void applyRaceRegenOverrides(String normalizedRace, RaceStatsConfig.ClassStats raceDefault) {
-        double multiplier = switch (normalizedRace) {
-            case "human", "saiyan", "frostdemon", "namekian", "majin" -> 0.5D;
-            case "bioandroid" -> DmzRevampRacialConfigs.bioAndroid().healthRegenMultiplier;
-            default -> 1.0D;
-        };
-        if (multiplier == 1.0D || raceDefault == null) {
-            return;
-        }
-        if (raceDefault.getBaseHp5() != null) {
-            raceDefault.setBaseHp5(raceDefault.getBaseHp5() * multiplier);
-        }
-        if (raceDefault.getHp5VitScaling() != null) {
-            raceDefault.setHp5VitScaling(raceDefault.getHp5VitScaling() * multiplier);
-        }
+        return createRaceStats(5, 5, 5, 5, 5, 5, 0.570D, 0.640D, 0.620D, 0.920D, 1.140D, 0.650D, 1.270D);
     }
 
     // Loads class configs. Existing config files are not migrated in place.
@@ -415,33 +404,23 @@ public final class DmzClassConfigManager {
             normalizeCustomPassiveBoolean(json);
             RaceStatsConfig.ClassStats parsedStats = GSON.fromJson(json, RaceStatsConfig.ClassStats.class);
             RaceStatsConfig.StatScaling parsedScaling = parsedStats != null ? parsedStats.getStatScaling() : null;
-            Double loadedVitalityScaling = parsedScaling != null ? parsedScaling.getVitalityScaling() : null;
             boolean missingDefenseScalingMax = parsedScaling != null && parsedScaling.getDefenseScalingMax() == null;
             boolean missingVitalityScalingMax = parsedScaling != null && parsedScaling.getVitalityScalingMax() == null;
             RaceStatsConfig.ClassStats stats = sanitize(parsedStats);
-            boolean roundedVitalityScaling = loadedVitalityScaling != null
-                    && Math.abs(loadedVitalityScaling - stats.getStatScaling().getVitalityScaling()) > 1.0E-9D;
             clearMissingClassOnlyMultipliers(json, stats);
             ClassMetadata metadata = readMetadata(classId, json, defaultMetadata);
-            boolean legacyPotentialist = false;
+            boolean legacyPotentialistColor = false;
             if ("potentialist".equals(normalize(classId))) {
-                JsonObject scaling = json.has("statScaling") && json.get("statScaling").isJsonObject()
-                        ? json.getAsJsonObject("statScaling") : null;
-                if (scaling != null && scaling.has("ENE_scaling")
-                        && Math.abs(scaling.get("ENE_scaling").getAsDouble() - 0.6D) < 0.000001D) {
-                    stats.getStatScaling().setEnergyScaling(1.2D);
-                    legacyPotentialist = true;
-                }
                 if ("#FFFFFF".equalsIgnoreCase(metadata.displayColor())) {
                     metadata = new ClassMetadata(metadata.classId(), metadata.displayName(), "#FF5555",
                             metadata.exclusiveRaces());
-                    legacyPotentialist = true;
+                    legacyPotentialistColor = true;
                 }
             }
             boolean legacyNamedColor = isNamedDisplayColor(readString(json, DISPLAY_COLOR_KEY, ""));
             boolean decimalPassiveEnums = hasDecimalCustomPassiveEnums(json);
             if (!RaceStatsConfig.CURRENT_VERSION.equals(readString(json, CONFIG_VERSION_KEY, ""))
-                    || legacyNamedColor || decimalPassiveEnums || legacyPotentialist || roundedVitalityScaling
+                    || legacyNamedColor || decimalPassiveEnums || legacyPotentialistColor
                     || missingDefenseScalingMax || missingVitalityScalingMax) {
                 try {
                     saveClassConfig(path, stats, metadata);
@@ -538,17 +517,27 @@ public final class DmzClassConfigManager {
     private static RaceStatsConfig.ClassStats createKnownClassDefault(String classId) {
         String normalizedClassId = normalize(classId);
         RaceStatsConfig.ClassStats stats = switch (normalizedClassId) {
-            case "warrior" -> createClassStats(6, 3, 2, 1, 1, 0, 1.0D, 0.7D, 0.4D, 0.6D, 0.9D, 0.3D, 1.0D);
-            case "spiritualist" -> createClassStats(0, 2, 1, 0, 6, 3, 0.2D, 0.6D, 0.5D, 0.4D, 0.9D, 1.0D, 2.0D);
-            case "berserker" -> createClassStats(7, 3, 2, 2, 0, 0, 1.0D, 0.8D, 0.7D, 0.9D, 1.1D, 0.1D, 0.6D);
-            case "martialartist" -> createClassStats(4, 1, 2, 2, 4, 2, 1.0D, 0.8D, 0.7D, 0.7D, 0.3D, 1.0D, 1.2D);
-            case "cleric" -> withTp(createClassStats(0, 2, 1, 0, 4, 5, 0.2D, 0.7D, 0.6D, 0.6D, 1.5D, 0.9D, 2.0D), -0.1D, 0.25D);
-            case "paladin" -> createClassStats(5, 1, 3, 1, 1, 1, 1.0D, 0.5D, 0.9D, 0.9D, 1.2D, 0.7D, 1.6D);
-            case "tank" -> withTp(createClassStats(3, 0, 3, 3, 2, 1, 0.7D, 0.4D, 1.0D, 0.9D, 1.5D, 0.5D, 1.6D), 0.0D, 0.25D);
-            case "speedster" -> createClassStats(1, 6, 0, 0, 3, 2, 0.7D, 1.0D, 0.4D, 0.8D, 0.9D, 0.6D, 1.6D);
-            case "duelist" -> createClassStats(2, 3, 2, 2, 2, 2, 0.7D, 0.9D, 0.6D, 1.0D, 0.9D, 0.7D, 2.0D);
-            case "kiassassin" -> createClassStats(0, 4, 0, 0, 6, 4, 0.0D, 0.8D, 0.3D, 0.5D, 0.8D, 1.0D, 2.0D);
-            case "potentialist" -> createClassStats(3, 3, 3, 3, 3, 3, 0.6D, 0.6D, 0.6D, 0.6D, 0.9D, 0.6D, 1.2D);
+            case "warrior" -> withRegen(createClassStats(6, 3, 2, 1, 1, 0, 0.850D, 0.705D, 0.480D, 0.920D, 1.140D, 0.425D, 1.125D),
+                    0.40D, 0.015D, -1.55D, -0.035D, 1.55D, 0.025D);
+            case "spiritualist" -> withRegen(createClassStats(0, 2, 1, 0, 6, 3, 0.290D, 0.640D, 0.550D, 0.730D, 1.140D, 0.950D, 1.850D),
+                    -0.85D, -0.030D, 2.45D, 0.085D, -5.45D, -0.045D);
+            case "berserker" -> withRegen(createClassStats(7, 3, 2, 2, 0, 0, 0.850D, 0.770D, 0.690D, 1.205D, 1.230D, 0.275D, 0.835D),
+                    -0.35D, -0.010D, -3.55D, -0.075D, 3.55D, 0.035D);
+            case "martialartist" -> withRegen(createClassStats(4, 1, 2, 2, 4, 2, 0.850D, 0.770D, 0.690D, 1.015D, 0.780D, 0.950D, 1.270D),
+                    -0.85D, -0.030D, 6.45D, 0.125D, 5.55D, 0.025D);
+            case "cleric" -> withTp(withRegen(createClassStats(0, 2, 1, 0, 4, 5, 0.290D, 0.705D, 0.620D, 0.920D, 1.500D, 0.875D, 1.850D),
+                    -0.85D, -0.030D, 6.45D, 0.125D, 5.55D, 0.025D), -0.1D, 0.25D);
+            case "paladin" -> withRegen(createClassStats(5, 1, 3, 1, 1, 1, 0.850D, 0.575D, 0.830D, 1.205D, 1.320D, 0.725D, 1.560D),
+                    0.65D, 0.025D, -1.55D, -0.035D, -2.45D, -0.015D);
+            case "tank" -> withTp(withRegen(createClassStats(3, 0, 3, 3, 2, 1, 0.640D, 0.510D, 0.900D, 1.205D, 1.500D, 0.575D, 1.560D),
+                    0.90D, 0.030D, -0.55D, -0.015D, -1.45D, -0.005D), 0.0D, 0.25D);
+            case "speedster" -> withRegen(createClassStats(1, 6, 0, 0, 3, 2, 0.640D, 0.900D, 0.480D, 1.110D, 1.140D, 0.650D, 1.560D),
+                    0.10D, -0.005D, -1.25D, -0.030D, 2.50D, 0.025D);
+            case "duelist" -> withRegen(createClassStats(2, 3, 2, 2, 2, 2, 0.640D, 0.835D, 0.620D, 1.300D, 1.140D, 0.725D, 1.850D),
+                    0.45D, 0.015D, -0.90D, -0.025D, 1.65D, 0.010D);
+            case "kiassassin" -> withRegen(createClassStats(0, 4, 0, 0, 6, 4, 0.150D, 0.770D, 0.410D, 0.825D, 1.050D, 0.950D, 1.850D),
+                    -0.60D, -0.020D, 2.00D, 0.040D, -4.00D, -0.050D);
+            case "potentialist" -> createClassStats(3, 3, 3, 3, 3, 3, 0.570D, 0.640D, 0.620D, 0.920D, 1.140D, 0.650D, 1.270D);
             default -> createZeroClassStats();
         };
         stats.setPassive(defaultPassive(normalizedClassId));
@@ -605,12 +594,12 @@ public final class DmzClassConfigManager {
         mergedScaling.setStaminaScaling(sum(raceScaling != null ? raceScaling.getStaminaScaling() : null, classScaling != null ? classScaling.getStaminaScaling() : null));
         mergedScaling.setDefenseScaling(sum(raceScaling != null ? raceScaling.getDefenseScaling() : null, classScaling != null ? classScaling.getDefenseScaling() : null));
         mergedScaling.setDefenseScalingMax(sum(
-                resolvedCurveMax(raceScaling != null ? raceScaling.getDefenseScaling() : null, raceScaling != null ? raceScaling.getDefenseScalingMax() : null),
-                resolvedCurveMax(classScaling != null ? classScaling.getDefenseScaling() : null, classScaling != null ? classScaling.getDefenseScalingMax() : null)));
+                resolvedCurveMax(raceScaling != null ? raceScaling.getDefenseScaling() : null, raceScaling != null ? raceScaling.getDefenseScalingMax() : null, DEFENSE_SCALING_MAX_RATIO),
+                resolvedCurveMax(classScaling != null ? classScaling.getDefenseScaling() : null, classScaling != null ? classScaling.getDefenseScalingMax() : null, DEFENSE_SCALING_MAX_RATIO)));
         mergedScaling.setVitalityScaling(sum(raceScaling != null ? raceScaling.getVitalityScaling() : null, classScaling != null ? classScaling.getVitalityScaling() : null));
         mergedScaling.setVitalityScalingMax(sum(
-                resolvedCurveMax(raceScaling != null ? raceScaling.getVitalityScaling() : null, raceScaling != null ? raceScaling.getVitalityScalingMax() : null),
-                resolvedCurveMax(classScaling != null ? classScaling.getVitalityScaling() : null, classScaling != null ? classScaling.getVitalityScalingMax() : null)));
+                resolvedCurveMax(raceScaling != null ? raceScaling.getVitalityScaling() : null, raceScaling != null ? raceScaling.getVitalityScalingMax() : null, VITALITY_SCALING_MAX_RATIO),
+                resolvedCurveMax(classScaling != null ? classScaling.getVitalityScaling() : null, classScaling != null ? classScaling.getVitalityScalingMax() : null, VITALITY_SCALING_MAX_RATIO)));
         mergedScaling.setKiPowerScaling(sum(raceScaling != null ? raceScaling.getKiPowerScaling() : null, classScaling != null ? classScaling.getKiPowerScaling() : null));
         mergedScaling.setEnergyScaling(sum(raceScaling != null ? raceScaling.getEnergyScaling() : null, classScaling != null ? classScaling.getEnergyScaling() : null));
         merged.setStatScaling(mergedScaling);
@@ -644,13 +633,11 @@ public final class DmzClassConfigManager {
         Double defenseScaling = scaling.getDefenseScaling();
         Double vitalityScaling = scaling.getVitalityScaling();
         if (defenseScaling != null && scaling.getDefenseScalingMax() == null) {
-            scaling.setDefenseScalingMax(defenseScaling * CURVED_SCALING_MAX_RATIO);
+            scaling.setDefenseScalingMax(defenseScaling * DEFENSE_SCALING_MAX_RATIO);
         }
         if (vitalityScaling != null) {
-            vitalityScaling = roundToOneDecimal(vitalityScaling);
-            scaling.setVitalityScaling(vitalityScaling);
             if (scaling.getVitalityScalingMax() == null) {
-                scaling.setVitalityScalingMax(vitalityScaling * CURVED_SCALING_MAX_RATIO);
+                scaling.setVitalityScalingMax(vitalityScaling * VITALITY_SCALING_MAX_RATIO);
             }
         }
         return classStats;
@@ -719,11 +706,10 @@ public final class DmzClassConfigManager {
         scaling.setStrengthScaling(strengthScaling);
         scaling.setStrikePowerScaling(strikePowerScaling);
         scaling.setDefenseScaling(defenseScaling);
-        scaling.setDefenseScalingMax(defenseScaling * CURVED_SCALING_MAX_RATIO);
+        scaling.setDefenseScalingMax(defenseScaling * DEFENSE_SCALING_MAX_RATIO);
         scaling.setStaminaScaling(staminaScaling);
-        double roundedVitalityScaling = roundToOneDecimal(vitalityScaling);
-        scaling.setVitalityScaling(roundedVitalityScaling);
-        scaling.setVitalityScalingMax(roundedVitalityScaling * CURVED_SCALING_MAX_RATIO);
+        scaling.setVitalityScaling(vitalityScaling);
+        scaling.setVitalityScalingMax(vitalityScaling * VITALITY_SCALING_MAX_RATIO);
         scaling.setKiPowerScaling(kiPowerScaling);
         scaling.setEnergyScaling(energyScaling);
         classStats.setStatScaling(scaling);
@@ -739,20 +725,32 @@ public final class DmzClassConfigManager {
         return classStats;
     }
 
-    private static Double resolvedCurveMax(Double minScaling, Double maxScaling) {
+    private static Double resolvedCurveMax(Double minScaling, Double maxScaling, double defaultRatio) {
         if (maxScaling != null && Double.isFinite(maxScaling)) {
             return maxScaling;
         }
-        return minScaling != null && Double.isFinite(minScaling) ? minScaling * CURVED_SCALING_MAX_RATIO : null;
-    }
-
-    private static double roundToOneDecimal(double value) {
-        return Math.round(value * 10D) / 10D;
+        return minScaling != null && Double.isFinite(minScaling) ? minScaling * defaultRatio : null;
     }
 
     private static RaceStatsConfig.ClassStats withTp(RaceStatsConfig.ClassStats classStats, double tpCostMultiplier, double tpGainMultiplier) {
         classStats.setTpCostMultiplier(tpCostMultiplier);
         classStats.setTpGainMultiplier(tpGainMultiplier);
+        return classStats;
+    }
+
+    private static RaceStatsConfig.ClassStats withRegen(RaceStatsConfig.ClassStats classStats,
+                                                         double baseHp5,
+                                                         double hp5VitScaling,
+                                                         double baseEp5,
+                                                         double ep5EneScaling,
+                                                         double baseSp5,
+                                                         double sp5StmScaling) {
+        classStats.setBaseHp5(baseHp5);
+        classStats.setHp5VitScaling(hp5VitScaling);
+        classStats.setBaseEp5(baseEp5);
+        classStats.setEp5EneScaling(ep5EneScaling);
+        classStats.setBaseSp5(baseSp5);
+        classStats.setSp5StmScaling(sp5StmScaling);
         return classStats;
     }
 

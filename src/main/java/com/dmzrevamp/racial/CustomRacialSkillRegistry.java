@@ -49,7 +49,11 @@ public final class CustomRacialSkillRegistry {
         if (id == null || id.isBlank()) {
             return null;
         }
-        return SKILLS.get(id.toLowerCase());
+        String normalized = id.toLowerCase();
+        // Compatibility with character configs generated before the Frost Demon
+        // racial adopted the canonical frostdemonrevamp id.
+        if ("frostrevamp".equals(normalized)) normalized = "frostdemonrevamp";
+        return SKILLS.get(normalized);
     }
 
     // Lets mixins quickly check whether DMZ should use Overhaul's custom racial handling for an id.

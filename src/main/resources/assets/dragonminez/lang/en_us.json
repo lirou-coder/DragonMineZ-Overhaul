@@ -43,6 +43,8 @@
   "skill.dragonminez.racial_saiyanrevamp.desc": "Surviving and fully recovering from a near-death experience grants a permanent stat boost based on the HP you lost, with diminishing returns after repeated uses. This has a cooldown of %1$s seconds. After each Zenkai, you can push your power even further beyond, and Rage can boost your power even more.",
   "skill.dragonminez.racial_frostrevamp": "Dangerously Fast",
   "skill.dragonminez.racial_frostrevamp.desc": "Your Speed and Ki Power increase as your HP decreases. Your attacks cost %1$s%% less Stamina. In lower forms, you can accumulate power and expend it in higher forms for a major power boost.",
+  "skill.dragonminez.racial_frostdemonrevamp": "Dangerously Fast",
+  "skill.dragonminez.racial_frostdemonrevamp.desc": "Your Speed and Ki Power increase as your HP decreases. Your attacks cost %1$s%% less Stamina. In lower forms, you can accumulate power and expend it in higher forms for a major power boost.",
   "skill.dragonminez.racial_bioandroidrevamp": "the Perfect DNA",
   "skill.dragonminez.racial_bioandroidrevamp.desc": "You have access to %1$s%% of the Humans', Saiyans', Namekians' and Frost Demons' racial abilities. On top of that, you have unique abilities depending on your form: Life Drain, self-destruction, or creating junior versions of yourself.",
   "skill.dragonminez.racial_majinrevamp": "Majin Absorption",

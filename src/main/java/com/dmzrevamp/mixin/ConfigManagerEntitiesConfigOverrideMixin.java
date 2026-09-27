@@ -22,16 +22,7 @@ public abstract class ConfigManagerEntitiesConfigOverrideMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String ENTITIES_SNAPSHOT = "data/dmzrevamp/defaults/config/entities.json";
     private static final String RADIAL_LAYOUT_SNAPSHOT = "data/dmzrevamp/defaults/config/radial_layout.json";
-    private static final String RACE_SNAPSHOT_ROOT = "data/dmzrevamp/defaults/races/";
     private static final String SAIRENS_DMZ_WORLD = "sairens_dmz_world";
-    private static final String[] DEFAULT_RACES = {
-            "bioandroid",
-            "frostdemon",
-            "human",
-            "majin",
-            "namekian",
-            "saiyan"
-    };
 
     @Shadow(remap = false)
     @Final
@@ -72,13 +63,6 @@ public abstract class ConfigManagerEntitiesConfigOverrideMixin {
             return;
         }
         dmzrevamp$copyMissingSnapshot(RADIAL_LAYOUT_SNAPSHOT, CONFIG_DIR.resolve("radial_layout.json"), "Dragon Mine Z radial layout config");
-        for (String race : DEFAULT_RACES) {
-            dmzrevamp$copyMissingSnapshot(
-                    RACE_SNAPSHOT_ROOT + race + "/character.json",
-                    CONFIG_DIR.resolve("races").resolve(race).resolve("character.json"),
-                    "Dragon Mine Z " + race + " character config"
-            );
-        }
     }
 
     private static void dmzrevamp$copyMissingSnapshot(String snapshot, Path target, String description) {
