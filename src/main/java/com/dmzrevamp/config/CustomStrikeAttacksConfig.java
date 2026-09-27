@@ -74,7 +74,6 @@ public final class CustomStrikeAttacksConfig {
                     StrikeSettings.defaults(type.isEvasive() ? 400 : 240));
         }
         config.strikeAttacks.put(StrikeAttackTemplates.ANDROID_ABSORPTION, StrikeSettings.defaults(1200));
-        config.strikeAttacks.put(StrikeAttackTemplates.NAMEKIAN_REGENERATION, StrikeSettings.defaults(1200));
         return config;
     }
 

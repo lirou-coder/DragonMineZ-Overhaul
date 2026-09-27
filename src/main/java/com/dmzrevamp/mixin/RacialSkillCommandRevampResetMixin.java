@@ -1,9 +1,6 @@
 package com.dmzrevamp.mixin;
 
-import com.dmzrevamp.racial.CustomRacialCooldownEvents;
-import com.dmzrevamp.racial.impl.MajinRevampRacialSkill;
-import com.dmzrevamp.racial.impl.NamekianRevampRacialSkill;
-import com.dmzrevamp.racial.impl.SaiyanRpgZenkaiEvents;
+import com.dmzrevamp.racial.RevampRacialResetHelper;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.commands.RacialSkillCommand;
@@ -24,10 +21,7 @@ public abstract class RacialSkillCommandRevampResetMixin {
                                                            CallbackInfoReturnable<Integer> cir) {
         for (ServerPlayer player : targets) {
             StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                SaiyanRpgZenkaiEvents.resetZenkai(player, data);
-                MajinRevampRacialSkill.resetAbsorption(player, data);
-                NamekianRevampRacialSkill.resetAssimilation(player, data);
-                CustomRacialCooldownEvents.clearAllRacialCooldowns(player);
+                RevampRacialResetHelper.resetAll(player, data);
             });
         }
     }

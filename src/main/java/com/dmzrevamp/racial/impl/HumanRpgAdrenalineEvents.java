@@ -47,12 +47,15 @@ public final class HumanRpgAdrenalineEvents {
 
         double maxEnergy = Math.max(1D, data.getMaxEnergy());
         double currentRatio = data.getResources().getCurrentEnergy() / maxEnergy;
-        if (currentRatio + 0.0001D < DmzRevampRacialConfigs.humanRpg().fullKiThreshold) {
+        double minimum = Math.max(0D, DmzRevampRacialConfigs.humanRpg().minimumKiThreshold);
+        double maximum = Math.max(minimum + 0.0001D, DmzRevampRacialConfigs.humanRpg().fullKiThreshold);
+        double strength = Math.max(0D, Math.min(1D, (currentRatio - minimum) / (maximum - minimum)));
+        if (strength <= 0D) {
             removeBoosts(data);
             return;
         }
 
-        double boost = DmzRevampRacialConfigs.humanRpg().fullKiPowerBoost;
+        double boost = DmzRevampRacialConfigs.humanRpg().fullKiPowerBoost * strength;
         String bonusKey = HUMAN_BONUS_KEY;
         if (human && data.getStatus().isAndroidUpgraded()) {
             boost *= DmzRevampRacialConfigs.humanRpg().androidUpgradedFullKiPowerBoostMultiplier;

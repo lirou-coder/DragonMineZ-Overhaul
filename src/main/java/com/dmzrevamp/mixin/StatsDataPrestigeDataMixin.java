@@ -4,7 +4,7 @@ import com.dmzrevamp.compat.DmzSkillProgressionCompat;
 import com.dmzrevamp.revamp.prestige.PrestigeDataAccess;
 import com.dmzrevamp.revamp.strike.RaceExclusiveStrikeEvents;
 import com.dmzrevamp.revamp.strike.StrikeAttackTemplates;
-import com.dmzrevamp.racial.impl.NamekianRevampRacialSkill;
+import com.dmzrevamp.racial.RevampRacialResetHelper;
 import com.dragonminez.common.stats.StatsData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -67,7 +67,7 @@ public abstract class StatsDataPrestigeDataMixin implements PrestigeDataAccess {
         data.getTechniques().removeTechnique(StrikeAttackTemplates.ANDROID_ABSORPTION);
         data.getTechniques().removeTechnique(RaceExclusiveStrikeEvents.SLEEP_RECOVERY_ID);
         data.getTechniques().removeTechnique(StrikeAttackTemplates.NAMEKIAN_REGENERATION);
-        NamekianRevampRacialSkill.resetAssimilation(player, data);
+        RevampRacialResetHelper.resetAll(player, data);
         if (!keepSkills) {
             DmzSkillProgressionCompat.resetProgression(player, true);
         }

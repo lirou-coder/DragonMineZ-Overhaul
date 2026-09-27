@@ -12,7 +12,8 @@ public class HumanRpgRacialConfig {
     public double androidUpgradedKiRegenBonusMultiplier = 2.0D;
     public double fullKiPowerBoost = 0.20D;
     public double androidUpgradedFullKiPowerBoostMultiplier = 0.5D;
-    public double fullKiThreshold = 0.85D;
+    public double fullKiThreshold = 0.90D;
+    public double minimumKiThreshold = 0.10D;
     public List<String> boostedStats = new ArrayList<>(List.of("STR", "SKP", "PWR", "DEF"));
 
     // Adds human-readable notes to the generated JSON without affecting gameplay values.
@@ -22,7 +23,8 @@ public class HumanRpgRacialConfig {
         comments.put("androidUpgradedKiRegenBonusMultiplier", "Multiplier applied to kiRegenBonus when Android Upgraded is active. 2.0 makes the default +25% become +50%.");
         comments.put("fullKiPowerBoost", "Multiplicative stat boost while at or above the full Ki threshold. 0.20 = +20%.");
         comments.put("androidUpgradedFullKiPowerBoostMultiplier", "Multiplier applied to fullKiPowerBoost when Android Upgraded is active. 0.5 makes the default +20% become +10%.");
-        comments.put("fullKiThreshold", "Current Ki ratio required for the stat boost. 0.85 = 85% Ki or higher.");
+        comments.put("fullKiThreshold", "Ki ratio where the stat boost reaches its configured maximum. 0.90 = 90% Ki.");
+        comments.put("minimumKiThreshold", "Ki ratio where the scaling stat boost reaches zero. Between this and fullKiThreshold it scales linearly.");
         comments.put("boostedStats", "DMZ stats boosted by Ki Boosting Body while the threshold is met. RES is interpreted as DEF only for this passive.");
         return comments;
     }

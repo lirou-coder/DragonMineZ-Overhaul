@@ -3,23 +3,57 @@ package com.dmzrevamp.mixin.client;
 import com.dmzrevamp.racial.CustomRacialActionHelper;
 import com.dmzrevamp.racial.CustomRacialSkill;
 import com.dragonminez.client.gui.radial.AbstractRadialNode;
+import com.dragonminez.client.gui.radial.RadialNode;
+import com.dragonminez.client.gui.radial.nodes.AbsorptionEjectNode;
+import com.dragonminez.client.gui.radial.nodes.BioSkillChoiceNode;
 import com.dragonminez.client.gui.radial.nodes.RacialSkillNode;
 import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.ActionMode;
+import com.dragonminez.common.racial.RacialData;
+import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Mixin(RacialSkillNode.class)
 public abstract class RacialActionMenuSlotRevampMixin extends AbstractRadialNode {
+    @Inject(method = "buildChildren", at = @At("HEAD"), cancellable = true, remap = false)
+    private void dmzrevamp$buildMajinRevampEjectSlots(StatsData data, CallbackInfoReturnable<List<RadialNode>> cir) {
+        if ("bioandroidrevamp".equalsIgnoreCase(CustomRacialActionHelper.getConfiguredRacialSkillId(data))) {
+            if ("semi".equals(BioAndroidEvolution.resolveTier(data))) {
+                cir.setReturnValue(List.of(new BioSkillChoiceNode(false), new BioSkillChoiceNode(true)));
+            } else {
+                cir.setReturnValue(List.of());
+            }
+            return;
+        }
+        if (!"majinrevamp".equalsIgnoreCase(CustomRacialActionHelper.getConfiguredRacialSkillId(data))) return;
+        List<RadialNode> slots = new ArrayList<>();
+        for (int i = 0; i < data.getRacialData().getAbsorptions().size(); i++) {
+            slots.add(new AbsorptionEjectNode(i, data.getRacialData().getAbsorptions().get(i)));
+        }
+        cir.setReturnValue(slots);
+    }
+
     @Inject(method = "label", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$labelCustomRacialAction(StatsData data, CallbackInfoReturnable<Component> cir) {
         if (!dmzrevamp$isVanillaRacialNode()) return;
+        if ("bioandroidrevamp".equalsIgnoreCase(CustomRacialActionHelper.getConfiguredRacialSkillId(data))) {
+            String tier = BioAndroidEvolution.resolveTier(data);
+            String suffix = "semi".equals(tier)
+                    && RacialData.BIO_SKILL_EXPLODE.equals(data.getRacialData().getBioSelectedSkill())
+                    ? "explode" : tier;
+            cir.setReturnValue(Component.translatable("gui.action.dragonminez.racial.bioandroid." + suffix));
+            return;
+        }
         CustomRacialSkill skill = actionSkill(data);
         if (skill == null) {
             return;

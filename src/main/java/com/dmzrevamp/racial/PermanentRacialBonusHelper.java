@@ -35,7 +35,9 @@ public final class PermanentRacialBonusHelper {
         double existingBonusValue = getNamedBonusValue(bonusStats, normalizedStat, bonusName);
         double sharedBonusValue = Arrays.stream(sharedBonusNames == null ? new String[0] : sharedBonusNames)
                 .filter(name -> name != null && !name.equals(bonusName))
-                .mapToDouble(name -> getNamedBonusValue(bonusStats, normalizedStat, name))
+                .mapToDouble(name -> name.endsWith("*")
+                        ? getPrefixedBonusValue(bonusStats, normalizedStat, name.substring(0, name.length() - 1))
+                        : getNamedBonusValue(bonusStats, normalizedStat, name))
                 .sum();
 
         int addedFlatValue = (int) Math.round(addedValue);
@@ -70,6 +72,17 @@ public final class PermanentRacialBonusHelper {
                                                         double addedValue,
                                                         double capRatio,
                                                         boolean applyMultipliers) {
+        return addOrAccumulateBaseCappedStat(data, stat, bonusName, addedValue, capRatio,
+                applyMultipliers, new String[0]);
+    }
+
+    public static boolean addOrAccumulateBaseCappedStat(StatsData data,
+                                                        String stat,
+                                                        String bonusName,
+                                                        double addedValue,
+                                                        double capRatio,
+                                                        boolean applyMultipliers,
+                                                        String... sharedBonusNames) {
         if (data == null || stat == null || bonusName == null || addedValue <= 0D || capRatio <= 0D) {
             return false;
         }
@@ -86,7 +99,12 @@ public final class PermanentRacialBonusHelper {
 
         BonusStats bonusStats = data.getBonusStats();
         double existingBonusValue = getNamedBonusValue(bonusStats, normalizedStat, bonusName);
-        int availableRoom = Math.max(0, (int) Math.floor(baseStatValue * capRatio) - (int) Math.round(existingBonusValue));
+        double sharedBonusValue = Arrays.stream(sharedBonusNames == null ? new String[0] : sharedBonusNames)
+                .filter(name -> name != null && !name.equals(bonusName))
+                .mapToDouble(name -> getNamedBonusValue(bonusStats, normalizedStat, name))
+                .sum();
+        int availableRoom = Math.max(0, (int) Math.floor(baseStatValue * capRatio)
+                - (int) Math.round(existingBonusValue + sharedBonusValue));
         if (availableRoom <= 0) {
             return false;
         }
@@ -142,6 +160,13 @@ public final class PermanentRacialBonusHelper {
             case "STR", "SKP", "RES", "VIT", "PWR", "ENE" -> true;
             default -> false;
         };
+    }
+
+    private static double getPrefixedBonusValue(BonusStats bonusStats, String stat, String prefix) {
+        return bonusStats.getBonuses(stat).stream()
+                .filter(bonus -> bonus.name != null && bonus.name.startsWith(prefix))
+                .mapToDouble(bonus -> bonus.value)
+                .sum();
     }
 
     private static boolean isRacialBonusStat(String normalizedStat) {

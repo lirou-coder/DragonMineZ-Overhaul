@@ -74,6 +74,11 @@ public class NamekianRevampRacialSkill implements CustomRacialSkill {
         if (PersistentRacialCooldown.isActive(player, data, COOLDOWN_KEY, LAST_USE_TAG, config.cooldownSeconds)) return;
 
         int previousUses = player.getPersistentData().getInt(USES_TAG);
+        int useLimit = effectiveUseLimit(config.maxAssimilationUses, config.effectDecayPerUse);
+        if (useLimit > 0 && previousUses >= useLimit) {
+            player.displayClientMessage(Component.translatable("message.dragonminez.racial.limit_reached"), true);
+            return;
+        }
         double decayPerUse = getDecayPerUse(config);
         double efficiency = Math.max(0D, 1D - previousUses * decayPerUse);
         if (efficiency <= 0D) {
@@ -161,10 +166,15 @@ public class NamekianRevampRacialSkill implements CustomRacialSkill {
         return Double.isFinite(config.effectDecayPerUse) ? Math.max(0D, config.effectDecayPerUse) : 0D;
     }
 
+    private static int effectiveUseLimit(int configured, double decayValue) {
+        double decay = Double.isFinite(decayValue) ? Math.max(0D, decayValue) : 0D;
+        int automatic = decay > 0D ? Math.max(0, (int) Math.floor(1D / decay)) : 0;
+        if (configured < 0 || automatic > 0 && configured > automatic) configured = 0;
+        return configured > 0 ? configured : automatic;
+    }
+
     private static double getEffectiveMaxBonusBaseStatRatio(NamekianRevampRacialConfig config) {
-        double configured = Double.isFinite(config.maxBonusCurrentStatRatio)
+        return Double.isFinite(config.maxBonusCurrentStatRatio)
                 ? Math.max(0D, config.maxBonusCurrentStatRatio) : 1D;
-        double decay = getDecayPerUse(config);
-        return decay <= 0D ? Double.POSITIVE_INFINITY : configured / decay;
     }
 }

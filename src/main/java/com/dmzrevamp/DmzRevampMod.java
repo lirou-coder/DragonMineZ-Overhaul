@@ -20,6 +20,7 @@ import com.dmzrevamp.entity.DmzRevampAttributes;
 import com.dmzrevamp.item.DmzRevampItems;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.racial.CustomRacialSkillRegistry;
+import com.dmzrevamp.racial.DmzNativeRacialBridge;
 import com.dmzrevamp.sound.DmzRevampSounds;
 import com.dmzrevamp.revamp.classes.skills.ClassPassiveAliases;
 import com.dmzrevamp.revamp.classes.DmzClassConfigManager;
@@ -69,6 +70,7 @@ public class DmzRevampMod {
         WeightMovementPenaltyConfig.initialize();
         DmzRevampNetwork.register();
         CustomRacialSkillRegistry.bootstrap();
+        DmzNativeRacialBridge.register();
         // Run after Sparking has suppressed/rebuilt DMZ defaults: Overhaul intentionally restores only PRESTIGE.
         MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, this::writePrestigeSagaBeforeQuestLoad);
     }

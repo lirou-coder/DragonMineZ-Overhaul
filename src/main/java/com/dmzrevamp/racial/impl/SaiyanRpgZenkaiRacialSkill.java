@@ -4,12 +4,13 @@ package com.dmzrevamp.racial.impl;
 import com.dmzrevamp.racial.CustomRacialSkill;
 import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
 import com.dragonminez.common.stats.StatsData;
+import com.dragonminez.common.stats.character.Cooldowns;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class SaiyanRpgZenkaiRacialSkill implements CustomRacialSkill {
-    public static final String COOLDOWN_KEY = "DmzRevampSaiyanZenkai";
+    public static final String COOLDOWN_KEY = Cooldowns.ZENKAI;
 
     @Override
     // This id must match the racialSkill value written in the Saiyan race config.

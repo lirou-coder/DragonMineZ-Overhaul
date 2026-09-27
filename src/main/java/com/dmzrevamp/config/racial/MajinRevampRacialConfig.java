@@ -14,6 +14,7 @@ public class MajinRevampRacialConfig {
     public double healthRegenRatio = 0.25D;
     public double statCopyRatio = 0.05D;
     public double effectDecayPerUse = 0.02D;
+    public int maxAbsorptionUses = 0;
     public double maxBonusBaseStatRatio = 1.0D;
     public double targetCurrentHealthDamageThreshold = 1.0D;
     public List<String> boostedStats = new ArrayList<>(List.of("STR", "SKP", "PWR", "DEF", "STM"));
@@ -27,6 +28,7 @@ public class MajinRevampRacialConfig {
         comments.put("healthRegenRatio", "Max health ratio healed after successful absorption. 0.25 = 25% max health.");
         comments.put("statCopyRatio", "Ratio copied from target stats. 0.05 = 5% of target stat values.");
         comments.put("effectDecayPerUse", "Each successful absorption loses this ratio of its boost per previous absorption. 0.02 = 2% less per use.");
+        comments.put("maxAbsorptionUses", "Overrides the amount of usable Absorptions. 0 uses the automatic limit from effectDecayPerUse.");
         comments.put("maxBonusBaseStatRatio", "Maximum permanent absorption bonus per stat compared to the absorber's base stat before decay scaling. 1.0 with effectDecayPerUse 0.02 allows up to 50x base stat total; 0 decay removes this cap.");
         comments.put("targetCurrentHealthDamageThreshold", "Absorption can occur when target current HP multiplied by this value is lower than the Majin player's Melee or Ki Damage. 1.0 = current HP must be lower than damage.");
         comments.put("boostedStats", "DMZ stats affected by Majin Absorption permanent bonuses. DEF and STM use the target's RES/base defense stat value.");

@@ -41,7 +41,7 @@ public class BioAndroidRacialSkill implements CustomRacialSkill {
         var config = DmzRevampRacialConfigs.bioAndroid();
         return Component.translatable(
                 "skill.dragonminez.racial_bioandroidrevamp.desc",
-                config.effectMultiplier
+                Math.round(config.effectMultiplier * 100D)
         );
     }
 }

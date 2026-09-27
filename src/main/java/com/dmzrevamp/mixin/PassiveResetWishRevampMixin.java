@@ -1,8 +1,6 @@
 package com.dmzrevamp.mixin;
 
-import com.dmzrevamp.racial.impl.MajinRevampRacialSkill;
-import com.dmzrevamp.racial.impl.SaiyanRpgZenkaiEvents;
-import com.dmzrevamp.racial.impl.NamekianRevampRacialSkill;
+import com.dmzrevamp.racial.RevampRacialResetHelper;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.wish.wishes.PassiveResetWish;
@@ -17,9 +15,7 @@ public abstract class PassiveResetWishRevampMixin {
     @Inject(method = "grant", at = @At("TAIL"), remap = false)
     private void dmzrevamp$resetRevampRacialPassives(ServerPlayer player, CallbackInfo ci) {
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            SaiyanRpgZenkaiEvents.resetZenkai(player, data);
-            MajinRevampRacialSkill.resetAbsorption(player, data);
-            NamekianRevampRacialSkill.resetAssimilation(player, data);
+            RevampRacialResetHelper.resetAll(player, data);
         });
     }
 }

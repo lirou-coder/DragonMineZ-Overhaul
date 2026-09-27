@@ -16,6 +16,7 @@ public class NamekianRevampRacialConfig {
     public boolean allowNamekianPlayers = true;
     public boolean allowNamekianNpcs = true;
     public double effectDecayPerUse = 0.02D;
+    public int maxAssimilationUses = 0;
     public double maxBonusCurrentStatRatio = 1.0D;
 
     public static Map<String, String> createComments() {
@@ -29,6 +30,7 @@ public class NamekianRevampRacialConfig {
         comments.put("allowNamekianPlayers", "Allows assimilation of other Namekian players when all normal power checks pass.");
         comments.put("allowNamekianNpcs", "Allows assimilation of DMZ Namekian NPCs and non-master Piccolo entities.");
         comments.put("effectDecayPerUse", "Each successful assimilation loses this ratio of its boost per previous assimilation. 0.02 = 2% less per use and determines the usable assimilation count.");
+        comments.put("maxAssimilationUses", "Overrides the amount of usable Assimilations. 0 uses the automatic limit from effectDecayPerUse.");
         comments.put("maxBonusCurrentStatRatio", "Maximum permanent Assimilation bonus ratio based only on each untransformed base stat, before decay scaling. The bonus is stored in one line and accepts multipliers.");
         return comments;
     }

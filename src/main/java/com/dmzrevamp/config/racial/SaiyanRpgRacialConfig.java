@@ -14,6 +14,8 @@ public class SaiyanRpgRacialConfig {
     public double statBonusPerStack = 0.005D;
     public int cooldownSeconds = 900;
     public double zenkaiDecayPerUse = 0.02D;
+    public int maxZenkais = 0;
+    public double maxZenkaiReleaseBonus = 0.15D;
     public double friendlyFistStackMultiplier = 0.5D;
     public boolean shadowDummyGiveZenkai = false;
     public boolean shadowDummyFriendlyFist = true;
@@ -29,6 +31,8 @@ public class SaiyanRpgRacialConfig {
         comments.put("statBonusPerStack", "Flat stat gain ratio per stack. 0.005 = +0.5% of the current raw stat per stack.");
         comments.put("cooldownSeconds", "Cooldown after a Zenkai is awarded.");
         comments.put("zenkaiDecayPerUse", "Each successful Zenkai loses this ratio of its boost per previous Zenkai. 0.02 = 2% less per use.");
+        comments.put("maxZenkais", "Overrides the amount of usable Zenkais. 0 uses the automatic limit from zenkaiDecayPerUse. Invalid negative or above-decay values are treated as 0.");
+        comments.put("maxZenkaiReleaseBonus", "Maximum additive release gained progressively from Zenkais. 0.15 means +15 release points at the final usable Zenkai.");
         comments.put("friendlyFistStackMultiplier", "Stack multiplier when damage came from a player with Friendly Fist active.");
         comments.put("shadowDummyGiveZenkai", "Whether damage caused by a DragonMineZ Shadow Dummy can contribute to Zenkai.");
         comments.put("shadowDummyFriendlyFist", "When Shadow Dummy Zenkai is enabled, treats its damage like Friendly Fist damage and applies friendlyFistStackMultiplier.");

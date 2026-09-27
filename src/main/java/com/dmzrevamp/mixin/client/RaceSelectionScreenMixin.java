@@ -5,6 +5,7 @@ import com.dmzrevamp.racial.CustomRacialSkillRegistry;
 import com.dragonminez.client.gui.character.RaceSelectionScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -27,7 +28,8 @@ public abstract class RaceSelectionScreenMixin {
             if (key != null && key.endsWith(".desc")) {
                 return customSkill.getRaceSelectionDescription().copy();
             }
-            return customSkill.getSkillTitle().copy();
+            return customSkill.getSkillTitle().copy().withStyle(style -> style.withFont(
+                    ResourceLocation.fromNamespaceAndPath("dragonminez", "smooth")));
         }
         return Component.translatable(key, args);
     }

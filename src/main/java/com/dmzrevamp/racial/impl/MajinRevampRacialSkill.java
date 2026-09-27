@@ -26,6 +26,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Locale;
 
 public class MajinRevampRacialSkill implements CustomRacialSkill {
@@ -98,21 +100,31 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
         }
 
         int previousUses = player.getPersistentData().getInt(ABSORPTION_USES_TAG);
+        int useLimit = effectiveUseLimit(config.maxAbsorptionUses, config.effectDecayPerUse);
+        if (useLimit > 0 && previousUses >= useLimit) {
+            player.displayClientMessage(Component.translatable("message.dragonminez.racial.limit_reached"), true);
+            return;
+        }
         double efficiency = Math.max(0D, 1D - (previousUses * getDecayPerUse(config)));
         if (efficiency <= 0D) {
             return;
         }
 
         boolean changedStats = false;
+        int slotIndex = data.getRacialData().getAbsorptionSlotCounter() + 1;
+        String slotName = "Absorption_Revamp_" + slotIndex;
+        Map<String, Integer> grantedStats = new HashMap<>();
         double statCopy = config.statCopyRatio * efficiency;
         if (target instanceof ServerPlayer targetPlayer && config.allowPlayerAbsorption) {
             boolean[] changed = new boolean[]{false};
-            StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> changed[0] = applyPlayerAbsorption(data, targetData, statCopy, config));
+            StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(targetData -> changed[0] =
+                    applyPlayerAbsorption(data, targetData, statCopy, config, grantedStats));
             changedStats = changed[0];
         } else if (target instanceof Mob && config.allowMobAbsorption) {
             int increase = (int) Math.max(1D, target.getMaxHealth() * statCopy);
             for (String stat : boostedStats(config)) {
-                changedStats |= addAbsorptionBonus(data, stat, increase, getEffectiveMaxBonusBaseStatRatio(config));
+                changedStats |= addAbsorptionBonus(data, stat, increase, getEffectiveMaxBonusBaseStatRatio(config),
+                        grantedStats);
             }
         }
 
@@ -125,6 +137,17 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
             player.heal((float) (player.getMaxHealth() * healthRegen));
         }
         killAbsorbedTarget(player, target);
+        if (target instanceof Mob) {
+            data.getRacialData().setAbsorptionSlotCounter(slotIndex);
+            data.getRacialData().addOwnedBonusName(slotName);
+            data.getRacialData().addAbsorption(new com.dragonminez.common.racial.RacialData.AbsorptionSlot(
+                    slotName, target.getUUID(), target.getName().getString(), grantedStats, player.level().getGameTime()));
+            while (data.getRacialData().getAbsorptions().size() > 5) {
+                // Forgetting a slot deliberately keeps its already-earned bonuses permanent.
+                var forgotten = data.getRacialData().getAbsorptions().remove(0);
+                data.getRacialData().removeOwnedBonusName(forgotten.bonusName());
+            }
+        }
         data.getResources().addRacialSkillCount(1);
         player.getPersistentData().putInt(ABSORPTION_USES_TAG, previousUses + 1);
         NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
@@ -149,6 +172,14 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
 
     public static void resetAbsorption(ServerPlayer player, StatsData data) {
         boolean changed = false;
+        for (var slot : List.copyOf(data.getRacialData().getAbsorptions())) {
+            for (String stat : slot.grantedStats().keySet()) {
+                data.getBonusStats().removeBonus(stat, slot.bonusName());
+                changed = true;
+            }
+            data.getRacialData().removeOwnedBonusName(slot.bonusName());
+        }
+        data.getRacialData().getAbsorptions().clear();
         for (String stat : new String[]{"STR", "SKP", "RES", "DEF", "STM", "VIT", "PWR", "ENE"}) {
             double existing = getExistingAbsorptionBonus(data, stat);
             if (existing <= 0D) {
@@ -164,21 +195,21 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
         }
     }
 
-    private static boolean applyPlayerAbsorption(StatsData data, StatsData targetData, double statCopy, MajinRevampRacialConfig config) {
+    private static boolean applyPlayerAbsorption(StatsData data, StatsData targetData, double statCopy,
+                                                  MajinRevampRacialConfig config, Map<String, Integer> grantedStats) {
         boolean changed = false;
         for (String stat : boostedStats(config)) {
             int value = getStatValue(targetData, stat);
             int increase = (int) Math.max(1D, value * statCopy);
-            changed |= addAbsorptionBonus(data, stat, increase, getEffectiveMaxBonusBaseStatRatio(config));
+            changed |= addAbsorptionBonus(data, stat, increase, getEffectiveMaxBonusBaseStatRatio(config),
+                    grantedStats);
         }
         return changed;
     }
 
     private static double getEffectiveMaxBonusBaseStatRatio(MajinRevampRacialConfig config) {
         double capRatio = config.maxBonusBaseStatRatio;
-        double safeBaseCapRatio = Double.isFinite(capRatio) ? Math.max(0D, capRatio) : 1.0D;
-        double decayPerUse = getDecayPerUse(config);
-        return decayPerUse <= 0D ? Double.POSITIVE_INFINITY : safeBaseCapRatio / decayPerUse;
+        return Double.isFinite(capRatio) ? Math.max(0D, capRatio) : 1.0D;
     }
 
     private static double getDecayPerUse(MajinRevampRacialConfig config) {
@@ -186,12 +217,21 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
         return Double.isFinite(decay) ? Math.max(0D, decay) : 0D;
     }
 
-    private static boolean addAbsorptionBonus(StatsData data, String stat, int increase, double capRatio) {
+    private static int effectiveUseLimit(int configured, double decayValue) {
+        double decay = Double.isFinite(decayValue) ? Math.max(0D, decayValue) : 0D;
+        int automatic = decay > 0D ? Math.max(0, (int) Math.floor(1D / decay)) : 0;
+        if (configured < 0 || automatic > 0 && configured > automatic) configured = 0;
+        return configured > 0 ? configured : automatic;
+    }
+
+    private static boolean addAbsorptionBonus(StatsData data, String stat, int increase, double capRatio,
+                                               Map<String, Integer> grantedStats) {
         String normalized = normalizeStat(stat);
         if (normalized.isEmpty() || increase <= 0) {
             return false;
         }
-        return PermanentRacialBonusHelper.addOrAccumulateBaseCappedStat(
+        double before = namedBonus(data, normalized, ABSORPTION_BONUS_KEY);
+        boolean changed = PermanentRacialBonusHelper.addOrAccumulateBaseCappedStat(
                 data,
                 normalized,
                 ABSORPTION_BONUS_KEY,
@@ -199,6 +239,14 @@ public class MajinRevampRacialSkill implements CustomRacialSkill {
                 capRatio,
                 true
         );
+        int granted = (int) Math.round(namedBonus(data, normalized, ABSORPTION_BONUS_KEY) - before);
+        if (granted > 0) grantedStats.put(normalized, granted);
+        return changed && granted > 0;
+    }
+
+    private static double namedBonus(StatsData data, String stat, String name) {
+        return data.getBonusStats().getBonuses(stat).stream()
+                .filter(bonus -> name.equals(bonus.name)).mapToDouble(bonus -> bonus.value).sum();
     }
 
     private static double getExistingAbsorptionBonus(StatsData data, String stat) {

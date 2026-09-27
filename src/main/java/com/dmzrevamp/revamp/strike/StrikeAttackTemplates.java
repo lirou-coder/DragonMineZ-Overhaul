@@ -13,8 +13,6 @@ public final class StrikeAttackTemplates {
     public static void registerRaceExclusiveDefaults() {
         StrikeAttackData absorption = register(ANDROID_ABSORPTION, "technique.dmzrevamp.android_absorption", "System", 1.25F, "cell_absorb", 40);
         absorption.setCooldown(1200);
-        StrikeAttackData regeneration = register(NAMEKIAN_REGENERATION, "technique.dmzrevamp.namekian_regeneration", "System", 1.0F, "animation.technique.regeneration", 28);
-        regeneration.setCooldown(1200);
     }
 
     public static StrikeAttackData copy(String id) {
