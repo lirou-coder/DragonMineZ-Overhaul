@@ -56,6 +56,13 @@ import java.util.UUID;
 /** Server-authoritative two-participant Strike/Combo clash. */
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class StrikeClashManager {
+    private static final java.util.Set<String> NON_CLASH_STRIKES = java.util.Set.of(
+            "oozaru_slam",
+            "dimensional_punch",
+            "dimensional_sword_attack",
+            "blue_hurricane",
+            StrikeAttackTemplates.NAMEKIAN_REGENERATION
+    );
     private static final float DRIFT_PER_TICK = 0.005F;
     private static final float POWER_FLOOR = 0.6F;
     private static final float POWER_SPAN = 0.95F;
@@ -71,6 +78,16 @@ public final class StrikeClashManager {
     };
 
     private StrikeClashManager() {
+    }
+
+    /**
+     * Attacks handled by DMZ as area/projectile/recovery actions never enter
+     * the target-lock timeline used by Strike Clashes. Target-optional attacks
+     * such as Wolf Fang and Deadly Dance intentionally remain eligible: when
+     * they do capture a target, their active strike contains that target UUID.
+     */
+    public static boolean canTechniqueStartClash(String techniqueId) {
+        return techniqueId != null && !techniqueId.isEmpty() && !NON_CLASH_STRIKES.contains(techniqueId);
     }
 
     /** Called on the first hit of a newly-created player Strike, before damage is applied. */

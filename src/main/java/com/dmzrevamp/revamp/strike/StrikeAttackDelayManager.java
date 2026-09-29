@@ -59,6 +59,7 @@ public final class StrikeAttackDelayManager {
         if (data == null || !data.getStatus().isHasCreatedCharacter() || data.getStatus().isStunned()) return false;
         TechniqueData selected = data.getTechniques().getSelectedTechnique();
         if (!(selected instanceof StrikeAttackData strike)) return false;
+        if (!StrikeClashManager.canTechniqueStartClash(strike.getId())) return false;
 
         String cooldownKey = "TechniqueCooldown_" + strike.getId();
         if (data.getCooldowns().hasCooldown(cooldownKey)) return false;

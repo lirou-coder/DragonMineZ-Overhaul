@@ -621,7 +621,7 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         return LongTpCostHelper.formatLikeTp(LongTpCostHelper.calculateRecursiveCost(statsData, tpMultiplier));
     }
 
-    @Inject(method = "lambda$initStatButtons$1", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
+    @Inject(method = "lambda$initStatButtons$10", at = @At("HEAD"), cancellable = true, remap = false, require = 1)
     private void dmzrevamp$cycleExtendedTpMultiplier(net.minecraft.client.gui.components.Button button, CallbackInfo ci) {
         tpMultiplier = dmzrevamp$nextTpMultiplier(tpMultiplier);
         refreshStatButtons();
