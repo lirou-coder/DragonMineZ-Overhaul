@@ -30,6 +30,34 @@ public final class DmzRevampHelper {
 
     // Adds the race/class starting stats so level calculations only count points earned after character creation.
     public static int getInitialStatTotal(StatsData data) {
+        RaceStatsConfig.BaseStats baseStats = getInitialBaseStats(data);
+        if (baseStats == null) return 0;
+        return getInt(baseStats.getStrength())
+                + getInt(baseStats.getStrikePower())
+                + getInt(baseStats.getResistance())
+                + getInt(baseStats.getVitality())
+                + getInt(baseStats.getKiPower())
+                + getInt(baseStats.getEnergy());
+    }
+
+    /** Returns the race + class starting value already merged by DMZ for one core attribute. */
+    public static int getInitialStatValue(StatsData data, String stat) {
+        if (data == null || stat == null) return 0;
+        RaceStatsConfig.BaseStats baseStats = getInitialBaseStats(data);
+        if (baseStats == null) return 0;
+        return switch (stat.toUpperCase(java.util.Locale.ROOT)) {
+            case "STR" -> getInt(baseStats.getStrength());
+            case "SKP", "SPD" -> getInt(baseStats.getStrikePower());
+            case "RES" -> getInt(baseStats.getResistance());
+            case "VIT" -> getInt(baseStats.getVitality());
+            case "PWR" -> getInt(baseStats.getKiPower());
+            case "ENE" -> getInt(baseStats.getEnergy());
+            default -> 0;
+        };
+    }
+
+    private static RaceStatsConfig.BaseStats getInitialBaseStats(StatsData data) {
+        if (data == null) return null;
         Character character = data.getCharacter();
         RaceStatsConfig raceConfig = ConfigManager.getRaceStats(character.getRaceName());
         RaceStatsConfig.ClassStats classStats = raceConfig != null ? raceConfig.getClassStats(character.getCharacterClass()) : null;
@@ -39,16 +67,7 @@ public final class DmzRevampHelper {
             RaceStatsConfig.ClassStats defaultClassStats = defaultConfig.getClassStats(character.getCharacterClass());
             baseStats = defaultClassStats != null ? defaultClassStats.getBaseStats() : null;
         }
-        if (baseStats == null) {
-            return 0;
-        }
-
-        return getInt(baseStats.getStrength())
-                + getInt(baseStats.getStrikePower())
-                + getInt(baseStats.getResistance())
-                + getInt(baseStats.getVitality())
-                + getInt(baseStats.getKiPower())
-                + getInt(baseStats.getEnergy());
+        return baseStats;
     }
 
     // Rebuilds the displayed level from distributed stat points instead of trusting DMZ's original three-stat formula.

@@ -51,7 +51,7 @@ public final class FusionCosmeticArmorEvents {
             return;
         }
 
-        if (event.getType() == DMZEvent.FusionEvent.FusionType.POTHALA) {
+        if (usesPotaraAppearance(event.getType())) {
             if (applySpecialPotaraSet(controllingPlayer, otherPlayer)) {
                 return;
             }
@@ -70,6 +70,11 @@ public final class FusionCosmeticArmorEvents {
                     false
             );
         }
+    }
+
+    private static boolean usesPotaraAppearance(DMZEvent.FusionEvent.FusionType type) {
+        return type == DMZEvent.FusionEvent.FusionType.POTHALA
+                || (type != null && "BEETLE".equals(type.name()));
     }
 
     private static boolean applySpecialPotaraSet(ServerPlayer controllingPlayer, ServerPlayer otherPlayer) {

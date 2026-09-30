@@ -14,6 +14,7 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.common.stats.character.BonusStats;
+import com.dragonminez.common.stats.character.Cooldowns;
 import com.dragonminez.common.stats.character.Resources;
 import com.dragonminez.server.util.FusionLogic;
 import net.minecraft.nbt.CompoundTag;
@@ -45,8 +46,16 @@ public final class FusionRevampLogic {
 
         FusionsRevampedConfig.FusionRevamped config = FusionsRevampedConfig.get().fusionRevamped;
         double similarity = similarity(leaderTotalStats, partnerTotalStats);
-        double minBonus = "POTHALA".equalsIgnoreCase(fusionType) ? config.potaraMinBonus : config.metamoruMinBonus;
-        double maxBonus = "POTHALA".equalsIgnoreCase(fusionType) ? config.potaraMaxBonus : config.metamoruMaxBonus;
+        boolean usesPotaraStats = "POTHALA".equalsIgnoreCase(fusionType);
+        // Beetle deliberately shares Metamoru's stat curve. Keep this choice
+        // explicit so a future DMZ fusion type cannot silently inherit it.
+        boolean usesMetamoruStats = "METAMORU".equalsIgnoreCase(fusionType)
+                || "BEETLE".equalsIgnoreCase(fusionType);
+        if (!usesPotaraStats && !usesMetamoruStats) {
+            return;
+        }
+        double minBonus = usesPotaraStats ? config.potaraMinBonus : config.metamoruMinBonus;
+        double maxBonus = usesPotaraStats ? config.potaraMaxBonus : config.metamoruMaxBonus;
         double bonusRatio = minBonus + (similarity * (maxBonus - minBonus));
 
         BonusStats leaderBonuses = leaderData.getBonusStats();
@@ -213,7 +222,7 @@ public final class FusionRevampLogic {
 
     private static void applyFusionCooldown(ServerPlayer player, StatsData data, int ticks) {
         if (player == null || data == null) return;
-        data.getCooldowns().addCooldown("FusionCooldown", ticks);
+        data.getCooldowns().addCooldown(Cooldowns.FUSION_CD, ticks);
         player.addEffect(new MobEffectInstance(MainEffects.FUSION_CD.get(), ticks, 0, false, false, true));
         NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
     }
