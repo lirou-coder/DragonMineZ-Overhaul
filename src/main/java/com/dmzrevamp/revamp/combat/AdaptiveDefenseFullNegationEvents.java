@@ -4,6 +4,8 @@ import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.AdaptiveDefenseMoreConfigured;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainSounds;
+import com.dmzrevamp.network.DmzRevampNetwork;
+import com.dmzrevamp.network.FullNegationS2CPacket;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
@@ -16,19 +18,21 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Cancels fully-negated ordinary hits before vanilla applies hurt animation/knockback. */
+/** Leaves fully-negated hits connected while suppressing their physical hit response. */
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class AdaptiveDefenseFullNegationEvents {
     private AdaptiveDefenseFullNegationEvents() {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void cancelOrdinaryFullyNegatedHit(LivingAttackEvent event) {
+    public static void zeroOrdinaryFullyNegatedHit(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof Player victim) || victim.level().isClientSide()) {
             return;
         }
@@ -50,7 +54,8 @@ public final class AdaptiveDefenseFullNegationEvents {
         if (Double.isFinite(defense) && Double.isFinite(referenceDamage) && defense > 0D
                 && referenceDamage > 0D
                 && defense >= cancellationPoint) {
-            event.setCanceled(true);
+            event.setAmount(0F);
+            markFullyNegated(victim);
             int variant = victim.getRandom().nextInt(3);
             SoundEvent sound = switch (variant) {
                 case 0 -> MainSounds.BLOCK1.get();
@@ -60,6 +65,29 @@ public final class AdaptiveDefenseFullNegationEvents {
             victim.level().playSound(null, victim.blockPosition(), sound, SoundSource.PLAYERS, 1.0F,
                     0.9F + victim.getRandom().nextFloat() * 0.1F);
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void cancelFullyNegatedKnockback(LivingKnockBackEvent event) {
+        if (isMarkedFullyNegated(event.getEntity())) {
+            event.setCanceled(true);
+        }
+    }
+
+    public static void markFullyNegated(LivingEntity victim) {
+        victim.getPersistentData().putLong("dmzrevamp_full_negation_tick", victim.level().getGameTime());
+        victim.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        victim.hasImpulse = true;
+        victim.hurtMarked = true;
+        victim.hurtTime = 0;
+        victim.hurtDuration = 0;
+        if (victim instanceof net.minecraft.server.level.ServerPlayer player) {
+            DmzRevampNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new FullNegationS2CPacket());
+        }
+    }
+
+    public static boolean isMarkedFullyNegated(LivingEntity entity) {
+        return entity.getPersistentData().getLong("dmzrevamp_full_negation_tick") == entity.level().getGameTime();
     }
 
     /** PvP basic attacks are resolved from DMZ's melee stat, not the tiny vanilla attack packet value. */

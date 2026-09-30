@@ -31,6 +31,7 @@ public final class DmzRevampNetwork {
         CHANNEL.registerMessage(packetId++, UpdateKiTechniqueExtrasC2SPacket.class, UpdateKiTechniqueExtrasC2SPacket::encode, UpdateKiTechniqueExtrasC2SPacket::decode, UpdateKiTechniqueExtrasC2SPacket::handle);
         CHANNEL.registerMessage(packetId++, CreateStrikeTechniqueC2SPacket.class, CreateStrikeTechniqueC2SPacket::encode, CreateStrikeTechniqueC2SPacket::decode, CreateStrikeTechniqueC2SPacket::handle);
         CHANNEL.registerMessage(packetId++, InternalCosmeticArmorSyncS2CPacket.class, InternalCosmeticArmorSyncS2CPacket::encode, InternalCosmeticArmorSyncS2CPacket::decode, InternalCosmeticArmorSyncS2CPacket::handle);
+        CHANNEL.registerMessage(packetId++, FullNegationS2CPacket.class, FullNegationS2CPacket::encode, FullNegationS2CPacket::decode, FullNegationS2CPacket::handle);
         CHANNEL.registerMessage(packetId++, OverchargeScreenShakeS2CPacket.class, OverchargeScreenShakeS2CPacket::encode, OverchargeScreenShakeS2CPacket::decode, OverchargeScreenShakeS2CPacket::handle);
         CHANNEL.registerMessage(packetId++, LocateMasterStructureC2SPacket.class, LocateMasterStructureC2SPacket::encode, LocateMasterStructureC2SPacket::decode, LocateMasterStructureC2SPacket::handle);
         CHANNEL.registerMessage(packetId++, SyncMasterStructureS2CPacket.class, SyncMasterStructureS2CPacket::encode, SyncMasterStructureS2CPacket::decode, SyncMasterStructureS2CPacket::handle);
