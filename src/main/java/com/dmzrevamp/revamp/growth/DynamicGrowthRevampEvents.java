@@ -1,5 +1,6 @@
 package com.dmzrevamp.revamp.growth;
 
+import com.dmzrevamp.compat.LivingWorldMeditationCompat;
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.DynamicGrowthCurveConfig;
 import com.dmzrevamp.config.DmzRevampConfig;
@@ -105,15 +106,16 @@ public final class DynamicGrowthRevampEvents {
         state.lastPosition = currentPosition;
 
         boolean mounted = player.isPassenger();
-        if (!mounted && player.isSwimming() && player.isInWater()) {
+        boolean mountBlocksGrowth = mounted && !LivingWorldMeditationCompat.isMeditating(player);
+        if (!mountBlocksGrowth && player.isSwimming() && player.isInWater()) {
             awardWholeBlocks(player, data, state, fullDistance, true);
             state.runningDistance = 0D;
             state.flyingDistance = 0D;
-        } else if (!mounted && isFastFlying(player, data, fullDistance)) {
+        } else if (!mountBlocksGrowth && isFastFlying(player, data, fullDistance)) {
             awardFastFlightWholeBlocks(player, data, state, fullDistance);
             state.runningDistance = 0D;
             state.swimmingDistance = 0D;
-        } else if (!mounted && player.isSprinting() && !player.isInWater()) {
+        } else if (!mountBlocksGrowth && player.isSprinting() && !player.isInWater()) {
             awardSkpWholeBlocks(player, data, state, horizontalDistance, MovementMode.RUNNING);
             state.swimmingDistance = 0D;
             state.flyingDistance = 0D;
@@ -123,7 +125,7 @@ public final class DynamicGrowthRevampEvents {
             state.flyingDistance = 0D;
         }
 
-        if (isUsingOxygenUnderwater(player)) {
+        if (!mountBlocksGrowth && isUsingOxygenUnderwater(player)) {
             state.underwaterTicks++;
             if (state.underwaterTicks >= RESISTANCE_INTERVAL_TICKS) {
                 state.underwaterTicks -= RESISTANCE_INTERVAL_TICKS;
@@ -133,7 +135,7 @@ public final class DynamicGrowthRevampEvents {
             state.underwaterTicks = 0;
         }
 
-        if (player.isInLava()) {
+        if (!mountBlocksGrowth && player.isInLava()) {
             state.lavaTicks++;
             if (state.lavaTicks >= RESISTANCE_INTERVAL_TICKS) {
                 state.lavaTicks -= RESISTANCE_INTERVAL_TICKS;
@@ -143,7 +145,7 @@ public final class DynamicGrowthRevampEvents {
             state.lavaTicks = 0;
         }
 
-        boolean flying = !mounted && isFlying(player, data);
+        boolean flying = !mountBlocksGrowth && isFlying(player, data);
         boolean movedWhileFlying = Double.isFinite(fullDistance)
                 && (fullDistance * fullDistance) > MIN_FLIGHT_MOVEMENT_SQR;
         if (flying && movedWhileFlying) {
@@ -159,7 +161,9 @@ public final class DynamicGrowthRevampEvents {
         state.gravityGrowthTicks++;
         if (state.gravityGrowthTicks >= GRAVITY_GROWTH_INTERVAL_TICKS) {
             state.gravityGrowthTicks -= GRAVITY_GROWTH_INTERVAL_TICKS;
-            awardGravityGrowth(player, data);
+            if (!mountBlocksGrowth) {
+                awardGravityGrowth(player, data);
+            }
         }
     }
 
