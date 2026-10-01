@@ -2,12 +2,15 @@ package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.config.KiClashConfigured;
 import com.dmzrevamp.revamp.ki.KiClashTeams;
+import com.dmzrevamp.revamp.ki.KiClashAttackResolver;
 import com.dragonminez.common.combat.clash.ClashParticipant;
+import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -31,5 +34,16 @@ public abstract class ClashParticipantConfiguredMixin implements com.dmzrevamp.r
     private float dmzrevamp$momentumDecay(float original) {
         return KiClashTeams.adjustedMomentumDecay((ClashParticipant) (Object) this,
                 KiClashConfigured.get().momentumDecayPerTick);
+    }
+
+    /**
+     * Configured non-beam attacks (notably Explosion) have no native MAJOR
+     * role. Keep them alive for the complete firing window instead of letting
+     * DMZ dissolve their clash on its first participant tick.
+     */
+    @Redirect(method = "isStillFiring", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/init/entities/ki/AbstractKiProjectile;isClashableBeam()Z"), remap = false)
+    private boolean dmzrevamp$configuredAttackStillActive(AbstractKiProjectile projectile) {
+        return projectile.isClashableBeam()
+                || (KiClashAttackResolver.isAllowed(projectile) && KiClashAttackResolver.isLaunched(projectile));
     }
 }

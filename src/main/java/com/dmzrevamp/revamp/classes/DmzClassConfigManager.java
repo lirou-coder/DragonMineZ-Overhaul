@@ -273,26 +273,26 @@ public final class DmzClassConfigManager {
         }
 
         return switch (normalized) {
-            case "human" -> withRegen(createRaceStats(2, 3, 1, 0, 2, 5, 0.500D, 0.575D, 0.480D, 0.920D, 1.140D, 0.725D, 1.850D),
+            case "human" -> withRegen(createRaceStats(2, 3, 1, 0, 2, 5, 0.50D, 0.60D, 0.50D, 0.90D, 1.15D, 0.75D, 1.85D),
                     1.35D, 0.045D, 5.55D, 0.115D, 10.45D, 0.095D);
-            case "saiyan" -> withRegen(createRaceStats(5, 3, 2, 1, 1, 1, 0.640D, 0.900D, 0.620D, 1.110D, 0.960D, 0.575D, 0.980D),
+            case "saiyan" -> withRegen(createRaceStats(5, 3, 2, 1, 1, 1, 0.65D, 0.90D, 0.60D, 1.10D, 0.95D, 0.60D, 1.00D),
                     1.25D, 0.040D, 4.75D, 0.095D, 11.75D, 0.110D);
-            case "frostdemon" -> withRegen(createRaceStats(0, 3, 1, 0, 5, 4, 0.220D, 0.705D, 0.550D, 0.635D, 0.870D, 0.950D, 1.850D),
+            case "frostdemon" -> withRegen(createRaceStats(0, 3, 1, 0, 5, 4, 0.20D, 0.70D, 0.55D, 0.65D, 0.85D, 0.95D, 1.85D),
                     1.10D, 0.035D, 6.85D, 0.145D, 9.25D, 0.080D);
-            case "namekian" -> withRegen(createRaceStats(2, 2, 3, 2, 2, 2, 0.710D, 0.445D, 0.900D, 1.205D, 1.500D, 0.500D, 1.415D),
+            case "namekian" -> withRegen(createRaceStats(2, 2, 3, 2, 2, 2, 0.70D, 0.45D, 0.90D, 1.20D, 1.50D, 0.50D, 1.40D),
                     1.60D, 0.055D, 5.25D, 0.105D, 10.50D, 0.100D);
-            case "majin" -> withRegen(createRaceStats(3, 2, 2, 1, 2, 3, 0.640D, 0.640D, 0.900D, 0.920D, 1.320D, 0.575D, 1.560D),
+            case "majin" -> withRegen(createRaceStats(3, 2, 2, 1, 2, 3, 0.65D, 0.65D, 0.90D, 0.90D, 1.30D, 0.60D, 1.55D),
                     1.90D, 0.065D, 4.75D, 0.095D, 9.50D, 0.080D);
-            case "bioandroid" -> withRegen(createRaceStats(2, 3, 1, 1, 2, 3, 0.640D, 0.705D, 0.690D, 1.015D, 1.230D, 0.725D, 1.415D),
+            case "bioandroid" -> withRegen(createRaceStats(2, 3, 1, 1, 2, 3, 0.65D, 0.70D, 0.70D, 1.00D, 1.25D, 0.75D, 1.40D),
                     1.30D, 0.045D, 5.60D, 0.115D, 10.50D, 0.095D);
-            case "glind" -> withRegen(createRaceStats(0, 2, 2, 1, 5, 3, 0.36D, 0.64D, 0.55D, 0.825D, 1.14D, 0.95D, 1.705D),
+            case "glind" -> withRegen(createRaceStats(0, 2, 2, 1, 5, 3, 0.35D, 0.65D, 0.55D, 0.85D, 1.15D, 0.95D, 1.70D),
                     1.30D, 0.045D, 6.50D, 0.140D, 9.75D, 0.085D);
             default -> createGenericRaceDefaultStats();
         };
     }
 
     private static RaceStatsConfig.ClassStats createGenericRaceDefaultStats() {
-        return createRaceStats(5, 5, 5, 5, 5, 5, 0.570D, 0.640D, 0.620D, 0.920D, 1.140D, 0.650D, 1.270D);
+        return createRaceStats(5, 5, 5, 5, 5, 5, 0.55D, 0.65D, 0.60D, 0.90D, 1.15D, 0.65D, 1.25D);
     }
 
     // Loads class configs. Existing config files are not migrated in place.
@@ -517,27 +517,27 @@ public final class DmzClassConfigManager {
     private static RaceStatsConfig.ClassStats createKnownClassDefault(String classId) {
         String normalizedClassId = normalize(classId);
         RaceStatsConfig.ClassStats stats = switch (normalizedClassId) {
-            case "warrior" -> withRegen(createClassStats(6, 3, 2, 1, 1, 0, 0.850D, 0.705D, 0.480D, 0.920D, 1.140D, 0.425D, 1.125D),
+            case "warrior" -> withRegen(createClassStats(6, 3, 2, 1, 1, 0, 0.85D, 0.70D, 0.50D, 0.90D, 1.15D, 0.45D, 1.15D),
                     0.40D, 0.015D, -1.55D, -0.035D, 1.55D, 0.025D);
-            case "spiritualist" -> withRegen(createClassStats(0, 2, 1, 0, 6, 3, 0.290D, 0.640D, 0.550D, 0.730D, 1.140D, 0.950D, 1.850D),
+            case "spiritualist" -> withRegen(createClassStats(0, 2, 1, 0, 6, 3, 0.30D, 0.65D, 0.55D, 0.75D, 1.15D, 0.95D, 1.85D),
                     -0.85D, -0.030D, 2.45D, 0.085D, -5.45D, -0.045D);
-            case "berserker" -> withRegen(createClassStats(7, 3, 2, 2, 0, 0, 0.850D, 0.770D, 0.690D, 1.205D, 1.230D, 0.275D, 0.835D),
+            case "berserker" -> withRegen(createClassStats(7, 3, 2, 2, 0, 0, 0.85D, 0.75D, 0.70D, 1.20D, 1.25D, 0.30D, 0.85D),
                     -0.35D, -0.010D, -3.55D, -0.075D, 3.55D, 0.035D);
-            case "martialartist" -> withRegen(createClassStats(4, 1, 2, 2, 4, 2, 0.850D, 0.770D, 0.690D, 1.015D, 0.780D, 0.950D, 1.270D),
+            case "martialartist" -> withRegen(createClassStats(4, 1, 2, 2, 4, 2, 0.85D, 0.75D, 0.70D, 1.00D, 0.80D, 0.95D, 1.25D),
                     -0.85D, -0.030D, 6.45D, 0.125D, 5.55D, 0.025D);
-            case "cleric" -> withTp(withRegen(createClassStats(0, 2, 1, 0, 4, 5, 0.290D, 0.705D, 0.620D, 0.920D, 1.500D, 0.875D, 1.850D),
+            case "cleric" -> withTp(withRegen(createClassStats(0, 2, 1, 0, 4, 5, 0.30D, 0.70D, 0.60D, 0.90D, 1.50D, 0.90D, 1.85D),
                     -0.85D, -0.030D, 6.45D, 0.125D, 5.55D, 0.025D), -0.1D, 0.25D);
-            case "paladin" -> withRegen(createClassStats(5, 1, 3, 1, 1, 1, 0.850D, 0.575D, 0.830D, 1.205D, 1.320D, 0.725D, 1.560D),
+            case "paladin" -> withRegen(createClassStats(5, 1, 3, 1, 1, 1, 0.85D, 0.60D, 0.85D, 1.20D, 1.30D, 0.75D, 1.55D),
                     0.65D, 0.025D, -1.55D, -0.035D, -2.45D, -0.015D);
-            case "tank" -> withTp(withRegen(createClassStats(3, 0, 3, 3, 2, 1, 0.640D, 0.510D, 0.900D, 1.205D, 1.500D, 0.575D, 1.560D),
+            case "tank" -> withTp(withRegen(createClassStats(3, 0, 3, 3, 2, 1, 0.65D, 0.50D, 0.90D, 1.20D, 1.50D, 0.60D, 1.55D),
                     0.90D, 0.030D, -0.55D, -0.015D, -1.45D, -0.005D), 0.0D, 0.25D);
-            case "speedster" -> withRegen(createClassStats(1, 6, 0, 0, 3, 2, 0.640D, 0.900D, 0.480D, 1.110D, 1.140D, 0.650D, 1.560D),
+            case "speedster" -> withRegen(createClassStats(1, 6, 0, 0, 3, 2, 0.65D, 0.90D, 0.50D, 1.10D, 1.15D, 0.65D, 1.55D),
                     0.10D, -0.005D, -1.25D, -0.030D, 2.50D, 0.025D);
-            case "duelist" -> withRegen(createClassStats(2, 3, 2, 2, 2, 2, 0.640D, 0.835D, 0.620D, 1.300D, 1.140D, 0.725D, 1.850D),
+            case "duelist" -> withRegen(createClassStats(2, 3, 2, 2, 2, 2, 0.65D, 0.85D, 0.60D, 1.30D, 1.15D, 0.75D, 1.85D),
                     0.45D, 0.015D, -0.90D, -0.025D, 1.65D, 0.010D);
-            case "kiassassin" -> withRegen(createClassStats(0, 4, 0, 0, 6, 4, 0.150D, 0.770D, 0.410D, 0.825D, 1.050D, 0.950D, 1.850D),
+            case "kiassassin" -> withRegen(createClassStats(0, 4, 0, 0, 6, 4, 0.15D, 0.75D, 0.40D, 0.85D, 1.05D, 0.95D, 1.85D),
                     -0.60D, -0.020D, 2.00D, 0.040D, -4.00D, -0.050D);
-            case "potentialist" -> createClassStats(3, 3, 3, 3, 3, 3, 0.570D, 0.640D, 0.620D, 0.920D, 1.140D, 0.650D, 1.270D);
+            case "potentialist" -> createClassStats(3, 3, 3, 3, 3, 3, 0.55D, 0.65D, 0.60D, 0.90D, 1.15D, 0.65D, 1.25D);
             default -> createZeroClassStats();
         };
         stats.setPassive(defaultPassive(normalizedClassId));

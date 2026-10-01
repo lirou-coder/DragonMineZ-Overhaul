@@ -2,6 +2,7 @@ package com.dmzrevamp.revamp.ki;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.KiClashConfigured;
+import com.dmzrevamp.mixin.KiExplosionEntityAccessor;
 import com.dmzrevamp.revamp.quest.QuestSpawnAttributeApplier;
 import com.dragonminez.common.combat.clash.BeamClash;
 import com.dragonminez.common.combat.clash.ClashParticipant;
@@ -9,6 +10,7 @@ import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiDiskEntity;
+import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.BeamClashStateS2C;
 import com.dragonminez.common.stats.StatsCapability;
@@ -94,6 +96,7 @@ public final class KiClashTeams {
             for (TeamState state : STATES.values()) {
                 preserveFullRender(state.clash.a().beam());
                 preserveFullRender(state.clash.b().beam());
+                state.updateExplosionSizes(level.getGameTime());
             }
             if (STATES.isEmpty()) {
                 return;
@@ -153,19 +156,33 @@ public final class KiClashTeams {
     }
 
     private static void discoverHelpers(TeamState state, List<AbstractKiProjectile> projectiles) {
+        // Two stationary explosions have no directional sides to join and the
+        // requested rules explicitly make this a closed one-on-one clash.
+        if (state.bothMainAttacksAreExplosions()) return;
         for (AbstractKiProjectile projectile : projectiles) {
             if (!KiClashAttackResolver.isAllowed(projectile) || projectile.isClashLocked() || !(projectile.getOwner() instanceof LivingEntity owner)) continue;
             if (state.hasOwner(owner.getUUID()) || HELPERS.containsKey(owner.getUUID())) continue;
             ClashParticipant hit = hitsClashingAttack(projectile, state.clash.a()) ? state.clash.a()
                     : hitsClashingAttack(projectile, state.clash.b()) ? state.clash.b() : null;
             if (hit == null) continue;
-            ClashParticipant team = closestFacingTeam(owner, state.clash.a(), state.clash.b());
+            ClashParticipant team = helperTeam(state, owner, projectile);
             Helper helper = new Helper(state, team, owner, projectile);
             state.helpers.add(helper);
+            state.rememberExplosion(projectile);
             HELPERS.put(owner.getUUID(), helper);
             projectile.setClashLock(Math.max(1F, projectile.getClashBeamLength()), hit.owner().getUUID());
             preserveFullRender(projectile);
         }
+    }
+
+    private static ClashParticipant helperTeam(TeamState state, LivingEntity owner, AbstractKiProjectile projectile) {
+        ClashParticipant explosionTeam = state.mainExplosionTeam();
+        if (explosionTeam != null) {
+            // A single Explosion side accepts only Explosion helpers. Every
+            // other Ki attack reinforces the opposing, directional attack.
+            return isExplosion(projectile) ? explosionTeam : state.opponentOf(explosionTeam);
+        }
+        return closestFacingTeam(owner, state.clash.a(), state.clash.b());
     }
 
     private static ClashParticipant closestFacingTeam(LivingEntity helper, ClashParticipant first, ClashParticipant second) {
@@ -193,7 +210,9 @@ public final class KiClashTeams {
         Vec3 helperEnd = attackEnd(helper);
         Vec3 targetStart = attackStart(clashing);
         Vec3 targetEnd = attackEnd(clashing);
-        double radius = Math.max(0.25D, (helper.getSize() + clashing.getSize()) * 0.5D) + 1.5D;
+        double radius = isExplosion(helper) || isExplosion(clashing)
+                ? clashRadius(helper) + clashRadius(clashing) + 1.5D
+                : Math.max(0.25D, (helper.getSize() + clashing.getSize()) * 0.5D) + 1.5D;
         return segmentDistanceSq(helperStart, helperEnd, targetStart, targetEnd) <= radius * radius;
     }
 
@@ -355,17 +374,44 @@ public final class KiClashTeams {
                 // refreshes entity dimensions, covering both visuals and hitbox.
                 winner.beam().setSize((float) Math.min(Float.MAX_VALUE, finalSize));
             }
+            if (winner.beam() instanceof KiExplosionEntity explosion) {
+                float originalRadius = state == null
+                        ? Math.max(0.1F, explosion.getMaxRadius())
+                        : state.originalExplosionRadius(explosion);
+                ClashParticipant opponent = clash.a() == winner ? clash.b() : clash.a();
+                double ownerDistance = winner.owner().distanceTo(opponent.owner());
+                double finalRadius = Math.max(originalRadius * 2.0D, ownerDistance + 10.0D);
+                if (Double.isFinite(finalRadius)) {
+                    float radius = (float) Math.min(Float.MAX_VALUE / 2.0F, finalRadius);
+                    explosion.setMaxRadius(radius);
+                    // AbstractKiProjectile SIZE controls EntityDimensions. The
+                    // value is a diameter, while MAX_RADIUS is a radius.
+                    explosion.setSize(radius * 2.0F);
+                    destroyExplosionArea(explosion);
+                    if (state != null) state.keepWinningExplosionSize(explosion);
+                }
+            }
             if (state != null) state.winnerDamageApplied = true;
         }
     }
 
     public static boolean visualSphereClash(AbstractKiProjectile first, AbstractKiProjectile second) {
-        if (!isSolidClashProjectile(first) && !isSolidClashProjectile(second)) return false;
+        if (!isSolidClashProjectile(first) && !isSolidClashProjectile(second)
+                && !isExplosion(first) && !isExplosion(second)) return false;
         if (!KiClashAttackResolver.isAllowed(first) || !KiClashAttackResolver.isAllowed(second)
                 || !KiClashAttackResolver.isLaunched(first) || !KiClashAttackResolver.isLaunched(second)) return false;
         Vec3 firstDirection = direction(first);
         Vec3 secondDirection = direction(second);
-        if (firstDirection.dot(secondDirection) > -0.3D) return false;
+        // Explosion is a stationary sphere centered on its caster. Its yaw and
+        // pitch do not describe the incoming collision, so directional beam
+        // opposition is meaningful only when neither side is an explosion.
+        if (!isExplosion(first) && !isExplosion(second)
+                && firstDirection.dot(secondDirection) > -0.3D) return false;
+        if (isExplosion(first) || isExplosion(second)) {
+            double collisionRadius = clashRadius(first) + clashRadius(second) + 1.5D;
+            return segmentDistanceSq(attackStart(first), attackEnd(first), attackStart(second), attackEnd(second))
+                    <= collisionRadius * collisionRadius;
+        }
         Vec3 firstMovement = first.getDeltaMovement();
         Vec3 secondMovement = second.getDeltaMovement();
         double firstReach = Math.max(firstMovement.length(), first.getSize() * 0.5D);
@@ -422,6 +468,28 @@ public final class KiClashTeams {
         return projectile instanceof KiBlastEntity || projectile instanceof KiDiskEntity;
     }
 
+    private static boolean isExplosion(AbstractKiProjectile projectile) {
+        return projectile instanceof KiExplosionEntity;
+    }
+
+    private static double clashRadius(AbstractKiProjectile projectile) {
+        if (projectile instanceof KiExplosionEntity explosion) {
+            // DMZ's active explosion renders its splash and applies pulse
+            // damage through maxRadius * 1.4, while the entity AABB remains at
+            // the fixed setup size. Clash against that complete active area.
+            return Math.max(0.1D, explosion.getMaxRadius() * 1.4D);
+        }
+        return Math.max(0.25D, projectile.getSize() * 0.5D);
+    }
+
+    private static void destroyExplosionArea(KiExplosionEntity explosion) {
+        if (explosion.isRemoved() || explosion.level().isClientSide() || !explosion.isFiring()) return;
+        // Match KiExplosionEntity#fireHability. createCrater delegates to
+        // carveKiSphere, which checks kiGriefing, claim/protection gates,
+        // Dragon Balls, block resistance and DMZ's destruction-radius config.
+        ((KiExplosionEntityAccessor) explosion).dmzrevamp$createCrater(explosion.getMaxRadius() * 1.2F);
+    }
+
     private static double chargeMultiplier(AbstractKiProjectile projectile) {
         float percent = projectile.getPersistentData().getFloat(KiAttackOverhaulEvents.OVERCHARGE_PERCENT_TAG);
         return Math.max(0.0001D, (percent > 0F && Float.isFinite(percent) ? percent : 100F) / 100D);
@@ -445,7 +513,8 @@ public final class KiClashTeams {
 
     /** Complete live projectile damage: current Ki Damage, technique output and launch charge. */
     private static double refreshedProjectileDamage(LivingEntity entity, AbstractKiProjectile projectile) {
-        return Math.max(0.0001D, attackWeightedKiDamage(entity, projectile) * chargeMultiplier(projectile));
+        double ownDamage = Math.max(0.0001D, attackWeightedKiDamage(entity, projectile) * chargeMultiplier(projectile));
+        return SpiritBombChargeAbsorption.withStoredDamageBonus(projectile, ownDamage);
     }
 
     private static double attackDamageMultiplier(LivingEntity entity, AbstractKiProjectile projectile, double base) {
@@ -540,6 +609,7 @@ public final class KiClashTeams {
         releaseFrozenLifetime(state.clash.b().beam());
         restoreSolidProjectile(state.clash.a().beam());
         restoreSolidProjectile(state.clash.b().beam());
+        if (discardProjectile) state.restoreExplosionSizes();
         releaseActiveMovement(state.clash.a().owner());
         releaseActiveMovement(state.clash.b().owner());
         for (Helper helper : state.helpers) {
@@ -560,6 +630,7 @@ public final class KiClashTeams {
 
     private static void detach(Helper helper) {
         HELPERS.remove(helper.owner.getUUID());
+        helper.state.restoreExplosion(helper.projectile);
         releaseMovement(helper.owner);
         releaseFrozenLifetime(helper.projectile);
         helper.projectile.clearClashLock();
@@ -626,11 +697,14 @@ public final class KiClashTeams {
     private static final class TeamState {
         final BeamClash clash;
         final List<Helper> helpers = new ArrayList<>();
+        final Map<KiExplosionEntity, Float> explosionBaseRadii = new IdentityHashMap<>();
         boolean winnerDamageApplied;
         TeamState(BeamClash clash) {
             this.clash = clash;
             rememberSphere(clash.a());
             rememberSphere(clash.b());
+            rememberExplosion(clash.a().beam());
+            rememberExplosion(clash.b().beam());
         }
         ClashParticipant teamFor(ClashParticipant participant) {
             if (participant == clash.a() || participant == clash.b()) return participant;
@@ -640,6 +714,64 @@ public final class KiClashTeams {
         void setTeamMomentum(ClashParticipant team, float value) {
             setMomentum(team, value);
             for (Helper helper : helpers) if (helper.team == team) setMomentum(helper.participant, value);
+        }
+        void rememberExplosion(AbstractKiProjectile projectile) {
+            if (projectile instanceof KiExplosionEntity explosion) {
+                explosionBaseRadii.putIfAbsent(explosion, Math.max(0.1F, explosion.getMaxRadius()));
+            }
+        }
+        void updateExplosionSizes(long gameTime) {
+            updateExplosionSize(clash.a().beam(), clash.advantageFor(clash.a().owner()));
+            updateExplosionSize(clash.b().beam(), clash.advantageFor(clash.b().owner()));
+            for (Helper helper : helpers) {
+                updateExplosionSize(helper.projectile, clash.advantageFor(helper.team.owner()));
+            }
+            if (gameTime % 10L == 0L) {
+                destroyExplosionAreaIfPresent(clash.a().beam());
+                destroyExplosionAreaIfPresent(clash.b().beam());
+                for (Helper helper : helpers) destroyExplosionAreaIfPresent(helper.projectile);
+            }
+        }
+        private static void destroyExplosionAreaIfPresent(AbstractKiProjectile projectile) {
+            if (projectile instanceof KiExplosionEntity explosion) destroyExplosionArea(explosion);
+        }
+        private void updateExplosionSize(AbstractKiProjectile projectile, float advantage) {
+            if (!(projectile instanceof KiExplosionEntity explosion)) return;
+            Float baseRadius = explosionBaseRadii.get(explosion);
+            if (baseRadius == null || explosion.isRemoved()) return;
+            float clamped = Math.max(0F, Math.min(1F, advantage));
+            float scale = clamped <= 0.5F
+                    ? 0.1F + clamped * 1.8F
+                    : 1.0F + (clamped - 0.5F);
+            explosion.setMaxRadius(baseRadius * scale);
+        }
+        boolean bothMainAttacksAreExplosions() {
+            return isExplosion(clash.a().beam()) && isExplosion(clash.b().beam());
+        }
+        ClashParticipant mainExplosionTeam() {
+            if (isExplosion(clash.a().beam()) && !isExplosion(clash.b().beam())) return clash.a();
+            if (isExplosion(clash.b().beam()) && !isExplosion(clash.a().beam())) return clash.b();
+            return null;
+        }
+        ClashParticipant opponentOf(ClashParticipant participant) {
+            return clash.a() == participant ? clash.b() : clash.a();
+        }
+        float originalExplosionRadius(KiExplosionEntity explosion) {
+            return explosionBaseRadii.getOrDefault(explosion, Math.max(0.1F, explosion.getMaxRadius()));
+        }
+        void keepWinningExplosionSize(KiExplosionEntity explosion) {
+            explosionBaseRadii.remove(explosion);
+        }
+        void restoreExplosion(AbstractKiProjectile projectile) {
+            if (!(projectile instanceof KiExplosionEntity explosion)) return;
+            Float baseRadius = explosionBaseRadii.remove(explosion);
+            if (baseRadius != null && !explosion.isRemoved()) explosion.setMaxRadius(baseRadius);
+        }
+        void restoreExplosionSizes() {
+            for (Map.Entry<KiExplosionEntity, Float> entry : explosionBaseRadii.entrySet()) {
+                if (!entry.getKey().isRemoved()) entry.getKey().setMaxRadius(entry.getValue());
+            }
+            explosionBaseRadii.clear();
         }
         private static void rememberSphere(ClashParticipant participant) {
             if (isSolidClashProjectile(participant.beam())) {

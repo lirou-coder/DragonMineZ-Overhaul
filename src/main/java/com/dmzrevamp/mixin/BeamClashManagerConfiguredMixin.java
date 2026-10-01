@@ -64,6 +64,17 @@ public abstract class BeamClashManagerConfiguredMixin {
                 : nativeRole;
     }
 
+    /**
+     * DMZ checks the projectile's native role again inside isClashableBeam().
+     * Explosion keeps a native NONE role, so it was excluded before our
+     * visual-radius collision test even when configured as a major attack.
+     */
+    @Redirect(method = "onLevelTick", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/init/entities/ki/AbstractKiProjectile;isClashableBeam()Z"), remap = false)
+    private static boolean dmzrevamp$configuredClashableAttack(AbstractKiProjectile projectile) {
+        return projectile.isClashableBeam()
+                || (KiClashAttackResolver.isAllowed(projectile) && KiClashAttackResolver.isLaunched(projectile));
+    }
+
     @Inject(method = "beamsClash", at = @At("RETURN"), cancellable = true, remap = false)
     private static void dmzrevamp$cancelOverwhelmingClash(AbstractKiProjectile first, AbstractKiProjectile second,
                                                           CallbackInfoReturnable<Boolean> cir) {

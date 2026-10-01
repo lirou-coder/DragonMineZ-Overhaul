@@ -5,6 +5,7 @@ import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiLaserEntity;
 import com.dragonminez.common.init.entities.ki.KiDiskEntity;
+import com.dragonminez.common.init.entities.ki.KiExplosionEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -44,6 +45,7 @@ public final class KiClashAttackResolver {
         if (projectile instanceof KiWaveEntity) return "WAVE";
         if (projectile instanceof KiLaserEntity) return projectile.getKiRenderType() == 1 ? "BEAM" : "LASER";
         if (projectile instanceof KiDiskEntity) return "DISK";
+        if (projectile instanceof KiExplosionEntity) return "EXPLOSION";
         // Ki Control's secondary-function basic blast has no technique id. It used
         // to fall through as MEDIUM_BALL and therefore inherited custom-technique
         // clash permission. Keep that distinct and permanently blocked.

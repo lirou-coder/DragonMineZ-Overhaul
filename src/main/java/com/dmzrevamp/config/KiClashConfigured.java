@@ -72,7 +72,7 @@ public final class KiClashConfigured {
         public float innerAdvantageLow = 0.20F;
         public float innerAdvantageHigh = 0.80F;
         public int maxClashDurationTicks = 600;
-        public List<String> allowedKiAttacks = new ArrayList<>(List.of("Medium_Ball", "Giant_Ball", "Wave", "Laser", "Beam"));
+        public List<String> allowedKiAttacks = new ArrayList<>(List.of("Medium_Ball", "Giant_Ball", "Wave", "Laser", "Beam", "Explosion"));
         public boolean KiDMGInfluence = true;
         public float KiDMGInfluenceMultiplier = 0.75F;
         public boolean overchargeInfluence = true;
@@ -121,6 +121,7 @@ public final class KiClashConfigured {
             case "BEAM" -> "Beam";
             case "DISK" -> "Disk";
             case "BARRAGE" -> "Barrage";
+            case "EXPLOSION" -> "Explosion";
             case "SHIELD" -> "Shield";
             case "AREA" -> "Area";
             default -> value.trim();
