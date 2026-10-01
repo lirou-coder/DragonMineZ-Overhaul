@@ -126,8 +126,8 @@ public final class QuestSpawnAttributeApplier {
         putNullable(tag, TF_MOVEMENT_SPEED_MULT_TAG, data.dmzrevamp$getTransformMovementSpeedMultiplier());
         saveMobEffects(tag, data.dmzrevamp$getMobEffects());
         saveMobEffects(tag, TF_MOB_EFFECTS_TAG, data.dmzrevamp$getTransformMobEffects());
-        TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(2), 2, true, 1D, 1D);
-        TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(3), 3, true, 1D, 1D);
+        TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(2), 2, true, 1D, 1D, difficultyDamage);
+        TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(3), 3, true, 1D, 1D, difficultyDamage);
         tag.putBoolean(CAN_TRANSFORM_2_TAG, data.dmzrevamp$canTransformStage(2));
         tag.putBoolean(CAN_TRANSFORM_3_TAG, data.dmzrevamp$canTransformStage(3));
 

@@ -11,7 +11,8 @@ public final class TransformStageOverridesWriter {
     }
 
     public static void save(CompoundTag tag, TransformStageOverrides values, int stage,
-                            boolean replace, double healthScale, double damageScale) {
+                            boolean replace, double healthScale, double damageScale,
+                            double defenseScale) {
         if (values == null || values.isEmpty()) return;
         putPair(tag, key(stage, "hp_abs"), key(stage, "hp_mult"),
                 scaled(values.health(), healthScale), values.healthMulti(), replace);
@@ -20,7 +21,7 @@ public final class TransformStageOverridesWriter {
         putPair(tag, key(stage, "ki_abs"), key(stage, "ki_mult"),
                 scaled(values.kiDamage(), damageScale), values.kiDamageMulti(), replace);
         putPair(tag, key(stage, "defense_abs"), key(stage, "defense_mult"),
-                values.defense(), values.defenseMulti(), replace);
+                scaled(values.defense(), defenseScale), values.defenseMulti(), replace);
         putPair(tag, key(stage, "armor_abs"), key(stage, "armor_mult"),
                 values.armor(), values.armorMulti(), replace);
         putPair(tag, key(stage, "toughness_abs"), key(stage, "toughness_mult"),
