@@ -57,7 +57,7 @@ public final class TransformationDefaultNormalizer {
             form.setTransformationAnimation("transf.generic");
         }
         if (form.getIncompatibleWith() == null) {
-            form.setIncompatibleWith(List.of("ultimate.ultimate"));
+            form.setIncompatibleWith(List.of("ultimate.beast"));
         }
         if (form.getShareMasteryWith() == null) {
             form.setShareMasteryWith(List.of());
