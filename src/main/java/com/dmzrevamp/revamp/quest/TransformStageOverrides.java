@@ -23,7 +23,7 @@ public record TransformStageOverrides(
     );
 
     public static TransformStageOverrides parse(JsonObject object, int stage) {
-        if (object == null || stage < 2 || stage > 3) {
+        if (object == null || stage < 2 || stage > 4) {
             return EMPTY;
         }
         String prefix = "Transform" + stage;

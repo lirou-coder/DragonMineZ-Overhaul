@@ -21,6 +21,15 @@ public final class TransformChainConfig {
         return merge(TransformStageOverrides.parse(stats, stage), TransformStageOverrides.parse(defaults, stage));
     }
 
+    public static synchronized boolean canTransform(String entityId, int stage) {
+        JsonObject defaults = object(loadedRoot, "transformDefaults");
+        JsonObject stats = object(object(loadedRoot, "defaultEntityStats"), entityId);
+        String key = "canTransform" + stage;
+        if (stats.has(key) && stats.get(key).isJsonPrimitive()) return stats.get(key).getAsBoolean();
+        if (defaults.has(key) && defaults.get(key).isJsonPrimitive()) return defaults.get(key).getAsBoolean();
+        return true;
+    }
+
     public static synchronized void reload() {
         Path path = FMLPaths.CONFIGDIR.get().resolve("dragonminez").resolve("entities.json");
         loadedRoot = new JsonObject();

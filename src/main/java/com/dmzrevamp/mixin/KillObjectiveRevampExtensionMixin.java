@@ -47,24 +47,39 @@ public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObj
     @Unique
     private TransformStageOverrides dmzrevamp$transformStage3 = TransformStageOverrides.EMPTY;
     @Unique
+    private TransformStageOverrides dmzrevamp$transformStage4 = TransformStageOverrides.EMPTY;
+    @Unique
     private boolean dmzrevamp$canTransform2 = true;
     @Unique
     private boolean dmzrevamp$canTransform3 = true;
+    @Unique
+    private boolean dmzrevamp$canTransform4 = true;
 
     @Override
     public boolean dmzrevamp$canTransformStage(int stage) {
-        return stage != 2 ? stage != 3 || dmzrevamp$canTransform3 : dmzrevamp$canTransform2;
+        return switch (stage) {
+            case 2 -> dmzrevamp$canTransform2;
+            case 3 -> dmzrevamp$canTransform3;
+            case 4 -> dmzrevamp$canTransform4;
+            default -> true;
+        };
     }
 
     @Override
     public void dmzrevamp$setCanTransformStage(int stage, boolean allowed) {
         if (stage == 2) dmzrevamp$canTransform2 = allowed;
         if (stage == 3) dmzrevamp$canTransform3 = allowed;
+        if (stage == 4) dmzrevamp$canTransform4 = allowed;
     }
 
     @Override
     public TransformStageOverrides dmzrevamp$getTransformStage(int stage) {
-        return stage == 2 ? dmzrevamp$transformStage2 : stage == 3 ? dmzrevamp$transformStage3 : TransformStageOverrides.EMPTY;
+        return switch (stage) {
+            case 2 -> dmzrevamp$transformStage2;
+            case 3 -> dmzrevamp$transformStage3;
+            case 4 -> dmzrevamp$transformStage4;
+            default -> TransformStageOverrides.EMPTY;
+        };
     }
 
     @Override
@@ -72,6 +87,7 @@ public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObj
         TransformStageOverrides safe = values == null ? TransformStageOverrides.EMPTY : values;
         if (stage == 2) dmzrevamp$transformStage2 = safe;
         if (stage == 3) dmzrevamp$transformStage3 = safe;
+        if (stage == 4) dmzrevamp$transformStage4 = safe;
     }
 
     @Override

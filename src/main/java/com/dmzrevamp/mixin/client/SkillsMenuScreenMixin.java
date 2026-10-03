@@ -14,6 +14,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.SkillsMenuScreen;
 import com.dragonminez.client.gui.character.TechniqueCreatorScreen;
+import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.skills.Skill;
@@ -27,10 +28,9 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -69,13 +69,7 @@ public abstract class SkillsMenuScreenMixin {
     private String selectedSkill;
 
     @Shadow
-    private float targetDescScroll;
-
-    @Shadow
-    private float currentDescScroll;
-
-    @Shadow
-    private float maxDescScroll;
+    private ScrollbarState descScroll;
 
     @Shadow
     private CustomTextureButton btnSpeed;
@@ -504,9 +498,16 @@ public abstract class SkillsMenuScreenMixin {
     @Invoker(value = "createUpgradeBtn", remap = false)
     protected abstract CustomTextureButton dmzrevamp$createUpgradeBtn(int x, int y, String statType, boolean plus);
 
-    @Inject(method = "renderSkillDetails", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderSkillDetails", at = @At("HEAD"), cancellable = true, remap = false)
     // Replaces DMZ's generic details when the selected entry is an addon passive or racial skill.
-    private void dmzrevamp$renderCustomRacialDetails(GuiGraphics graphics, int panelX, int panelY, CallbackInfo ci) {
+    private void dmzrevamp$renderCustomRacialDetails(
+            GuiGraphics graphics,
+            int panelX,
+            int panelY,
+            int mouseX,
+            int mouseY,
+            CallbackInfo ci
+    ) {
         if (selectedSkill == null) {
             return;
         }
@@ -534,7 +535,8 @@ public abstract class SkillsMenuScreenMixin {
             );
 
             List<String> wrappedDesc = dmzrevamp$wrapText(description, DMZ_REVAMP_DESC_WIDTH);
-            dmzrevamp$renderScrollableDescription(graphics, classSkill == null ? selectedSkill : classSkill, wrappedDesc, panelX + 13, startY + 70);
+            dmzrevamp$renderScrollableDescription(graphics, classSkill == null ? selectedSkill : classSkill,
+                    wrappedDesc, panelX + 13, startY + 70, mouseX, mouseY);
             ci.cancel();
             return;
         }
@@ -571,34 +573,44 @@ public abstract class SkillsMenuScreenMixin {
         List<String> wrappedDesc = dmzrevamp$wrapText(description, DMZ_REVAMP_DESC_WIDTH);
         int descY = startY + 70;
 
-        dmzrevamp$renderScrollableDescription(graphics, selectedSkill, wrappedDesc, panelX + 13, descY);
+        dmzrevamp$renderScrollableDescription(graphics, selectedSkill, wrappedDesc,
+                panelX + 13, descY, mouseX, mouseY);
 
         ci.cancel();
     }
 
     // Draws long descriptions inside the same clipped area used by the DMZ menu.
-    private void dmzrevamp$renderScrollableDescription(GuiGraphics graphics, String skillId, List<String> wrappedDesc, int x, int y) {
+    private void dmzrevamp$renderScrollableDescription(
+            GuiGraphics graphics,
+            String skillId,
+            List<String> wrappedDesc,
+            int x,
+            int y,
+            int mouseX,
+            int mouseY
+    ) {
         if (dmzrevamp$lastDetailsSkill == null || !dmzrevamp$lastDetailsSkill.equals(skillId)) {
             dmzrevamp$lastDetailsSkill = skillId;
-            targetDescScroll = 0.0F;
-            currentDescScroll = 0.0F;
+            descScroll.reset();
         }
 
-        maxDescScroll = Math.max(0, wrappedDesc.size() * DMZ_REVAMP_LINE_HEIGHT - DMZ_REVAMP_DESC_HEIGHT);
-        targetDescScroll = Mth.clamp(targetDescScroll, 0.0F, maxDescScroll);
-        currentDescScroll = Mth.lerp(Minecraft.getInstance().getFrameTime() * 0.4F, currentDescScroll, targetDescScroll);
+        List<FormattedCharSequence> lines = wrappedDesc.stream()
+                .map(line -> Component.literal(line).getVisualOrderText())
+                .toList();
         TextUtil.renderScrollableText(
                 graphics,
                 Minecraft.getInstance().font,
-                wrappedDesc,
+                descScroll,
+                lines,
                 x,
                 y,
                 DMZ_REVAMP_DESC_WIDTH,
                 DMZ_REVAMP_DESC_HEIGHT,
-                currentDescScroll,
-                maxDescScroll,
+                DMZ_REVAMP_LINE_HEIGHT,
                 0xFFCCCCCC,
-                Style.EMPTY
+                false,
+                mouseX,
+                mouseY
         );
     }
 

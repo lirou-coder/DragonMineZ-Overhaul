@@ -20,7 +20,13 @@ public abstract class StatsDataPrestigeDataMixin implements PrestigeDataAccess {
     @Unique
     private static final String DMZREVAMP_PRESTIGE_COUNT = "DmzRevampPrestigeCount";
     @Unique
+    private static final String DMZREVAMP_PRESTIGE_ELIGIBLE = "DmzRevampPrestigeEligible";
+    @Unique
     private int dmzrevamp$prestigeCount;
+    @Unique
+    private boolean dmzrevamp$prestigeEligibilityKnown;
+    @Unique
+    private boolean dmzrevamp$prestigeEligible;
 
     @Override
     public int dmzrevamp$getPrestigeCount() {
@@ -32,9 +38,29 @@ public abstract class StatsDataPrestigeDataMixin implements PrestigeDataAccess {
         dmzrevamp$prestigeCount = Math.max(0, count);
     }
 
+    @Override
+    public boolean dmzrevamp$isPrestigeEligibilityKnown() {
+        return dmzrevamp$prestigeEligibilityKnown;
+    }
+
+    @Override
+    public boolean dmzrevamp$isPrestigeEligible() {
+        return dmzrevamp$prestigeEligible;
+    }
+
+    @Override
+    public void dmzrevamp$setPrestigeEligibility(boolean known, boolean eligible) {
+        dmzrevamp$prestigeEligibilityKnown = known;
+        dmzrevamp$prestigeEligible = eligible;
+    }
+
     @Inject(method = "save", at = @At("RETURN"), remap = false)
     private void dmzrevamp$savePrestige(CallbackInfoReturnable<CompoundTag> cir) {
+        boolean eligible = com.dmzrevamp.revamp.prestige.PrestigeSystem
+                .canPrestigeAuthoritative((StatsData) (Object) this);
+        dmzrevamp$setPrestigeEligibility(true, eligible);
         cir.getReturnValue().putInt(DMZREVAMP_PRESTIGE_COUNT, dmzrevamp$getPrestigeCount());
+        cir.getReturnValue().putBoolean(DMZREVAMP_PRESTIGE_ELIGIBLE, eligible);
     }
 
     @Inject(method = "load", at = @At("TAIL"), remap = false)
@@ -45,11 +71,19 @@ public abstract class StatsDataPrestigeDataMixin implements PrestigeDataAccess {
         if (tag != null && tag.contains(DMZREVAMP_PRESTIGE_COUNT, Tag.TAG_ANY_NUMERIC)) {
             dmzrevamp$setPrestigeCount(tag.getInt(DMZREVAMP_PRESTIGE_COUNT));
         }
+        if (tag != null && tag.contains(DMZREVAMP_PRESTIGE_ELIGIBLE, Tag.TAG_BYTE)) {
+            dmzrevamp$setPrestigeEligibility(true, tag.getBoolean(DMZREVAMP_PRESTIGE_ELIGIBLE));
+        }
     }
 
     @Inject(method = "copyFrom", at = @At("TAIL"), remap = false)
     private void dmzrevamp$copyPrestige(StatsData oldData, CallbackInfo ci) {
-        dmzrevamp$setPrestigeCount(((PrestigeDataAccess) oldData).dmzrevamp$getPrestigeCount());
+        PrestigeDataAccess oldAccess = (PrestigeDataAccess) oldData;
+        dmzrevamp$setPrestigeCount(oldAccess.dmzrevamp$getPrestigeCount());
+        dmzrevamp$setPrestigeEligibility(
+                oldAccess.dmzrevamp$isPrestigeEligibilityKnown(),
+                oldAccess.dmzrevamp$isPrestigeEligible()
+        );
     }
 
     @Inject(method = "resetPlayerProgress", at = @At("TAIL"), remap = false)

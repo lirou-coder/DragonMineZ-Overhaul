@@ -45,4 +45,23 @@ public abstract class EntitiesConfigTransformSettingsChainFieldsMixin {
     @Unique @SerializedName(value="Transform3MovementSpeedMulti", alternate={"Transform3MovementSpeedMultiplier","transform3MovementSpeedMulti"}) private Double dmzrevamp$t3SpeedMulti;
     @Unique @SerializedName(value="Transform3TriggerPercent", alternate={"Transform3TriggerHealthPercent","transform3TriggerPercent"}) private Double dmzrevamp$t3Trigger;
     @Unique @SerializedName(value="Transform3MobEffects", alternate={"Transform3MobEffect","transform3MobEffects","transform3MobEffect"}) private JsonElement dmzrevamp$t3Effects;
+    @Unique @SerializedName(value="Transform4Health", alternate={"transform4Health"}) private Double dmzrevamp$t4Health;
+    @Unique @SerializedName(value="Transform4HealthMulti", alternate={"Transform4HealthMultiplier","transform4HealthMulti"}) private Double dmzrevamp$t4HealthMulti;
+    @Unique @SerializedName(value="Transform4MeleeDamage", alternate={"transform4MeleeDamage"}) private Double dmzrevamp$t4Melee;
+    @Unique @SerializedName(value="Transform4MeleeDamageMulti", alternate={"Transform4MeleeDamageMultiplier","Transform4MeleeMulti","transform4MeleeDamageMulti"}) private Double dmzrevamp$t4MeleeMulti;
+    @Unique @SerializedName(value="Transform4KiDamage", alternate={"transform4KiDamage"}) private Double dmzrevamp$t4Ki;
+    @Unique @SerializedName(value="Transform4KiDamageMulti", alternate={"Transform4KiDamageMultiplier","Transform4KiMulti","transform4KiDamageMulti"}) private Double dmzrevamp$t4KiMulti;
+    @Unique @SerializedName(value="Transform4Defense", alternate={"transform4Defense"}) private Double dmzrevamp$t4Defense;
+    @Unique @SerializedName(value="Transform4DefenseMulti", alternate={"Transform4DefenseMultiplier","transform4DefenseMulti","transform4DefenseMultiplier"}) private Double dmzrevamp$t4DefenseMulti;
+    @Unique @SerializedName(value="Transform4Armor", alternate={"transform4Armor"}) private Double dmzrevamp$t4Armor;
+    @Unique @SerializedName(value="Transform4ArmorMulti", alternate={"Transform4ArmorMultiplier","transform4ArmorMulti"}) private Double dmzrevamp$t4ArmorMulti;
+    @Unique @SerializedName(value="Transform4ArmorToughness", alternate={"transform4ArmorToughness"}) private Double dmzrevamp$t4Toughness;
+    @Unique @SerializedName(value="Transform4ArmorToughnessMulti", alternate={"Transform4ArmorToughnessMultiplier","transform4ArmorToughnessMulti"}) private Double dmzrevamp$t4ToughnessMulti;
+    @Unique @SerializedName(value="Transform4Protection", alternate={"transform4Protection"}) private Double dmzrevamp$t4Protection;
+    @Unique @SerializedName(value="Transform4ProtectionMulti", alternate={"Transform4ProtectionMultiplier","transform4ProtectionMulti"}) private Double dmzrevamp$t4ProtectionMulti;
+    @Unique @SerializedName(value="Transform4MovementSpeed", alternate={"transform4MovementSpeed"}) private Double dmzrevamp$t4Speed;
+    @Unique @SerializedName(value="Transform4MovementSpeedMulti", alternate={"Transform4MovementSpeedMultiplier","transform4MovementSpeedMulti"}) private Double dmzrevamp$t4SpeedMulti;
+    @Unique @SerializedName(value="Transform4TriggerPercent", alternate={"Transform4TriggerHealthPercent","transform4TriggerPercent"}) private Double dmzrevamp$t4Trigger;
+    @Unique @SerializedName(value="Transform4MobEffects", alternate={"Transform4MobEffect","transform4MobEffects","transform4MobEffect"}) private JsonElement dmzrevamp$t4Effects;
+    @Unique @SerializedName(value="canTransform4", alternate={"CanTransform4"}) private Boolean dmzrevamp$canTransform4 = true;
 }

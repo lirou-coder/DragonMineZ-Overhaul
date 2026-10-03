@@ -41,6 +41,11 @@ public final class EntityConfigAttributeApplier {
         applyTransformFields(tag, entityData, defaultData);
         TransformStageOverridesWriter.save(tag, TransformChainConfig.get(key.toString(), 2), 2, false, 1D, 1D, 1D);
         TransformStageOverridesWriter.save(tag, TransformChainConfig.get(key.toString(), 3), 3, false, 1D, 1D, 1D);
+        TransformStageOverridesWriter.save(tag, TransformChainConfig.get(key.toString(), 4), 4, false, 1D, 1D, 1D);
+        if (!tag.contains(QuestSpawnAttributeApplier.CAN_TRANSFORM_4_TAG)) {
+            tag.putBoolean(QuestSpawnAttributeApplier.CAN_TRANSFORM_4_TAG,
+                    TransformChainConfig.canTransform(key.toString(), 4));
+        }
     }
 
     private static void applyBaseFields(LivingEntity entity, CompoundTag tag, EntitiesConfig.EntityStats stats, RevampEntityStatsData data) {

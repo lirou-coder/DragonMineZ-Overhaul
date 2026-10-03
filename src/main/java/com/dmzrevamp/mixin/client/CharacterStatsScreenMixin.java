@@ -370,7 +370,6 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
                 .onPress(ignored -> Minecraft.getInstance().setScreen(new PrestigeConfirmationScreen((CharacterStatsScreen) (Object) this)))
                 .build();
         boolean available = statsData != null
-                && LevelingRevampConfig.prestigeEnabled()
                 && PrestigeSystem.canPrestige(statsData);
         dmzrevamp$prestigeButton.visible = available;
         dmzrevamp$prestigeButton.active = available;
@@ -387,7 +386,7 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     @Inject(method = "m_86600_", at = @At("RETURN"), remap = false, require = 0)
     private void dmzrevamp$refreshPrestigeAvailability(CallbackInfo ci) {
         if (dmzrevamp$prestigeButton == null) return;
-        boolean available = statsData != null && LevelingRevampConfig.prestigeEnabled() && PrestigeSystem.canPrestige(statsData);
+        boolean available = statsData != null && PrestigeSystem.canPrestige(statsData);
         dmzrevamp$prestigeButton.visible = available;
         dmzrevamp$prestigeButton.active = available;
     }

@@ -95,11 +95,31 @@ public final class PrestigeSystem {
     }
 
     public static boolean canPrestige(StatsData data) {
+        if (data instanceof PrestigeDataAccess access && access.dmzrevamp$isPrestigeEligibilityKnown()) {
+            return access.dmzrevamp$isPrestigeEligible();
+        }
+        return canPrestigeAuthoritative(data);
+    }
+
+    public static boolean canPrestigeAuthoritative(StatsData data) {
         var config = LevelingRevampConfig.get();
         return LevelingRevampConfig.prestigeEnabled()
                 && count(data) < config.Prestige.maxPrestigeCount
-                && data.getLevel() >= levelCap(data)
+                && hasReachedCurrentPrestigeCap(data)
                 && data.getPlayerQuestData().isQuestCompleted(FINAL_PRESTIGE_QUEST);
+    }
+
+    /**
+     * DMZ derives its displayed level from its own configured maximum-stat
+     * reference. With an explicit Overhaul maxAttribute that reference is not
+     * the same as the current Prestige point budget, so getLevel() can remain
+     * below the cap after every legal point has already been assigned.
+     */
+    public static boolean hasReachedCurrentPrestigeCap(StatsData data) {
+        int currentCap = levelCap(data);
+        if (data.getLevel() >= currentCap) return true;
+        if (LevelingRevampConfig.get().levelsAndAttributes.maxAttribute < 0) return false;
+        return data.getStats().getTotalStats() >= maxAssignableTotal(data);
     }
 
     public static double scaleMultiplier(StatsData data) {

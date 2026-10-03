@@ -27,7 +27,7 @@ public abstract class QuestParserRevampKillFieldsMixin {
             "TransformDefense", "TransformArmor", "TransformArmorToughness", "TransformProtection", "TransformMovementSpeed",
             "TransformDefenseMulti", "TransformDefenseMultiplier", "TransformArmorMultiplier", "TransformArmorToughnessMultiplier", "TransformProtectionMultiplier", "TransformMovementSpeedMultiplier",
             "mobEffects", "mobEffect", "TransformMobEffects", "TransformMobEffect",
-            "canTransform2", "canTransform3"
+            "canTransform2", "canTransform3", "canTransform4"
     };
     private static final String[] DMZREVAMP_CHAIN_SUFFIXES = {
             "Health", "HealthMulti", "HealthMultiplier",
@@ -68,8 +68,10 @@ public abstract class QuestParserRevampKillFieldsMixin {
         data.dmzrevamp$setTransformMobEffects(parseMobEffects(object, "TransformMobEffects", "TransformMobEffect"));
         data.dmzrevamp$setTransformStage(2, TransformStageOverrides.parse(object, 2));
         data.dmzrevamp$setTransformStage(3, TransformStageOverrides.parse(object, 3));
+        data.dmzrevamp$setTransformStage(4, TransformStageOverrides.parse(object, 4));
         data.dmzrevamp$setCanTransformStage(2, nullableBoolean(object, "canTransform2", true));
         data.dmzrevamp$setCanTransformStage(3, nullableBoolean(object, "canTransform3", true));
+        data.dmzrevamp$setCanTransformStage(4, nullableBoolean(object, "canTransform4", true));
     }
 
     @Inject(method = "validateObjective", at = @At("HEAD"))
@@ -81,7 +83,7 @@ public abstract class QuestParserRevampKillFieldsMixin {
                     removed.put(key, object.remove(key));
                 }
             }
-            for (int stage = 2; stage <= 3; stage++) {
+            for (int stage = 2; stage <= 4; stage++) {
                 for (String suffix : DMZREVAMP_CHAIN_SUFFIXES) {
                     String key = "Transform" + stage + suffix;
                     if (object.has(key)) removed.put(key, object.remove(key));

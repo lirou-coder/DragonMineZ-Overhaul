@@ -47,6 +47,7 @@ public final class QuestSpawnAttributeApplier {
     public static final String TRANSFORM_STAGE_TAG = "dmzrevamp_transform_stage";
     public static final String CAN_TRANSFORM_2_TAG = "dmzrevamp_can_transform_2";
     public static final String CAN_TRANSFORM_3_TAG = "dmzrevamp_can_transform_3";
+    public static final String CAN_TRANSFORM_4_TAG = "dmzrevamp_can_transform_4";
     private static final String DMZ_TF_HP_ABS = "dmz_quest_tf_hp_abs";
     private static final String DMZ_TF_HP_MULT = "dmz_quest_tf_hp_mult";
     private static final String DMZ_TF_MELEE_ABS = "dmz_quest_tf_melee_abs";
@@ -128,8 +129,10 @@ public final class QuestSpawnAttributeApplier {
         saveMobEffects(tag, TF_MOB_EFFECTS_TAG, data.dmzrevamp$getTransformMobEffects());
         TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(2), 2, true, 1D, 1D, difficultyDamage);
         TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(3), 3, true, 1D, 1D, difficultyDamage);
+        TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(4), 4, true, 1D, 1D, difficultyDamage);
         tag.putBoolean(CAN_TRANSFORM_2_TAG, data.dmzrevamp$canTransformStage(2));
         tag.putBoolean(CAN_TRANSFORM_3_TAG, data.dmzrevamp$canTransformStage(3));
+        tag.putBoolean(CAN_TRANSFORM_4_TAG, data.dmzrevamp$canTransformStage(4));
 
         applyConfiguredSpawnAttributes(living);
         applyMobEffects(living);
@@ -189,12 +192,13 @@ public final class QuestSpawnAttributeApplier {
         }
         applyMobEffects(transformed);
 
-        int transformedStage = Math.min(3, source.getInt(TRANSFORM_STAGE_TAG) + 1);
+        int transformedStage = Math.min(4, source.getInt(TRANSFORM_STAGE_TAG) + 1);
         transformed.getPersistentData().putInt(TRANSFORM_STAGE_TAG, transformedStage);
         activateStage(transformed.getPersistentData(), transformedStage + 1);
-        boolean nextTransformationAllowed = transformedStage < 2
-                ? !source.contains(CAN_TRANSFORM_2_TAG) || source.getBoolean(CAN_TRANSFORM_2_TAG)
-                : !source.contains(CAN_TRANSFORM_3_TAG) || source.getBoolean(CAN_TRANSFORM_3_TAG);
+        String nextStagePermission = transformedStage < 2 ? CAN_TRANSFORM_2_TAG
+                : transformedStage == 2 ? CAN_TRANSFORM_3_TAG : CAN_TRANSFORM_4_TAG;
+        boolean nextTransformationAllowed = !source.contains(nextStagePermission)
+                || source.getBoolean(nextStagePermission);
         if (!nextTransformationAllowed) {
             if (transformed instanceof DBSagasEntity sagaEntity) {
                 sagaEntity.setTransformationDisabled(true);
@@ -212,14 +216,15 @@ public final class QuestSpawnAttributeApplier {
                 TF_DEFENSE_TAG, TF_ARMOR_TAG, TF_ARMOR_TOUGHNESS_TAG, TF_PROTECTION_TAG, TF_MOVEMENT_SPEED_TAG,
                 TF_DEFENSE_MULT_TAG, TF_ARMOR_MULT_TAG, TF_ARMOR_TOUGHNESS_MULT_TAG, TF_PROTECTION_MULT_TAG, TF_MOVEMENT_SPEED_MULT_TAG,
                 MOB_EFFECTS_TAG, TF_MOB_EFFECTS_TAG, TRANSFORM_STAGE_TAG,
-                CAN_TRANSFORM_2_TAG, CAN_TRANSFORM_3_TAG, VERIFIED_QUEST_SPAWN_TAG
+                CAN_TRANSFORM_2_TAG, CAN_TRANSFORM_3_TAG, CAN_TRANSFORM_4_TAG, VERIFIED_QUEST_SPAWN_TAG
         }) {
             if (sourceTag.contains(key)) {
                 targetTag.put(key, sourceTag.get(key).copy());
             }
         }
         for (String key : sourceTag.getAllKeys()) {
-            if (key.startsWith("dmzrevamp_transform2_") || key.startsWith("dmzrevamp_transform3_")) {
+            if (key.startsWith("dmzrevamp_transform2_") || key.startsWith("dmzrevamp_transform3_")
+                    || key.startsWith("dmzrevamp_transform4_")) {
                 targetTag.put(key, sourceTag.get(key).copy());
             }
         }
@@ -239,13 +244,13 @@ public final class QuestSpawnAttributeApplier {
         };
         for (String[] mapping : mappings) {
             tag.remove(mapping[0]);
-            if (stage <= 3) {
+            if (stage <= 4) {
                 String stored = TransformStageOverridesWriter.key(stage, mapping[1]);
                 if (tag.contains(stored)) tag.putDouble(mapping[0], tag.getDouble(stored));
             }
         }
         tag.remove(TF_MOB_EFFECTS_TAG);
-        if (stage <= 3) {
+        if (stage <= 4) {
             String effects = TransformStageOverridesWriter.key(stage, "effects");
             if (tag.contains(effects, 9)) tag.put(TF_MOB_EFFECTS_TAG, tag.getList(effects, 10).copy());
         }

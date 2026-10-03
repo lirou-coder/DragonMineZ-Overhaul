@@ -39,7 +39,7 @@ public final class PrestigeService {
             player.sendSystemMessage(Component.literal("You cannot prestige while in a party. Leave your party to prestige"));
             return;
         }
-        if (!PrestigeSystem.canPrestige(data)) return;
+        if (!PrestigeSystem.canPrestigeAuthoritative(data)) return;
 
         LevelingRevampConfig.Prestige config = LevelingRevampConfig.get().Prestige;
         int nextCount = PrestigeSystem.count(data) + 1;
