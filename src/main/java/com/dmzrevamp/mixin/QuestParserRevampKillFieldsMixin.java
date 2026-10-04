@@ -1,10 +1,13 @@
 package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.revamp.quest.QuestMobEffectConfig;
+import com.dmzrevamp.revamp.quest.RevampDefenseObjectiveData;
 import com.dmzrevamp.revamp.quest.RevampKillObjectiveData;
 import com.dmzrevamp.revamp.quest.TransformStageOverrides;
+import com.dmzrevamp.revamp.quest.TransformingSparObjective;
 import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.SparObjective;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -24,10 +27,16 @@ import java.util.Map;
 public abstract class QuestParserRevampKillFieldsMixin {
     private static final String[] DMZREVAMP_KILL_KEYS = {
             "Defense", "Armor", "ArmorToughness", "Protection", "movementSpeed", "MovementSpeed",
+            "TransformHealth", "TransformMeleeDamage", "TransformKiDamage",
+            "TransformHealthMultiplier", "TransformMeleeDamageMultiplier", "TransformKiMultiplier",
+            "TransformTriggerPercent",
             "TransformDefense", "TransformArmor", "TransformArmorToughness", "TransformProtection", "TransformMovementSpeed",
             "TransformDefenseMulti", "TransformDefenseMultiplier", "TransformArmorMultiplier", "TransformArmorToughnessMultiplier", "TransformProtectionMultiplier", "TransformMovementSpeedMultiplier",
             "mobEffects", "mobEffect", "TransformMobEffects", "TransformMobEffect",
-            "canTransform2", "canTransform3", "canTransform4"
+            "canTransform2", "canTransform3", "canTransform4",
+            "TransformEntity", "Transform2Entity", "Transform3Entity", "Transform4Entity",
+            "TransformOverride", "Transform2Override", "Transform3Override", "Transform4Override",
+            "TransformOveride", "Transform2Overide", "Transform3Overide", "Transform4Overide"
     };
     private static final String[] DMZREVAMP_CHAIN_SUFFIXES = {
             "Health", "HealthMulti", "HealthMultiplier",
@@ -43,13 +52,27 @@ public abstract class QuestParserRevampKillFieldsMixin {
     private static final ThreadLocal<ArrayDeque<Map<String, JsonElement>>> DMZREVAMP_REMOVED_KEYS =
             ThreadLocal.withInitial(ArrayDeque::new);
 
-    @Inject(method = "parseObjective", at = @At("RETURN"))
+    @Inject(method = "parseObjective", at = @At("RETURN"), cancellable = true)
     private static void dmzrevamp$parseKillExtraFields(JsonObject object, CallbackInfoReturnable<QuestObjective> cir) {
+        if (cir.getReturnValue() instanceof SparObjective spar
+                && !(spar instanceof TransformingSparObjective)
+                && needsSparTransformBridge(spar, object)) {
+            cir.setReturnValue(new TransformingSparObjective(
+                    spar.getEntityId(), spar.getCount(), spar.getHealth(), spar.getMeleeDamage(), spar.getKiDamage(),
+                    spar.getSpawnMode(), spar.getCountMode(), spar.getTextureVariant(), spar.getAiTier(),
+                    spar.isCanTransform(), nullableDouble(object, "TransformHealth"),
+                    nullableDouble(object, "TransformMeleeDamage"), nullableDouble(object, "TransformKiDamage"),
+                    nullableDouble(object, "TransformHealthMultiplier"),
+                    nullableDouble(object, "TransformMeleeDamageMultiplier"),
+                    nullableDouble(object, "TransformKiMultiplier"), nullableDouble(object, "TransformTriggerPercent")));
+        }
+        if (cir.getReturnValue() instanceof RevampDefenseObjectiveData defenseData) {
+            defenseData.dmzrevamp$setDefense(nullableDouble(object, "Defense", "defense"));
+        }
         if (!(cir.getReturnValue() instanceof KillObjective objective) || !(objective instanceof RevampKillObjectiveData data)) {
             return;
         }
 
-        data.dmzrevamp$setDefense(nullableDouble(object, "Defense"));
         data.dmzrevamp$setArmor(nullableDouble(object, "Armor"));
         data.dmzrevamp$setArmorToughness(nullableDouble(object, "ArmorToughness"));
         data.dmzrevamp$setProtection(nullableDouble(object, "Protection"));
@@ -72,6 +95,25 @@ public abstract class QuestParserRevampKillFieldsMixin {
         data.dmzrevamp$setCanTransformStage(2, nullableBoolean(object, "canTransform2", true));
         data.dmzrevamp$setCanTransformStage(3, nullableBoolean(object, "canTransform3", true));
         data.dmzrevamp$setCanTransformStage(4, nullableBoolean(object, "canTransform4", true));
+        for (int stage = 1; stage <= 4; stage++) {
+            String prefix = stage == 1 ? "Transform" : "Transform" + stage;
+            data.dmzrevamp$setTransformEntity(stage, nullableString(object,
+                    prefix + "Entity", prefix + "Override", prefix + "Overide"));
+        }
+    }
+
+    private static boolean needsSparTransformBridge(SparObjective objective, JsonObject object) {
+        return missingConfiguredValue(object, "TransformHealth", objective.getTransformHealth())
+                || missingConfiguredValue(object, "TransformMeleeDamage", objective.getTransformMeleeDamage())
+                || missingConfiguredValue(object, "TransformKiDamage", objective.getTransformKiDamage())
+                || missingConfiguredValue(object, "TransformHealthMultiplier", objective.getTransformHealthMultiplier())
+                || missingConfiguredValue(object, "TransformMeleeDamageMultiplier", objective.getTransformMeleeMultiplier())
+                || missingConfiguredValue(object, "TransformKiMultiplier", objective.getTransformKiMultiplier())
+                || missingConfiguredValue(object, "TransformTriggerPercent", objective.getTransformTriggerPercent());
+    }
+
+    private static boolean missingConfiguredValue(JsonObject object, String key, Double parsedValue) {
+        return object != null && object.has(key) && !object.get(key).isJsonNull() && parsedValue == null;
     }
 
     @Inject(method = "validateObjective", at = @At("HEAD"))
@@ -89,6 +131,9 @@ public abstract class QuestParserRevampKillFieldsMixin {
                     if (object.has(key)) removed.put(key, object.remove(key));
                 }
             }
+        } else if (isDefenseObjective(object)) {
+            removeIfPresent(object, removed, "Defense");
+            removeIfPresent(object, removed, "defense");
         }
         DMZREVAMP_REMOVED_KEYS.get().push(removed);
     }
@@ -109,7 +154,18 @@ public abstract class QuestParserRevampKillFieldsMixin {
         if (object == null || !object.has("type") || object.get("type").isJsonNull()) {
             return false;
         }
-        return "KILL".equalsIgnoreCase(object.get("type").getAsString());
+        String type = object.get("type").getAsString();
+        return "KILL".equalsIgnoreCase(type) || "SPAR".equalsIgnoreCase(type);
+    }
+
+    private static boolean isDefenseObjective(JsonObject object) {
+        if (object == null || !object.has("type") || object.get("type").isJsonNull()) return false;
+        String type = object.get("type").getAsString();
+        return "SURVIVE_WAVES".equalsIgnoreCase(type) || "ESCORT".equalsIgnoreCase(type);
+    }
+
+    private static void removeIfPresent(JsonObject object, Map<String, JsonElement> removed, String key) {
+        if (object.has(key)) removed.put(key, object.remove(key));
     }
 
     private static Double nullableDouble(JsonObject object, String key) {
@@ -127,6 +183,19 @@ public abstract class QuestParserRevampKillFieldsMixin {
     private static boolean nullableBoolean(JsonObject object, String key, boolean fallback) {
         return object != null && object.has(key) && !object.get(key).isJsonNull()
                 ? object.get(key).getAsBoolean() : fallback;
+    }
+
+    private static String nullableString(JsonObject object, String... keys) {
+        if (object == null) return null;
+        for (String key : keys) {
+            JsonElement element = object.get(key);
+            if (element != null && !element.isJsonNull() && element.isJsonPrimitive()
+                    && element.getAsJsonPrimitive().isString()) {
+                String value = element.getAsString().trim();
+                if (!value.isEmpty()) return value;
+            }
+        }
+        return null;
     }
 
     private static List<QuestMobEffectConfig> parseMobEffects(JsonObject object) {

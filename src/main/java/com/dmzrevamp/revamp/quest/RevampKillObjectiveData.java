@@ -2,9 +2,7 @@ package com.dmzrevamp.revamp.quest;
 
 import java.util.List;
 
-public interface RevampKillObjectiveData {
-    Double dmzrevamp$getDefense();
-    void dmzrevamp$setDefense(Double value);
+public interface RevampKillObjectiveData extends RevampDefenseObjectiveData {
     boolean dmzrevamp$canTransformStage(int stage);
 
     void dmzrevamp$setCanTransformStage(int stage, boolean allowed);
@@ -12,6 +10,10 @@ public interface RevampKillObjectiveData {
     TransformStageOverrides dmzrevamp$getTransformStage(int stage);
 
     void dmzrevamp$setTransformStage(int stage, TransformStageOverrides values);
+
+    String dmzrevamp$getTransformEntity(int stage);
+
+    void dmzrevamp$setTransformEntity(int stage, String entityId);
 
     Double dmzrevamp$getArmor();
 

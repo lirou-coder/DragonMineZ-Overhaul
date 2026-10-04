@@ -54,6 +54,10 @@ public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObj
     private boolean dmzrevamp$canTransform3 = true;
     @Unique
     private boolean dmzrevamp$canTransform4 = true;
+    @Unique private String dmzrevamp$transformEntity;
+    @Unique private String dmzrevamp$transform2Entity;
+    @Unique private String dmzrevamp$transform3Entity;
+    @Unique private String dmzrevamp$transform4Entity;
 
     @Override
     public boolean dmzrevamp$canTransformStage(int stage) {
@@ -88,6 +92,26 @@ public abstract class KillObjectiveRevampExtensionMixin implements RevampKillObj
         if (stage == 2) dmzrevamp$transformStage2 = safe;
         if (stage == 3) dmzrevamp$transformStage3 = safe;
         if (stage == 4) dmzrevamp$transformStage4 = safe;
+    }
+
+    @Override
+    public String dmzrevamp$getTransformEntity(int stage) {
+        return switch (stage) {
+            case 1 -> dmzrevamp$transformEntity;
+            case 2 -> dmzrevamp$transform2Entity;
+            case 3 -> dmzrevamp$transform3Entity;
+            case 4 -> dmzrevamp$transform4Entity;
+            default -> null;
+        };
+    }
+
+    @Override
+    public void dmzrevamp$setTransformEntity(int stage, String entityId) {
+        String safe = entityId == null || entityId.isBlank() ? null : entityId.trim();
+        if (stage == 1) dmzrevamp$transformEntity = safe;
+        if (stage == 2) dmzrevamp$transform2Entity = safe;
+        if (stage == 3) dmzrevamp$transform3Entity = safe;
+        if (stage == 4) dmzrevamp$transform4Entity = safe;
     }
 
     @Override

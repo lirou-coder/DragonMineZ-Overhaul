@@ -26,10 +26,9 @@ public abstract class QuestTreeExtraDifficultiesMixin extends BaseMenuScreen {
             ResourceLocation.fromNamespaceAndPath("dragonminez", "smooth");
     @Unique private float dmzrevamp$difficultyListScroll;
     @Unique private float dmzrevamp$difficultyListMaxScroll;
+    @Unique private boolean dmzrevamp$difficultyListClipActive;
 
     @Shadow @Final @Mutable private static Difficulty[] DIFFICULTY_OPTIONS;
-    @Shadow @Final @Mutable private float[] diffOptScroll;
-    @Shadow @Final @Mutable private float[] diffOptMaxScroll;
     @Shadow @Final @Mutable private ScrollbarState[] diffOptBars;
 
     protected QuestTreeExtraDifficultiesMixin() {
@@ -44,10 +43,10 @@ public abstract class QuestTreeExtraDifficultiesMixin extends BaseMenuScreen {
     @Inject(method = "<init>", at = @At("TAIL"))
     private void dmzrevamp$resizeDifficultyUiState(CallbackInfo ci) {
         int count = DIFFICULTY_OPTIONS.length;
-        diffOptScroll = new float[count];
-        diffOptMaxScroll = new float[count];
         diffOptBars = new ScrollbarState[count];
-        for (int i = 0; i < count; i++) diffOptBars[i] = new ScrollbarState();
+        for (int i = 0; i < count; i++) {
+            diffOptBars[i] = new ScrollbarState().minThumb(10).instant();
+        }
     }
 
     @Shadow
@@ -66,9 +65,14 @@ public abstract class QuestTreeExtraDifficultiesMixin extends BaseMenuScreen {
 
     @Inject(
             method = "renderDifficultySelectOverlay",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiGraphics;m_280618_()V", ordinal = 0, shift = At.Shift.AFTER)
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lcom/dragonminez/client/gui/character/QuestTreeScreen;getDifficultyOptionRect(I)Lcom/dragonminez/client/gui/character/QuestTreeScreen$PanelRect;",
+                    shift = At.Shift.BEFORE
+            )
     )
     private void dmzrevamp$clipDifficultyList(GuiGraphics graphics, int mouseX, int mouseY, CallbackInfo ci) {
+        if (dmzrevamp$difficultyListClipActive) return;
         int popupX = (getUiWidth() - 220) / 2;
         int popupY = (getUiHeight() - 196) / 2;
         int viewportTop = popupY + 46;
@@ -80,11 +84,15 @@ public abstract class QuestTreeExtraDifficultiesMixin extends BaseMenuScreen {
         graphics.enableScissor(
                 toScreenCoord(popupX + 8), toScreenCoord(viewportTop),
                 toScreenCoord(popupX + 212), toScreenCoord(viewportBottom));
+        dmzrevamp$difficultyListClipActive = true;
     }
 
     @Inject(method = "renderDifficultySelectOverlay", at = @At("TAIL"))
     private void dmzrevamp$finishDifficultyListClip(GuiGraphics graphics, int mouseX, int mouseY, CallbackInfo ci) {
-        graphics.disableScissor();
+        if (dmzrevamp$difficultyListClipActive) {
+            graphics.disableScissor();
+            dmzrevamp$difficultyListClipActive = false;
+        }
     }
 
     @Inject(method = "m_6050_(DDD)Z", at = @At("HEAD"), cancellable = true, remap = false)

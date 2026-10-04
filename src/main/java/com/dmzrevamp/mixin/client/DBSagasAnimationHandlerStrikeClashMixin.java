@@ -10,13 +10,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 /** Lets synchronized swing pulses use a saga NPC's basic attack controller during Strike Clash. */
 @Mixin(value = DBSagasAnimationHandler.class, remap = false)
 public abstract class DBSagasAnimationHandlerStrikeClashMixin {
-    @Redirect(method = "skillPredicate", at = @At(value = "INVOKE",
+    @Redirect(method = "skillPredicate(Lsoftware/bernie/geckolib/core/animation/AnimationState;Lcom/dragonminez/common/init/entities/sagas/DBSagasEntity;)Lsoftware/bernie/geckolib/core/object/PlayState;", at = @At(value = "INVOKE",
             target = "Lcom/dragonminez/common/init/entities/sagas/DBSagasEntity;isComboing()Z"))
     private static boolean dmzrevamp$hideComboAnimationDuringStrikeClash(DBSagasEntity entity) {
         return !ClientStrikeClashState.isEntityActive(entity.getId()) && entity.isComboing();
     }
 
-    @Redirect(method = "attackPredicate", at = @At(value = "INVOKE",
+    @Redirect(method = "attackPredicate(Lsoftware/bernie/geckolib/core/animation/AnimationState;Lcom/dragonminez/common/init/entities/sagas/DBSagasEntity;)Lsoftware/bernie/geckolib/core/object/PlayState;", at = @At(value = "INVOKE",
             target = "Lcom/dragonminez/common/init/entities/sagas/DBSagasEntity;isComboing()Z"))
     private static boolean dmzrevamp$allowBasicAttacksDuringStrikeClash(DBSagasEntity entity) {
         return !ClientStrikeClashState.isEntityActive(entity.getId()) && entity.isComboing();

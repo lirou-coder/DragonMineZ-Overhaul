@@ -48,6 +48,7 @@ public final class QuestSpawnAttributeApplier {
     public static final String CAN_TRANSFORM_2_TAG = "dmzrevamp_can_transform_2";
     public static final String CAN_TRANSFORM_3_TAG = "dmzrevamp_can_transform_3";
     public static final String CAN_TRANSFORM_4_TAG = "dmzrevamp_can_transform_4";
+    public static final String TRANSFORM_ENTITY_TAG_PREFIX = "dmzrevamp_transform_entity_";
     private static final String DMZ_TF_HP_ABS = "dmz_quest_tf_hp_abs";
     private static final String DMZ_TF_HP_MULT = "dmz_quest_tf_hp_mult";
     private static final String DMZ_TF_MELEE_ABS = "dmz_quest_tf_melee_abs";
@@ -69,7 +70,7 @@ public final class QuestSpawnAttributeApplier {
         Quest quest = QuestRegistry.getQuest(tag.getString(QUEST_KEY_TAG));
         int objectiveIndex = tag.getInt(QUEST_OBJECTIVE_INDEX_TAG);
         return quest != null && objectiveIndex >= 0 && objectiveIndex < quest.getObjectives().size()
-                && quest.getObjectives().get(objectiveIndex) instanceof KillObjective;
+                && quest.getObjectives().get(objectiveIndex) instanceof RevampDefenseObjectiveData;
     }
 
     public static void markVerifiedQuestSpawn(Entity entity) {
@@ -95,19 +96,23 @@ public final class QuestSpawnAttributeApplier {
         }
 
         QuestObjective objective = quest.getObjectives().get(objectiveIndex);
-        if (!(objective instanceof KillObjective killObjective) || !(killObjective instanceof RevampKillObjectiveData data)) {
+        if (!(objective instanceof RevampDefenseObjectiveData defenseData)) {
             return;
         }
 
         CompoundTag tag = entity.getPersistentData();
+        double difficultyDamage = questDamageMultiplier(tag);
+        putNullableScaled(tag, DEFENSE_TAG, defenseData.dmzrevamp$getDefense(), difficultyDamage);
+        if (!(objective instanceof KillObjective killObjective) || !(killObjective instanceof RevampKillObjectiveData data)) {
+            applyConfiguredSpawnAttributes(living);
+            return;
+        }
         if (!killObjective.isCanTransform()) {
             tag.putBoolean(QUEST_NO_TRANSFORM_TAG, true);
             if (living instanceof DBSagasEntity sagaEntity) {
                 sagaEntity.setTransformationDisabled(true);
             }
         }
-        double difficultyDamage = questDamageMultiplier(tag);
-        putNullableScaled(tag, DEFENSE_TAG, data.dmzrevamp$getDefense(), difficultyDamage);
         putNullable(tag, ARMOR_TAG, data.dmzrevamp$getArmor());
         putNullable(tag, ARMOR_TOUGHNESS_TAG, data.dmzrevamp$getArmorToughness());
         putNullable(tag, PROTECTION_TAG, data.dmzrevamp$getProtection());
@@ -133,6 +138,12 @@ public final class QuestSpawnAttributeApplier {
         tag.putBoolean(CAN_TRANSFORM_2_TAG, data.dmzrevamp$canTransformStage(2));
         tag.putBoolean(CAN_TRANSFORM_3_TAG, data.dmzrevamp$canTransformStage(3));
         tag.putBoolean(CAN_TRANSFORM_4_TAG, data.dmzrevamp$canTransformStage(4));
+        for (int stage = 1; stage <= 4; stage++) {
+            String entityId = data.dmzrevamp$getTransformEntity(stage);
+            if (entityId != null && !entityId.isBlank()) {
+                tag.putString(TRANSFORM_ENTITY_TAG_PREFIX + stage, entityId);
+            }
+        }
 
         applyConfiguredSpawnAttributes(living);
         applyMobEffects(living);
@@ -221,6 +232,10 @@ public final class QuestSpawnAttributeApplier {
             if (sourceTag.contains(key)) {
                 targetTag.put(key, sourceTag.get(key).copy());
             }
+        }
+        for (int stage = 1; stage <= 4; stage++) {
+            String key = TRANSFORM_ENTITY_TAG_PREFIX + stage;
+            if (sourceTag.contains(key, 8)) targetTag.putString(key, sourceTag.getString(key));
         }
         for (String key : sourceTag.getAllKeys()) {
             if (key.startsWith("dmzrevamp_transform2_") || key.startsWith("dmzrevamp_transform3_")
