@@ -101,7 +101,7 @@ public abstract class StrikeAttackDataRevampExtensionMixin implements RevampStri
         dmzrevamp$strikeType = CustomStrikeType.parse(revamp.getString("StrikeType"));
         dmzrevamp$dashSpeedMultiplier = Mth.clamp(revamp.getFloat("DashSpeedMultiplier"), 0.0F, 1.5F);
         dmzrevamp$speedLevel = Mth.clamp(revamp.getInt("SpeedLevel"), 0, 100);
-        dmzrevamp$armorPenetration = dmzrevamp$strikeType.isEvasive() ? 0 : Mth.clamp(revamp.getInt("ArmorPenetration"), 0, 10);
+        dmzrevamp$armorPenetration = Mth.clamp(revamp.getInt("ArmorPenetration"), 0, 10);
         dmzrevamp$armorPenLevel = Mth.clamp(revamp.getInt("ArmorPenLevel"), 0, 100);
         try {
             dmzrevamp$secondaryType = KiAttackData.SecondaryEffectType.valueOf(revamp.getString("SecondaryType"));
@@ -231,8 +231,8 @@ public abstract class StrikeAttackDataRevampExtensionMixin implements RevampStri
         }
         cir.setReturnValue(switch (stat) {
             case "damage", "cooldown" -> true;
-            case "speed" -> !dmzrevamp$strikeType.isEvasive() && dmzrevamp$getDashSpeedMultiplier() < 1.5F;
-            case "armor_pen" -> !dmzrevamp$strikeType.isEvasive() && dmzrevamp$getArmorPenetration() < 10;
+            case "speed" -> dmzrevamp$getDashSpeedMultiplier() < 1.5F;
+            case "armor_pen" -> dmzrevamp$getArmorPenetration() < 10;
             default -> false;
         });
     }
@@ -285,12 +285,12 @@ public abstract class StrikeAttackDataRevampExtensionMixin implements RevampStri
 
     @Override
     public float dmzrevamp$getDashSpeedMultiplier() {
-        return dmzrevamp$strikeType.isEvasive() ? 0.0F : dmzrevamp$dashSpeedMultiplier;
+        return dmzrevamp$dashSpeedMultiplier;
     }
 
     @Override
     public void dmzrevamp$setDashSpeedMultiplier(float speedMultiplier) {
-        dmzrevamp$dashSpeedMultiplier = dmzrevamp$strikeType.isEvasive() ? 0.0F : Mth.clamp(speedMultiplier, 0.1F, 1.5F);
+        dmzrevamp$dashSpeedMultiplier = Mth.clamp(speedMultiplier, 0.1F, 1.5F);
     }
 
     @Override
@@ -305,12 +305,12 @@ public abstract class StrikeAttackDataRevampExtensionMixin implements RevampStri
 
     @Override
     public int dmzrevamp$getArmorPenetration() {
-        return dmzrevamp$strikeType.isEvasive() ? 0 : dmzrevamp$armorPenetration;
+        return dmzrevamp$armorPenetration;
     }
 
     @Override
     public void dmzrevamp$setArmorPenetration(int armorPenetration) {
-        dmzrevamp$armorPenetration = dmzrevamp$strikeType.isEvasive() ? 0 : Mth.clamp(armorPenetration, 0, 10);
+        dmzrevamp$armorPenetration = Mth.clamp(armorPenetration, 0, 10);
     }
 
     @Override

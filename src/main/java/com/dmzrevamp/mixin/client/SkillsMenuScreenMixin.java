@@ -313,12 +313,10 @@ public abstract class SkillsMenuScreenMixin {
         y += 12;
         dmzrevamp$drawSmooth(graphics, dmzrevamp$detailLine("gui.dragonminez.technique.damage", Component.literal(String.valueOf(damage))), left, y, DMZ_REVAMP_DETAIL_COLOR_VALUE);
         y += 12;
-        if (!revamp.dmzrevamp$getStrikeType().isEvasive()) {
-            dmzrevamp$drawSmooth(graphics, dmzrevamp$detailLine("gui.dragonminez.technique.speed", Component.literal(String.format(java.util.Locale.US, "%.1f", revamp.dmzrevamp$getDashSpeedMultiplier()))), left, y, DMZ_REVAMP_DETAIL_COLOR_VALUE);
-            y += 12;
-            dmzrevamp$drawSmooth(graphics, dmzrevamp$detailLine("gui.dragonminez.technique.armor_pen", Component.literal(String.valueOf(revamp.dmzrevamp$getArmorPenetration()))), left, y, DMZ_REVAMP_DETAIL_COLOR_VALUE);
-            y += 12;
-        }
+        dmzrevamp$drawSmooth(graphics, dmzrevamp$detailLine("gui.dragonminez.technique.speed", Component.literal(String.format(java.util.Locale.US, "%.1f", revamp.dmzrevamp$getDashSpeedMultiplier()))), left, y, DMZ_REVAMP_DETAIL_COLOR_VALUE);
+        y += 12;
+        dmzrevamp$drawSmooth(graphics, dmzrevamp$detailLine("gui.dragonminez.technique.armor_pen", Component.literal(String.valueOf(revamp.dmzrevamp$getArmorPenetration()))), left, y, DMZ_REVAMP_DETAIL_COLOR_VALUE);
+        y += 12;
         dmzrevamp$drawSmooth(graphics, dmzrevamp$detailLine("gui.dragonminez.technique.cooldown", Component.literal(String.format(java.util.Locale.US, "%.1fs", cooldownTicks / 20.0F))), left, y, DMZ_REVAMP_DETAIL_COLOR_VALUE);
         y += 16;
         dmzrevamp$drawSmooth(graphics, dmzrevamp$detailLine("gui.dragonminez.technique.energy_cost", Component.literal(String.format(java.util.Locale.US, "%.1f", strike.getCalculatedCost(statsData)))), left, y, DMZ_REVAMP_DETAIL_COLOR_COST);

@@ -1,0 +1,17 @@
+/*
+ * Reference only. This file is deliberately not compiled.
+ *
+ * Original CustomStrikeType entry:
+ * EVASIVE("evasive", 0.2F, 1.0F, "technique.evasive", 20, 0.0F)
+ *
+ * Creator/runtime rules:
+ * - base cooldown: 400 ticks
+ * - utility: HEAL
+ * - dash speed: 0
+ * - armor penetration: 0
+ * - secondary effects: BUFF only
+ * - extra mob effects: BENEFICIAL only
+ * - effects target the attacker
+ * - tick 6: punch sound + outward target knockback + cloud particles
+ * - tick 20: finish technique
+ */

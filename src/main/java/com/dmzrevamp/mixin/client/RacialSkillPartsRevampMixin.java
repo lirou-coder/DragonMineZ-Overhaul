@@ -47,12 +47,16 @@ public abstract class RacialSkillPartsRevampMixin {
                 Component.translatable("skill.dragonminez.racial_humanrevamp.ki_boosting_body.desc",
                         dmzrevamp$pct(config.kiRegenBonus), dmzrevamp$pct(config.fullKiPowerBoost),
                         dmzrevamp$pct(config.fullKiThreshold), dmzrevamp$pct(config.minimumKiThreshold))));
-        dmzrevamp$replace(parts, "racial_human.android_core", new RacialSkillParts.Part(
-                "racial_humanrevamp.android_core",
-                Component.translatable("skill.dragonminez.racial_human.android_core"),
-                Component.translatable("skill.dragonminez.racial_humanrevamp.android_core.desc",
-                        dmzrevamp$pct(config.androidUpgradedKiRegenBonusMultiplier - 1D),
-                        dmzrevamp$pct(1D - config.androidUpgradedFullKiPowerBoostMultiplier))));
+        // DMZ omits Android Core and Absorption Barrier for non-upgraded humans. Do not let
+        // replace() reinsert an Android-only entry when its native counterpart is absent.
+        if (android || allVariants) {
+            dmzrevamp$replace(parts, "racial_human.android_core", new RacialSkillParts.Part(
+                    "racial_human.android_core",
+                    Component.translatable("skill.dragonminez.racial_human.android_core"),
+                    Component.translatable("skill.dragonminez.racial_humanrevamp.android_core.desc",
+                            dmzrevamp$pct(config.androidUpgradedKiRegenBonusMultiplier - 1D),
+                            dmzrevamp$pct(1D - config.androidUpgradedFullKiPowerBoostMultiplier))));
+        }
         return parts;
     }
 
@@ -60,11 +64,11 @@ public abstract class RacialSkillPartsRevampMixin {
         List<RacialSkillParts.Part> parts = dmzrevamp$nativeParts("saiyan", false, allVariants);
         var config = DmzRevampRacialConfigs.saiyanRpg();
         dmzrevamp$replace(parts, "racial_saiyan.zenkai", new RacialSkillParts.Part(
-                "racial_saiyanrevamp.zenkai",
+                "racial_saiyan.zenkai",
                 Component.translatable("skill.dragonminez.racial_saiyan.zenkai"),
                 Component.translatable("skill.dragonminez.racial_saiyanrevamp.zenkai.desc", config.cooldownSeconds)));
         dmzrevamp$replace(parts, "racial_saiyan.limitless_power", new RacialSkillParts.Part(
-                "racial_saiyanrevamp.limitless_power",
+                "racial_saiyan.limitless_power",
                 Component.translatable("skill.dragonminez.racial_saiyan.limitless_power"),
                 Component.translatable("skill.dragonminez.racial_saiyanrevamp.limitless_power.desc",
                         dmzrevamp$pct(config.maxZenkaiReleaseBonus))));
@@ -86,7 +90,7 @@ public abstract class RacialSkillPartsRevampMixin {
         List<RacialSkillParts.Part> parts = dmzrevamp$nativeParts("namekian", false, allVariants);
         var config = DmzRevampRacialConfigs.namekianRevamp();
         dmzrevamp$replace(parts, "racial_namekian.assimilation", new RacialSkillParts.Part(
-                "racial_namekianrevamp.assimilation",
+                "racial_namekian.assimilation",
                 Component.translatable("skill.dragonminez.racial_namekian.assimilation"),
                 Component.translatable("skill.dragonminez.racial_namekianrevamp.assimilation.desc",
                         config.assimilationChargeTicks / 20D, dmzrevamp$pct(config.healthRegenRatio),
@@ -98,7 +102,7 @@ public abstract class RacialSkillPartsRevampMixin {
         List<RacialSkillParts.Part> parts = dmzrevamp$nativeParts("majin", false, allVariants);
         var config = DmzRevampRacialConfigs.majinRevamp();
         dmzrevamp$replace(parts, "racial_majin.absorption", new RacialSkillParts.Part(
-                "racial_majinrevamp.absorption",
+                "racial_majin.absorption",
                 Component.translatable("skill.dragonminez.racial_majin.absorption"),
                 Component.translatable("skill.dragonminez.racial_majinrevamp.absorption.desc",
                         config.absorptionChargeTicks / 20D, dmzrevamp$pct(config.healthRegenRatio),
@@ -109,7 +113,7 @@ public abstract class RacialSkillPartsRevampMixin {
     private static List<RacialSkillParts.Part> dmzrevamp$bioAndroid(boolean allVariants) {
         List<RacialSkillParts.Part> parts = dmzrevamp$nativeParts("bioandroid", false, allVariants);
         dmzrevamp$replace(parts, "racial_bioandroid.evolution", new RacialSkillParts.Part(
-                "racial_bioandroidrevamp.evolution",
+                "racial_bioandroid.evolution",
                 Component.translatable("skill.dragonminez.racial_bioandroid.evolution"),
                 Component.translatable("skill.dragonminez.racial_bioandroidrevamp.evolution.desc",
                         dmzrevamp$pct(DmzRevampRacialConfigs.bioAndroid().effectMultiplier))));

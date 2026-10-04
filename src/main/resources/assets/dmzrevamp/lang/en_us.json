@@ -56,5 +56,6 @@
   "dmz.quest.prestige3.desc": "Face the strongest warriors in the universe, and you may ascend to greater hights.",
   "hud.dmzrevamp.strike_clash_title": "STRIKE CLASH!",
   "key.categories.dmzrevamp": "Dragon Mine Z: Overhaul",
-  "key.dmzrevamp.lock_cycle": "Lock Cycle"
+  "key.dmzrevamp.lock_cycle": "Lock Cycle",
+  "gui.dmzrevamp.skills.required_dmz_level": "You need to be at level %s to unlock this form"
 }

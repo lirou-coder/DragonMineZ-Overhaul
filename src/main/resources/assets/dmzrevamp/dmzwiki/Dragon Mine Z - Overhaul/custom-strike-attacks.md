@@ -12,15 +12,14 @@ The selected type determines the animation, movement pattern, hit sequence, star
 - Meteor Combination: a longer rapid combination based on the Kaioken Attack movement style.
 - Fast Punch: a quick physical attack sequence.
 - Strong Punch: a shorter, heavier attack.
-- Evasive: a defensive recovery technique rather than a damaging Strike.
 
 Damage can be adjusted only within the range supported by the selected type. Changing type also updates the compatible movement and utility options.
 
 ## Armor Penetration and effects
 
-Damaging custom Strikes can be created and upgraded with up to 10% Armor Penetration. Evasive techniques cannot use Armor Penetration.
+Custom Strikes can be created and upgraded with up to 10% Armor Penetration.
 
-Custom Strikes may carry several secondary stat effects and up to two compatible mob effects. Damaging Strikes accept harmful effects for their target, while Evasive techniques accept beneficial effects for their user.
+Custom Strikes may carry several secondary stat effects and up to two compatible harmful mob effects for their target.
 
 Adding damage, speed, Armor Penetration, or additional effects raises the derived resource, XP, or cooldown costs. Techniques are classified as Basic, Advanced, or Ultimate from their damage and active effects.
 

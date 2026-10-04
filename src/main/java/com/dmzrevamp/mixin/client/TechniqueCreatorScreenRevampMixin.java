@@ -90,8 +90,6 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     private static final int DMZREVAMP_PAGE_TWO_ARROW_HOVER_HEIGHT = 42;
     @Unique
     private static final int DMZREVAMP_STRIKE_BASE_COOLDOWN_TICKS = 240;
-    @Unique
-    private static final int DMZREVAMP_EVASIVE_BASE_COOLDOWN_TICKS = 400;
 
     @Shadow(remap = false)
     private String creatorName;
@@ -406,7 +404,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     @Inject(method = "toggleUtility", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$cycleAreaBothUtility(CallbackInfo ci) {
         if (dmzrevamp$strikeCreator) {
-            creatorUtility = dmzrevamp$strikeType.isEvasive() ? KiAttackData.Utility.HEAL : KiAttackData.Utility.DAMAGE;
+            creatorUtility = KiAttackData.Utility.DAMAGE;
             recomputeDerivedValues();
             ci.cancel();
             return;
@@ -454,11 +452,10 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
                 sizeRight.active = false;
             }
             if (armorLeft != null && armorRight != null) {
-                boolean armorEnabled = !dmzrevamp$strikeType.isEvasive();
-                armorLeft.visible = armorEnabled;
-                armorRight.visible = armorEnabled;
-                armorLeft.active = armorEnabled;
-                armorRight.active = armorEnabled;
+                armorLeft.visible = true;
+                armorRight.visible = true;
+                armorLeft.active = true;
+                armorRight.active = true;
             }
         }
         dmzrevamp$updateCreatorPageWidgets();
@@ -471,8 +468,8 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
             remap = false
     )
     private boolean dmzrevamp$allowArmorPenForStrikeCreator(KiAttackData.KiType type) {
-        // Strike creation reuses the Ki creator screen, so this tells DMZ that non-evasive strikes can edit Armor Pen.
-        return dmzrevamp$strikeCreator ? !dmzrevamp$strikeType.isEvasive() : KiAttackData.usesCustomArmorPen(type);
+        // Strike creation reuses the Ki creator screen, so this tells DMZ that strikes can edit Armor Pen.
+        return dmzrevamp$strikeCreator || KiAttackData.usesCustomArmorPen(type);
     }
 
     @Inject(method = "adjustDamage", at = @At("HEAD"), cancellable = true, remap = false)
@@ -491,12 +488,8 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         if (!dmzrevamp$strikeCreator) {
             return;
         }
-        if (dmzrevamp$strikeType.isEvasive()) {
-            creatorSpeed = 0.0F;
-        } else {
-            float step = hasShiftDown() ? 0.01F : 0.05F;
-            creatorSpeed = Mth.clamp(creatorSpeed + (increase ? step : -step), 0.1F, 1.5F);
-        }
+        float step = hasShiftDown() ? 0.01F : 0.05F;
+        creatorSpeed = Mth.clamp(creatorSpeed + (increase ? step : -step), 0.1F, 1.5F);
         dmzrevamp$applyStrikeCreatorDerivedValues();
         ci.cancel();
     }
@@ -516,12 +509,8 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         if (!dmzrevamp$strikeCreator) {
             return;
         }
-        if (dmzrevamp$strikeType.isEvasive()) {
-            creatorArmorPen = 0;
-        } else {
-            int step = hasShiftDown() ? 1 : 1;
-            creatorArmorPen = Mth.clamp(creatorArmorPen + (increase ? step : -step), 0, 10);
-        }
+        int step = 1;
+        creatorArmorPen = Mth.clamp(creatorArmorPen + (increase ? step : -step), 0, 10);
         dmzrevamp$applyStrikeCreatorDerivedValues();
         ci.cancel();
     }
@@ -1228,7 +1217,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     )
     private String dmzrevamp$displayAreaBothUtilityName(KiAttackData.Utility instance) {
         if (dmzrevamp$strikeCreator) {
-            return dmzrevamp$strikeType.isEvasive() ? "HEAL" : "DAMAGE";
+            return "DAMAGE";
         }
         return dmzrevamp$areaBothEnabled() ? "BOTH" : instance.name();
     }
@@ -1292,8 +1281,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         if (!dmzrevamp$strikeCreator) {
             return;
         }
-        double utilityMultiplier = dmzrevamp$strikeType.isEvasive() ? 0.4D : 1.0D;
-        cir.setReturnValue(String.format(Locale.US, "%.2f", dmzrevamp$clientMeleeDamage() * creatorDamage * utilityMultiplier));
+        cir.setReturnValue(String.format(Locale.US, "%.2f", dmzrevamp$clientMeleeDamage() * creatorDamage));
     }
 
     @Redirect(
@@ -1324,8 +1312,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
 
     @Unique
     private String dmzrevamp$strikeDamageTooltipValue() {
-        double utilityMultiplier = dmzrevamp$strikeType.isEvasive() ? 0.4D : 1.0D;
-        return String.format(Locale.US, "%.2f", dmzrevamp$clientMeleeDamage() * creatorDamage * utilityMultiplier);
+        return String.format(Locale.US, "%.2f", dmzrevamp$clientMeleeDamage() * creatorDamage);
     }
 
     @Invoker(value = "createArrowButton", remap = false)
@@ -1334,11 +1321,11 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     @Unique
     private void dmzrevamp$applyStrikeCreatorDefaults() {
         creatorType = KiAttackData.KiType.SMALL_BALL;
-        creatorUtility = dmzrevamp$strikeType.isEvasive() ? KiAttackData.Utility.HEAL : KiAttackData.Utility.DAMAGE;
+        creatorUtility = KiAttackData.Utility.DAMAGE;
         creatorDamage = dmzrevamp$strikeType.defaultDamageMultiplier();
         creatorSize = 1.0F;
-        creatorSpeed = dmzrevamp$strikeType.isEvasive() ? 0.0F : dmzrevamp$strikeType.defaultSpeedMultiplier();
-        creatorArmorPen = dmzrevamp$strikeType.isEvasive() ? 0 : Mth.clamp(creatorArmorPen, 0, 10);
+        creatorSpeed = dmzrevamp$strikeType.defaultSpeedMultiplier();
+        creatorArmorPen = Mth.clamp(creatorArmorPen, 0, 10);
         dmzrevamp$archetype = KiAttackArchetype.NORMAL;
         dmzrevamp$areaBothUtility = false;
         dmzrevamp$filterStrikeEffects();
@@ -1348,14 +1335,9 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     private void dmzrevamp$applyStrikeCreatorDerivedValues() {
         dmzrevamp$filterStrikeEffects();
         creatorSize = 1.0F;
-        creatorArmorPen = dmzrevamp$strikeType.isEvasive() ? 0 : Mth.clamp(creatorArmorPen, 0, 10);
-        if (dmzrevamp$strikeType.isEvasive()) {
-            creatorUtility = KiAttackData.Utility.HEAL;
-            creatorSpeed = 0.0F;
-        } else {
-            creatorUtility = KiAttackData.Utility.DAMAGE;
-            creatorSpeed = Mth.clamp(creatorSpeed, 0.1F, 1.5F);
-        }
+        creatorArmorPen = Mth.clamp(creatorArmorPen, 0, 10);
+        creatorUtility = KiAttackData.Utility.DAMAGE;
+        creatorSpeed = Mth.clamp(creatorSpeed, 0.1F, 1.5F);
         creatorDamage = Mth.clamp(creatorDamage, dmzrevamp$strikeType.minDamageMultiplier(), dmzrevamp$strikeType.maxDamageMultiplier());
         float extraMultiplier = 1.0F
                 + (creatorSecondaryType == KiAttackData.SecondaryEffectType.NONE ? 0.0F : KiAttackCategoryRules.secondaryWeight(creatorSecondaryIntensity, creatorSecondaryDuration))
@@ -1367,12 +1349,11 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         float minDamage = Math.max(0.1F, dmzrevamp$strikeType.minDamageMultiplier());
         float defaultDamage = Math.max(0.1F, dmzrevamp$strikeType.defaultDamageMultiplier());
         float damageRatio = creatorDamage / defaultDamage;
-        float speedRatio = dmzrevamp$strikeType.isEvasive() ? 1.0F : 1.0F + Math.max(0.0F, creatorSpeed - 1.0F) * 0.35F;
+        float speedRatio = 1.0F + Math.max(0.0F, creatorSpeed - 1.0F) * 0.35F;
         kiCost = Math.max(5.0F, (float) (dmzrevamp$clientMeleeNoForms() * creatorDamage * 0.35D / 2.0D)) * extraMultiplier * speedRatio;
         tpCost = Math.max(100.0F, 100.0F * (creatorDamage / minDamage) * speedRatio * extraMultiplier);
-        int baseCooldown = dmzrevamp$strikeType.isEvasive() ? DMZREVAMP_EVASIVE_BASE_COOLDOWN_TICKS : DMZREVAMP_STRIKE_BASE_COOLDOWN_TICKS;
         // Armor Pen and extra effects raise the derived costs through extraMultiplier.
-        creatorCooldown = Math.max(1, Math.round((baseCooldown * damageRatio * speedRatio + Math.round((extraMultiplier - 1.0F) * 80.0F)) * dmzrevamp$strikeType.cooldownMultiplier()));
+        creatorCooldown = Math.max(1, Math.round((DMZREVAMP_STRIKE_BASE_COOLDOWN_TICKS * damageRatio * speedRatio + Math.round((extraMultiplier - 1.0F) * 80.0F)) * dmzrevamp$strikeType.cooldownMultiplier()));
     }
 
     @Redirect(
@@ -1390,13 +1371,10 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
 
     @Unique
     private void dmzrevamp$filterStrikeEffects() {
-        KiAttackData.SecondaryEffectType allowed = dmzrevamp$strikeType.isEvasive() ? KiAttackData.SecondaryEffectType.BUFF : KiAttackData.SecondaryEffectType.DEBUFF;
-        KiAttackExtraEffect.Mode extraAllowed = dmzrevamp$strikeType.isEvasive() ? KiAttackExtraEffect.Mode.BENEFICIAL : KiAttackExtraEffect.Mode.HARMFUL;
+        KiAttackData.SecondaryEffectType allowed = KiAttackData.SecondaryEffectType.DEBUFF;
+        KiAttackExtraEffect.Mode extraAllowed = KiAttackExtraEffect.Mode.HARMFUL;
         if (creatorSecondaryType != allowed) {
             creatorSecondaryType = KiAttackData.SecondaryEffectType.NONE;
-        }
-        if (dmzrevamp$strikeType.isEvasive()) {
-            creatorArmorPen = 0;
         }
         if (dmzrevamp$thirdType != allowed) {
             dmzrevamp$thirdType = KiAttackData.SecondaryEffectType.NONE;

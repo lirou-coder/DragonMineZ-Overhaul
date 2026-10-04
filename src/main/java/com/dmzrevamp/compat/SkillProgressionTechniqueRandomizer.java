@@ -44,12 +44,8 @@ public final class SkillProgressionTechniqueRandomizer {
 
     public static void randomizeStrike(ServerPlayer player, CustomStrikeType strikeType, RevampStrikeAttackData revamp) {
         RandomSource random = player.getRandom();
-        KiAttackData.SecondaryEffectType effectType = strikeType.isEvasive()
-                ? KiAttackData.SecondaryEffectType.BUFF
-                : KiAttackData.SecondaryEffectType.DEBUFF;
-        KiAttackExtraEffect.Mode extraMode = strikeType.isEvasive()
-                ? KiAttackExtraEffect.Mode.BENEFICIAL
-                : KiAttackExtraEffect.Mode.HARMFUL;
+        KiAttackData.SecondaryEffectType effectType = KiAttackData.SecondaryEffectType.DEBUFF;
+        KiAttackExtraEffect.Mode extraMode = KiAttackExtraEffect.Mode.HARMFUL;
 
         EffectRoll secondary = effectRoll(random, effectType);
         revamp.dmzrevamp$setSecondaryEffect(secondary.type(), secondary.stat(), secondary.intensity(), secondary.duration());

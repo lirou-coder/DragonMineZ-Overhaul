@@ -35,7 +35,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.registries.RegistryObject;
 import org.spongepowered.asm.mixin.Final;
@@ -48,7 +47,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.lang.reflect.Method;
@@ -61,9 +59,6 @@ public abstract class StrikeAttackHandlerRevampMixin {
 
     @Unique
     private static Method dmzrevamp$withTicksElapsedMethod;
-
-    @Unique
-    private static final Map<UUID, Integer> DMZREVAMP_EVASIVE_PUSH_TICK = new HashMap<>();
 
     @Redirect(
             method = "lambda$requestStrike$0",
@@ -104,9 +99,6 @@ public abstract class StrikeAttackHandlerRevampMixin {
         String animationId = strike.getAnimationId();
         if ("kaioken_attack".equals(animationId)) {
             return "skp.kaioken_attack";
-        }
-        if ("animation.technique.evasive".equals(animationId)) {
-            return "technique.evasive";
         }
         return animationId;
     }
@@ -232,10 +224,6 @@ public abstract class StrikeAttackHandlerRevampMixin {
             if (!(technique instanceof StrikeAttackData strike) || !(strike instanceof RevampStrikeAttackData revamp) || !revamp.dmzrevamp$isCustomStrike()) {
                 return;
             }
-            if (revamp.dmzrevamp$getStrikeType().isEvasive()) {
-                ci.cancel();
-                return;
-            }
             dmzrevamp$lockCustomStrikeTarget(player, target, data);
             ci.cancel();
         });
@@ -309,20 +297,6 @@ public abstract class StrikeAttackHandlerRevampMixin {
         }
         int tick = activeData.dmzrevamp$getTicksElapsed() + 1;
         double totalDamage = Math.max(0.0D, activeData.dmzrevamp$getTotalDamage());
-        if (revamp.dmzrevamp$getStrikeType().isEvasive()) {
-            dmzrevamp$face(player, target);
-            dmzrevamp$freeze(player);
-            if (tick == 6) {
-                dmzrevamp$pushTarget(player, target);
-                StrikeAttackEffectApplier.applyExtras(strike, player, target);
-            }
-            if (tick >= 20) {
-                dmzrevamp$endCustomStrike(player, target, data);
-                return;
-            }
-            ACTIVE.put(player.getUUID(), dmzrevamp$withTicksElapsed(active, tick));
-            return;
-        }
         dmzrevamp$lockCustomStrikeTarget(player, target, data);
         dmzrevamp$face(player, target);
         if (target instanceof ServerPlayer targetPlayer) {
@@ -801,45 +775,6 @@ public abstract class StrikeAttackHandlerRevampMixin {
                 targetData.getStatus().setStrikeLocked(true);
                 NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(targetPlayer), targetPlayer);
             });
-        }
-    }
-
-    @Unique
-    private static void dmzrevamp$pushNearby(ServerPlayer player) {
-        int tick = player.tickCount;
-        Integer previous = DMZREVAMP_EVASIVE_PUSH_TICK.get(player.getUUID());
-        if (previous != null && previous == tick) {
-            return;
-        }
-        DMZREVAMP_EVASIVE_PUSH_TICK.put(player.getUUID(), tick);
-        dmzrevamp$play(player, MainSounds.EVASION1, 1.0F, 1.0F);
-        AABB area = player.getBoundingBox().inflate(4.0D);
-        for (LivingEntity entity : player.level().getEntitiesOfClass(LivingEntity.class, area, entity -> entity != player && entity.isAlive())) {
-            Vec3 direction = entity.position().subtract(player.position());
-            if (direction.lengthSqr() < 0.01D) {
-                direction = player.getLookAngle();
-            }
-            direction = direction.normalize();
-            entity.setDeltaMovement(direction.x * 1.4D, 0.35D, direction.z * 1.4D);
-            entity.hurtMarked = true;
-        }
-        if (player.level() instanceof ServerLevel level) {
-            level.sendParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.5D, player.getZ(), 16, 1.0D, 0.35D, 1.0D, 0.08D);
-        }
-    }
-
-    @Unique
-    private static void dmzrevamp$pushTarget(ServerPlayer player, LivingEntity target) {
-        dmzrevamp$play(player, MainSounds.FIST_PUNCH, 1.2F, 1.0F);
-        Vec3 direction = target.position().subtract(player.position());
-        if (direction.lengthSqr() < 0.01D) {
-            direction = player.getLookAngle();
-        }
-        direction = direction.normalize();
-        target.setDeltaMovement(direction.x * 3.5D, 0.45D, direction.z * 3.5D);
-        target.hurtMarked = true;
-        if (player.level() instanceof ServerLevel level) {
-            level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ(), 12, 0.35D, 0.25D, 0.35D, 0.08D);
         }
     }
 

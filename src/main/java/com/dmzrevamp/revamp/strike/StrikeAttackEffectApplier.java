@@ -27,26 +27,21 @@ public final class StrikeAttackEffectApplier {
         if (!(data instanceof RevampStrikeAttackData revamp)) {
             return;
         }
-        boolean beneficial = revamp.dmzrevamp$getStrikeType().isEvasive();
-        LivingEntity effectTarget = beneficial ? attacker : target;
-        applySecondary(revamp.dmzrevamp$getSecondaryEffectType(), revamp.dmzrevamp$getSecondaryAffectedStat(), revamp.dmzrevamp$getSecondaryIntensity(), revamp.dmzrevamp$getSecondaryDuration(), beneficial, effectTarget);
-        applySecondary(revamp.dmzrevamp$getThirdEffectType(), revamp.dmzrevamp$getThirdAffectedStat(), revamp.dmzrevamp$getThirdIntensity(), revamp.dmzrevamp$getThirdDuration(), beneficial, effectTarget);
-        applySecondary(revamp.dmzrevamp$getFourthEffectType(), revamp.dmzrevamp$getFourthAffectedStat(), revamp.dmzrevamp$getFourthIntensity(), revamp.dmzrevamp$getFourthDuration(), beneficial, effectTarget);
-        applyExtra(revamp.dmzrevamp$getExtraEffectOne(), beneficial, effectTarget);
-        applyExtra(revamp.dmzrevamp$getExtraEffectTwo(), beneficial, effectTarget);
+        applySecondary(revamp.dmzrevamp$getSecondaryEffectType(), revamp.dmzrevamp$getSecondaryAffectedStat(), revamp.dmzrevamp$getSecondaryIntensity(), revamp.dmzrevamp$getSecondaryDuration(), target);
+        applySecondary(revamp.dmzrevamp$getThirdEffectType(), revamp.dmzrevamp$getThirdAffectedStat(), revamp.dmzrevamp$getThirdIntensity(), revamp.dmzrevamp$getThirdDuration(), target);
+        applySecondary(revamp.dmzrevamp$getFourthEffectType(), revamp.dmzrevamp$getFourthAffectedStat(), revamp.dmzrevamp$getFourthIntensity(), revamp.dmzrevamp$getFourthDuration(), target);
+        applyExtra(revamp.dmzrevamp$getExtraEffectOne(), target);
+        applyExtra(revamp.dmzrevamp$getExtraEffectTwo(), target);
     }
 
-    private static void applySecondary(KiAttackData.SecondaryEffectType type, KiAttackData.AffectedStat stat, float intensity, int durationSeconds, boolean beneficial, LivingEntity target) {
+    private static void applySecondary(KiAttackData.SecondaryEffectType type, KiAttackData.AffectedStat stat, float intensity, int durationSeconds, LivingEntity target) {
         if (type == KiAttackData.SecondaryEffectType.NONE || stat == null || intensity <= 0.0F || durationSeconds <= 0) {
             return;
         }
-        if (beneficial != (type == KiAttackData.SecondaryEffectType.BUFF)) {
+        if (type != KiAttackData.SecondaryEffectType.DEBUFF) {
             return;
         }
-        double modifier = intensity / 100.0D;
-        if (!beneficial) {
-            modifier = -modifier;
-        }
+        double modifier = -intensity / 100.0D;
         int durationTicks = Math.max(1, durationSeconds * 20);
         String statName = stat.name();
         StatsData data = StatsProvider.get(StatsCapability.INSTANCE, target).resolve().orElse(null);
@@ -58,19 +53,16 @@ public final class StrikeAttackEffectApplier {
             }
             return;
         }
-        if (!beneficial && EntityStatDebuffs.isSupported(statName)) {
+        if (EntityStatDebuffs.isSupported(statName)) {
             EntityStatDebuffs.applyDebuff(target, statName, modifier, durationTicks);
         }
     }
 
-    private static void applyExtra(KiAttackExtraEffect extra, boolean beneficial, LivingEntity target) {
+    private static void applyExtra(KiAttackExtraEffect extra, LivingEntity target) {
         if (!extra.isActive()) {
             return;
         }
-        if (beneficial && extra.mode() != KiAttackExtraEffect.Mode.BENEFICIAL) {
-            return;
-        }
-        if (!beneficial && extra.mode() != KiAttackExtraEffect.Mode.HARMFUL) {
+        if (extra.mode() != KiAttackExtraEffect.Mode.HARMFUL) {
             return;
         }
         ResourceLocation id = ResourceLocation.tryParse(extra.effectId());
@@ -78,7 +70,7 @@ public final class StrikeAttackEffectApplier {
             return;
         }
         MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(id);
-        if (effect == null || effect.isBeneficial() != beneficial) {
+        if (effect == null || effect.isBeneficial()) {
             return;
         }
         int durationTicks = KiAttackExtraEffectRules.clampAppliedDurationTicks(extra.mode(), Math.max(1, extra.durationSeconds() * 20), target instanceof Player);

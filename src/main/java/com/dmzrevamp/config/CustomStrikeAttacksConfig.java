@@ -70,8 +70,7 @@ public final class CustomStrikeAttacksConfig {
     private static Config defaults() {
         Config config = new Config();
         for (CustomStrikeType type : CustomStrikeType.values()) {
-            config.strikeAttacks.put(normalize(type.translationSuffix()),
-                    StrikeSettings.defaults(type.isEvasive() ? 400 : 240));
+            config.strikeAttacks.put(normalize(type.translationSuffix()), StrikeSettings.defaults(240));
         }
         config.strikeAttacks.put(StrikeAttackTemplates.ANDROID_ABSORPTION, StrikeSettings.defaults(1200));
         return config;
@@ -94,6 +93,7 @@ public final class CustomStrikeAttacksConfig {
         // Sleep Recovery is a native DMZ 2.2 Evasion and must not keep a
         // legacy custom-Strike settings entry from older Overhaul configs.
         merged.remove(RaceExclusiveStrikeEvents.SLEEP_RECOVERY_ID);
+        merged.remove("evasive");
         defaults.strikeAttacks.forEach(merged::putIfAbsent);
         if (migrateLegacyRacialCooldowns) {
             // DMZ's normal Strike defaults use a 5x XP gain multiplier. Older

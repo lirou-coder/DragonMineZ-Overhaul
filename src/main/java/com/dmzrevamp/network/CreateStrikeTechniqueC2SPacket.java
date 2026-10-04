@@ -47,7 +47,6 @@ public record CreateStrikeTechniqueC2SPacket(
         int extraTwoDuration
 ) {
     private static final int STRIKE_BASE_COOLDOWN_TICKS = 240;
-    private static final int EVASIVE_BASE_COOLDOWN_TICKS = 400;
 
     public static void encode(CreateStrikeTechniqueC2SPacket packet, FriendlyByteBuf buffer) {
         buffer.writeUtf(packet.name);
@@ -139,15 +138,15 @@ public record CreateStrikeTechniqueC2SPacket(
                     revamp.dmzrevamp$setCustomStrike(true);
                     revamp.dmzrevamp$setStrikeType(type);
                     revamp.dmzrevamp$setDashSpeedMultiplier(packet.speedMultiplier);
-                    revamp.dmzrevamp$setArmorPenetration(type.isEvasive() ? 0 : Mth.clamp(packet.armorPenetration, 0, 10));
+                    revamp.dmzrevamp$setArmorPenetration(Mth.clamp(packet.armorPenetration, 0, 10));
                     if (DmzSkillProgressionCompat.isLoaded()) {
                         SkillProgressionTechniqueRandomizer.randomizeStrike(player, type, revamp);
                     } else {
-                        revamp.dmzrevamp$setSecondaryEffect(filterSecondary(type, parseSecondary(packet.secondaryType)), parseStat(packet.secondaryStat), packet.secondaryIntensity, packet.secondaryDuration);
-                        revamp.dmzrevamp$setThirdEffect(filterSecondary(type, parseSecondary(packet.thirdType)), parseStat(packet.thirdStat), packet.thirdIntensity, packet.thirdDuration);
-                        revamp.dmzrevamp$setFourthEffect(filterSecondary(type, parseSecondary(packet.fourthType)), parseStat(packet.fourthStat), packet.fourthIntensity, packet.fourthDuration);
-                        revamp.dmzrevamp$getExtraEffectOne().set(filterMode(type, parseMode(packet.extraOneMode)), packet.extraOneEffect, packet.extraOneLevel, packet.extraOneDuration);
-                        revamp.dmzrevamp$getExtraEffectTwo().set(filterMode(type, parseMode(packet.extraTwoMode)), packet.extraTwoEffect, packet.extraTwoLevel, packet.extraTwoDuration);
+                        revamp.dmzrevamp$setSecondaryEffect(filterSecondary(parseSecondary(packet.secondaryType)), parseStat(packet.secondaryStat), packet.secondaryIntensity, packet.secondaryDuration);
+                        revamp.dmzrevamp$setThirdEffect(filterSecondary(parseSecondary(packet.thirdType)), parseStat(packet.thirdStat), packet.thirdIntensity, packet.thirdDuration);
+                        revamp.dmzrevamp$setFourthEffect(filterSecondary(parseSecondary(packet.fourthType)), parseStat(packet.fourthStat), packet.fourthIntensity, packet.fourthDuration);
+                        revamp.dmzrevamp$getExtraEffectOne().set(filterMode(parseMode(packet.extraOneMode)), packet.extraOneEffect, packet.extraOneLevel, packet.extraOneDuration);
+                        revamp.dmzrevamp$getExtraEffectTwo().set(filterMode(parseMode(packet.extraTwoMode)), packet.extraTwoEffect, packet.extraTwoLevel, packet.extraTwoDuration);
                     }
                     strike.setCooldown(creationCooldown(strike, revamp));
                     strike.setTpCost(creationTpCost(strike, revamp));
@@ -177,10 +176,9 @@ public record CreateStrikeTechniqueC2SPacket(
     private static int creationCooldown(StrikeAttackData strike, RevampStrikeAttackData revamp) {
         float defaultDamage = Math.max(0.1F, revamp.dmzrevamp$getStrikeType().defaultDamageMultiplier());
         float damageRatio = Math.max(0.1F, strike.getDamageMultiplier()) / defaultDamage;
-        float speedRatio = revamp.dmzrevamp$getStrikeType().isEvasive() ? 1.0F : 1.0F + Math.max(0.0F, revamp.dmzrevamp$getDashSpeedMultiplier() - 1.0F) * 0.35F;
-        int baseCooldown = revamp.dmzrevamp$getStrikeType().isEvasive() ? EVASIVE_BASE_COOLDOWN_TICKS : STRIKE_BASE_COOLDOWN_TICKS;
+        float speedRatio = 1.0F + Math.max(0.0F, revamp.dmzrevamp$getDashSpeedMultiplier() - 1.0F) * 0.35F;
         // The server repeats the creator math so packet tampering cannot bypass costs.
-        return Math.max(1, Math.round((baseCooldown * damageRatio * speedRatio + revamp.dmzrevamp$getExtraCooldownTicks()) * revamp.dmzrevamp$getStrikeType().cooldownMultiplier()));
+        return Math.max(1, Math.round((STRIKE_BASE_COOLDOWN_TICKS * damageRatio * speedRatio + revamp.dmzrevamp$getExtraCooldownTicks()) * revamp.dmzrevamp$getStrikeType().cooldownMultiplier()));
     }
 
     private static String cleanName(String raw) {
@@ -188,17 +186,11 @@ public record CreateStrikeTechniqueC2SPacket(
         return clean.length() > 64 ? clean.substring(0, 64) : clean;
     }
 
-    private static KiAttackData.SecondaryEffectType filterSecondary(CustomStrikeType type, KiAttackData.SecondaryEffectType effectType) {
-        if (type.isEvasive()) {
-            return effectType == KiAttackData.SecondaryEffectType.BUFF ? effectType : KiAttackData.SecondaryEffectType.NONE;
-        }
+    private static KiAttackData.SecondaryEffectType filterSecondary(KiAttackData.SecondaryEffectType effectType) {
         return effectType == KiAttackData.SecondaryEffectType.DEBUFF ? effectType : KiAttackData.SecondaryEffectType.NONE;
     }
 
-    private static KiAttackExtraEffect.Mode filterMode(CustomStrikeType type, KiAttackExtraEffect.Mode mode) {
-        if (type.isEvasive()) {
-            return mode == KiAttackExtraEffect.Mode.BENEFICIAL ? mode : KiAttackExtraEffect.Mode.NONE;
-        }
+    private static KiAttackExtraEffect.Mode filterMode(KiAttackExtraEffect.Mode mode) {
         return mode == KiAttackExtraEffect.Mode.HARMFUL ? mode : KiAttackExtraEffect.Mode.NONE;
     }
 
