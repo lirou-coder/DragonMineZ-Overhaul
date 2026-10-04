@@ -76,6 +76,20 @@ public final class CustomBattlePowerCalculator {
         return Math.max(1D, calculate(CustomBattlePowerConfig.get(), totalStats, 1D));
     }
 
+    /** Inverse of the configured mob BP curve, used when an addon supplies a target BP. */
+    public static double totalStatsForMobBattlePower(double battlePower) {
+        CustomBattlePowerConfig.Config config = CustomBattlePowerConfig.get();
+        if (!Double.isFinite(battlePower) || battlePower <= 0D
+                || !Double.isFinite(config.referenceMultiplier) || config.referenceMultiplier <= 0D
+                || !Double.isFinite(config.totalStatsDivisor) || config.totalStatsDivisor <= 0D
+                || !Double.isFinite(config.exponent) || config.exponent <= 0D) {
+            return 0D;
+        }
+        double result = config.totalStatsDivisor
+                * Math.pow(battlePower / config.referenceMultiplier, 1D / config.exponent);
+        return Double.isFinite(result) && result > 0D ? result : 0D;
+    }
+
     public static double calculateScouterBreakBattlePower() {
         return calculate(CustomBattlePowerConfig.get(), SCOUTER_BREAK_REFERENCE_STATS, 1D);
     }

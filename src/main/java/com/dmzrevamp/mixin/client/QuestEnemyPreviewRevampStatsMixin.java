@@ -3,6 +3,7 @@ package com.dmzrevamp.mixin.client;
 import com.dmzrevamp.revamp.battlepower.QuestPreviewBattlePowerCalculator;
 import com.dmzrevamp.revamp.battlepower.QuestPreviewExtraStatsResolver;
 import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
+import com.dmzrevamp.util.CompactNumberFormatter;
 import com.dragonminez.common.quest.Difficulty;
 import com.dragonminez.client.gui.quest.preview.QuestEnemyPreview;
 import com.dragonminez.common.quest.Quest;
@@ -166,21 +167,7 @@ public abstract class QuestEnemyPreviewRevampStatsMixin {
     }
 
     private static String dmzrevamp$abbreviateBattlePower(long value) {
-        if (value >= 1_000_000_000L) {
-            return dmzrevamp$trim(value / 1_000_000_000D) + "B";
-        }
-        if (value >= 1_000_000L) {
-            return dmzrevamp$trim(value / 1_000_000D) + "M";
-        }
-        if (value >= 10_000L) {
-            return dmzrevamp$trim(value / 1_000D) + "K";
-        }
-        return String.format("%,d", value);
-    }
-
-    private static String dmzrevamp$trim(double value) {
-        String formatted = String.format(Locale.ROOT, "%.1f", value);
-        return formatted.endsWith(".0") ? formatted.substring(0, formatted.length() - 2) : formatted;
+        return CompactNumberFormatter.format(value, 10_000D);
     }
 
     private static MutableComponent dmzrevamp$stat(String key, String value, int valueColor) {

@@ -2,6 +2,7 @@ package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.client.KiSenseDangerStyle;
 import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
+import com.dmzrevamp.util.CompactNumberFormatter;
 import com.dragonminez.client.events.KiSenseEvent;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -84,24 +85,7 @@ public abstract class KiSenseEventBattlePowerLabelMixin {
     }
 
     private static String formatBattlePower(double value) {
-        if (value < 10_000_000D) {
-            return String.format(Locale.ROOT, "%,.0f", value).replace(",", ".");
-        }
-        if (value >= 1_000_000_000_000D) {
-            return trim(value / 1_000_000_000_000D) + "T";
-        }
-        if (value >= 1_000_000_000D) {
-            return trim(value / 1_000_000_000D) + "B";
-        }
-        return trim(value / 1_000_000D) + "M";
-    }
-
-    private static String trim(double value) {
-        String text = String.format(Locale.ROOT, "%.2f", value);
-        while (text.endsWith("0")) {
-            text = text.substring(0, text.length() - 1);
-        }
-        return text.endsWith(".") ? text.substring(0, text.length() - 1) : text;
+        return CompactNumberFormatter.format(value, 10_000_000D).replace(",", ".");
     }
 
     @ModifyConstant(

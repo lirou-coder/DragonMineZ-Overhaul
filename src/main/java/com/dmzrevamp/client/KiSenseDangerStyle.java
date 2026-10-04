@@ -36,6 +36,20 @@ public final class KiSenseDangerStyle {
                 SEARCH_AURA_SCALES[segment.upperIndex], segment.progress);
     }
 
+    /** Recovers the interpolated color from the aura scale carried by Noea's renderer. */
+    public static int colorForAuraScale(double scale) {
+        double safe = Double.isFinite(scale) ? scale : SEARCH_AURA_SCALES[0];
+        if (safe <= SEARCH_AURA_SCALES[0]) return COLORS[0];
+        for (int upper = 1; upper < SEARCH_AURA_SCALES.length; upper++) {
+            if (safe <= SEARCH_AURA_SCALES[upper]) {
+                double progress = (safe - SEARCH_AURA_SCALES[upper - 1])
+                        / (SEARCH_AURA_SCALES[upper] - SEARCH_AURA_SCALES[upper - 1]);
+                return lerpColor(COLORS[upper - 1], COLORS[upper], Math.max(0D, Math.min(1D, progress)));
+            }
+        }
+        return COLORS[COLORS.length - 1];
+    }
+
     public static float[][] auraColors(double ratio) {
         int color = color(ratio);
         float r = ((color >> 16) & 0xFF) / 255.0F;

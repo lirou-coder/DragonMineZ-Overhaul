@@ -57,7 +57,7 @@ public final class AccurateMobBattlePowerCalculator {
         return (int) Math.min(STORED_VISIBLE_MAX, battlePower);
     }
 
-    private static double calculateTotalPower(LivingEntity entity) {
+    public static double calculateTotalPower(LivingEntity entity) {
         CustomBattlePowerConfig.Config config = CustomBattlePowerConfig.get();
         double total = 0D;
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "maxHealth", attributeValue(entity, Attributes.MAX_HEALTH));
@@ -75,6 +75,15 @@ public final class AccurateMobBattlePowerCalculator {
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "autoLevelingExplosionDamage", autoLevelingBonus(entity, AUTOLEVELING_EXPLOSION_DAMAGE));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "ironsSpellPower", ironsSpellPower(entity));
         return total;
+    }
+
+    public static double calculateNonCorePower(LivingEntity entity) {
+        CustomBattlePowerConfig.Config config = CustomBattlePowerConfig.get();
+        double core = CustomBattlePowerConfig.weightedValue(config.mobStats, "maxHealth", attributeValue(entity, Attributes.MAX_HEALTH))
+                + CustomBattlePowerConfig.weightedValue(config.mobStats, "attackDamage", attributeValue(entity, Attributes.ATTACK_DAMAGE))
+                + CustomBattlePowerConfig.weightedValue(config.mobStats, "defense", attributeValue(entity, DmzRevampAttributes.MOB_DEFENSE.get()))
+                + weightedMobValue(config.mobStats, "kiDamage", "kiBlastDamage", kiDamage(entity));
+        return Math.max(0D, calculateTotalPower(entity) - core);
     }
 
     private static double weightedMobValue(Map<String, CustomBattlePowerConfig.StatRule> rules, String key, String legacyKey, double value) {

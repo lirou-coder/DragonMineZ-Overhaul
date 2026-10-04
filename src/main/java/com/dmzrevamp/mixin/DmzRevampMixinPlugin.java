@@ -50,11 +50,7 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         if (noeaLoaded && "com.dmzrevamp.mixin.client.LockOnEventScouterMixin".equals(mixinClassName)) {
             return false;
         }
-        if (Set.of(
-                "com.dmzrevamp.mixin.compat.NoeaArmBandRaceCaptureMixin",
-                "com.dmzrevamp.mixin.compat.NoeaGodKiUnknownFormMixin",
-                "com.dmzrevamp.mixin.compat.NoeaGodKiVariantAliasMixin"
-        ).contains(mixinClassName)) {
+        if (mixinClassName.startsWith("com.dmzrevamp.mixin.compat.Noea")) {
             return noeaLoaded && hasClass(targetClassName);
         }
         if (mixinClassName.startsWith("com.dmzrevamp.mixin.compat.sdu.")) {
