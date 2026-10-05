@@ -15,7 +15,7 @@ public final class DmzRacialRegenEvents {
     private DmzRacialRegenEvents() {
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onEnergyRegen(DMZEvent.EnergyRegenEvent event) {
         if (event.getPlayer().level().isClientSide() || event.getAmount() <= 0D) {
             return;

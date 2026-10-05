@@ -5,6 +5,7 @@ import com.dragonminez.common.quest.QuestObjective;
 import com.dragonminez.common.quest.QuestRegistry;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.quest.objectives.KillObjective;
+import com.dragonminez.common.quest.objectives.SurviveWavesObjective;
 import com.dragonminez.common.quest.Difficulty;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -103,11 +104,14 @@ public final class QuestSpawnAttributeApplier {
         CompoundTag tag = entity.getPersistentData();
         double difficultyDamage = questDamageMultiplier(tag);
         putNullableScaled(tag, DEFENSE_TAG, defenseData.dmzrevamp$getDefense(), difficultyDamage);
-        if (!(objective instanceof KillObjective killObjective) || !(killObjective instanceof RevampKillObjectiveData data)) {
+        if (!(objective instanceof RevampKillObjectiveData data)) {
             applyConfiguredSpawnAttributes(living);
             return;
         }
-        if (!killObjective.isCanTransform()) {
+        boolean canTransform = objective instanceof KillObjective killObjective
+                ? killObjective.isCanTransform()
+                : !(objective instanceof SurviveWavesObjective wavesObjective) || wavesObjective.isCanTransform();
+        if (!canTransform) {
             tag.putBoolean(QUEST_NO_TRANSFORM_TAG, true);
             if (living instanceof DBSagasEntity sagaEntity) {
                 sagaEntity.setTransformationDisabled(true);

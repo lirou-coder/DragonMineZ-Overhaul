@@ -165,7 +165,7 @@ public final class CustomClassPassiveEvents {
         event.setAmount(event.getAmount() * regenMultiplier(event.getPlayer(), event.getStatsData(), 8, 6));
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void energyRegen(DMZEvent.EnergyRegenEvent event) {
         event.setAmount(event.getAmount() * regenMultiplier(event.getPlayer(), event.getStatsData(), 9, 7));
     }

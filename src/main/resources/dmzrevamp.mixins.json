@@ -103,6 +103,7 @@
     "RacialModeHandlerCustomSkillMixin",
     "RacialSkillCommandRevampResetMixin",
     "ReloadCommandWeightConfigMixin",
+    "ResourcesMaxEnergyCapMixin",
     "CombatConfigAdaptiveDefenseDefaultsMixin",
     "StatsDataRevampMixin",
     "SpeedDodgeHandlerOverhaulMixin",

@@ -69,7 +69,7 @@ public abstract class QuestParserRevampKillFieldsMixin {
         if (cir.getReturnValue() instanceof RevampDefenseObjectiveData defenseData) {
             defenseData.dmzrevamp$setDefense(nullableDouble(object, "Defense", "defense"));
         }
-        if (!(cir.getReturnValue() instanceof KillObjective objective) || !(objective instanceof RevampKillObjectiveData data)) {
+        if (!(cir.getReturnValue() instanceof RevampKillObjectiveData data)) {
             return;
         }
 
@@ -119,7 +119,7 @@ public abstract class QuestParserRevampKillFieldsMixin {
     @Inject(method = "validateObjective", at = @At("HEAD"))
     private static void dmzrevamp$hideExtraKillKeysFromValidation(String namespace, String path, String label, JsonObject object, CallbackInfo ci) {
         Map<String, JsonElement> removed = new LinkedHashMap<>();
-        if (isKillObjective(object)) {
+        if (supportsRevampKillFields(object)) {
             for (String key : DMZREVAMP_KILL_KEYS) {
                 if (object.has(key)) {
                     removed.put(key, object.remove(key));
@@ -156,6 +156,12 @@ public abstract class QuestParserRevampKillFieldsMixin {
         }
         String type = object.get("type").getAsString();
         return "KILL".equalsIgnoreCase(type) || "SPAR".equalsIgnoreCase(type);
+    }
+
+    private static boolean supportsRevampKillFields(JsonObject object) {
+        if (isKillObjective(object)) return true;
+        if (object == null || !object.has("type") || object.get("type").isJsonNull()) return false;
+        return "SURVIVE_WAVES".equalsIgnoreCase(object.get("type").getAsString());
     }
 
     private static boolean isDefenseObjective(JsonObject object) {
