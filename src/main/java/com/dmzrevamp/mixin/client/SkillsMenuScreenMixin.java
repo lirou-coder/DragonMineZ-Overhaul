@@ -14,6 +14,7 @@ import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.buttons.TexturedTextButton;
 import com.dragonminez.client.gui.character.SkillsMenuScreen;
 import com.dragonminez.client.gui.character.TechniqueCreatorScreen;
+import com.dragonminez.client.gui.character.TechniqueDraft;
 import com.dragonminez.client.util.ScrollbarState;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.stats.StatsData;
@@ -187,7 +188,9 @@ public abstract class SkillsMenuScreenMixin {
                     Minecraft minecraft = Minecraft.getInstance();
                     if (minecraft != null) {
                         ClientStrikeCreatorMode.markNextCreatorAsStrike();
-                        minecraft.setScreen(new TechniqueCreatorScreen((SkillsMenuScreen) (Object) this));
+                        minecraft.setScreen(new TechniqueCreatorScreen(
+                                (SkillsMenuScreen) (Object) this,
+                                TechniqueDraft.create()));
                     }
                 })
                 .build();

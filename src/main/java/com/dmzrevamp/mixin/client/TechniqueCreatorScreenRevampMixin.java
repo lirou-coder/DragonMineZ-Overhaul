@@ -2,6 +2,7 @@ package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.client.ClientKiExtraEffectSelection;
 import com.dmzrevamp.client.ClientStrikeCreatorMode;
+import com.dmzrevamp.mixin.accessor.TechniqueDraftAccessor;
 import com.dmzrevamp.compat.DmzSkillProgressionCompat;
 import com.dmzrevamp.network.CreateStrikeTechniqueC2SPacket;
 import com.dmzrevamp.network.DmzRevampNetwork;
@@ -15,10 +16,10 @@ import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.client.gui.buttons.CustomTextureButton;
 import com.dragonminez.client.gui.character.TechniqueCreatorScreen;
+import com.dragonminez.client.gui.character.TechniqueDraft;
 import com.dragonminez.client.gui.character.util.ScaledScreen;
 import com.dragonminez.client.util.TextUtil;
 import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.config.TechniqueConfig;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.techniques.KiAttackData;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -91,34 +92,40 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     @Unique
     private static final int DMZREVAMP_STRIKE_BASE_COOLDOWN_TICKS = 240;
 
-    @Shadow(remap = false)
+    @Shadow(remap = false) @org.spongepowered.asm.mixin.Final
+    private TechniqueDraft draft;
+    @Unique
     private String creatorName;
-    @Shadow(remap = false)
+    @Unique
     private KiAttackData.KiType creatorType;
-    @Shadow(remap = false)
+    @Unique
     private KiAttackData.Utility creatorUtility;
-    @Shadow(remap = false)
+    @Unique
     private float creatorDamage;
-    @Shadow(remap = false)
+    @Unique
     private float creatorSize;
-    @Shadow(remap = false)
+    @Unique
     private float creatorSpeed;
-    @Shadow(remap = false)
+    @Unique
     private int creatorArmorPen;
-    @Shadow(remap = false)
+    @Unique
     private int creatorCooldown;
-    @Shadow(remap = false)
+    @Unique
     private float kiCost;
-    @Shadow(remap = false)
+    @Unique
     private float tpCost;
-    @Shadow(remap = false)
+    @Unique
     private KiAttackData.SecondaryEffectType creatorSecondaryType;
-    @Shadow(remap = false)
+    @Unique
     private KiAttackData.AffectedStat creatorAffectedStat;
-    @Shadow(remap = false)
+    @Unique
     private int creatorSecondaryIntensity;
-    @Shadow(remap = false)
+    @Unique
     private int creatorSecondaryDuration;
+    @Shadow(remap = false)
+    private CustomTextureButton utilityLeft;
+    @Shadow(remap = false)
+    private CustomTextureButton utilityRight;
     @Shadow(remap = false)
     private CustomTextureButton sizeLeft;
     @Shadow(remap = false)
@@ -131,15 +138,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     private int panelX;
     @Shadow(remap = false)
     private int panelY;
-    @Shadow(remap = false)
-    private void recomputeDerivedValues() {
-    }
-    @Shadow(remap = false)
-    private void setCreatorType(KiAttackData.KiType newType) {
-    }
-    @Shadow(remap = false)
-    private void updateAdjusterVisibility() {
-    }
+    @Shadow(remap = false) private void updateWidgetStates() {}
 
     @Unique
     private KiAttackData.SecondaryEffectType dmzrevamp$thirdType = KiAttackData.SecondaryEffectType.NONE;
@@ -168,8 +167,6 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     @Unique
     private int dmzrevamp$domainDuration = 30;
     @Unique
-    private KiAttackData.SecondaryEffectType dmzrevamp$domainSecondaryBeforeRecompute = null;
-    @Unique
     private boolean dmzrevamp$areaBothUtility = false;
     @Unique
     private CustomTextureButton dmzrevamp$projectilesLeft;
@@ -179,6 +176,14 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     private CustomTextureButton dmzrevamp$areaSizeLeft;
     @Unique
     private CustomTextureButton dmzrevamp$areaSizeRight;
+    @Unique
+    private CustomTextureButton dmzrevamp$utilityLeft;
+    @Unique
+    private CustomTextureButton dmzrevamp$utilityRight;
+    @Unique
+    private CustomTextureButton dmzrevamp$secondaryTypeLeft;
+    @Unique
+    private CustomTextureButton dmzrevamp$secondaryTypeRight;
     @Unique
     private final List<CustomTextureButton> dmzrevamp$extraOneModeDependentButtons = new ArrayList<>();
     @Unique
@@ -194,23 +199,106 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     @Unique
     private boolean dmzrevamp$strikeCreator = false;
     @Unique
+    private boolean dmzrevamp$creationAllowed;
+    @Unique
     private CustomStrikeType dmzrevamp$strikeType = CustomStrikeType.BASIC;
 
     protected TechniqueCreatorScreenRevampMixin(Component title) {
         super(title);
     }
 
+    @Unique
+    private void dmzrevamp$readDraft() {
+        creatorName = draft.getName();
+        creatorType = draft.getType();
+        creatorUtility = draft.getEffectiveUtility();
+        creatorDamage = draft.getDamage();
+        creatorSize = draft.getSize();
+        creatorSpeed = draft.getSpeed();
+        creatorArmorPen = draft.getArmorPen();
+        creatorCooldown = draft.getCooldown();
+        kiCost = draft.getKiCost();
+        tpCost = draft.getTpCost();
+        creatorSecondaryType = draft.getSecondaryType();
+        creatorAffectedStat = draft.getAffectedStat();
+        creatorSecondaryIntensity = draft.getSecondaryIntensity();
+        creatorSecondaryDuration = draft.getSecondaryDuration();
+    }
+
+    @Unique
+    private void dmzrevamp$writeDraft(boolean includeDerived) {
+        TechniqueDraftAccessor access = (TechniqueDraftAccessor) draft;
+        draft.setName(creatorName);
+        access.dmzrevamp$setType(creatorType);
+        access.dmzrevamp$setUtility(creatorUtility);
+        access.dmzrevamp$setDamage(creatorDamage);
+        access.dmzrevamp$setSize(creatorSize);
+        access.dmzrevamp$setSpeed(creatorSpeed);
+        access.dmzrevamp$setArmorPen(creatorArmorPen);
+        access.dmzrevamp$setSecondaryType(creatorSecondaryType);
+        access.dmzrevamp$setAffectedStat(creatorAffectedStat);
+        access.dmzrevamp$setSecondaryIntensity(creatorSecondaryIntensity);
+        access.dmzrevamp$setSecondaryDuration(creatorSecondaryDuration);
+        if (includeDerived) {
+            access.dmzrevamp$setCooldown(creatorCooldown);
+            access.dmzrevamp$setKiCost(kiCost);
+            access.dmzrevamp$setTpCost(tpCost);
+        }
+    }
+
+    @Unique
+    private void recomputeDerivedValues() {
+        if (dmzrevamp$strikeCreator) {
+            // TechniqueDraft recompute applies the selected Ki type's damage
+            // limits. Strike attacks only reuse this screen and have their own
+            // multiplier ranges and cost formula, so running the Ki pipeline
+            // here would clamp/reset the value selected by the player.
+            dmzrevamp$applyStrikeCreatorDerivedValues();
+            dmzrevamp$writeDraft(true);
+            return;
+        }
+        float requestedAreaSize = creatorSize;
+        KiAttackData.SecondaryEffectType requestedAreaEffect = creatorSecondaryType;
+        dmzrevamp$writeDraft(false);
+        draft.recompute();
+        dmzrevamp$readDraft();
+        if (!dmzrevamp$strikeCreator && creatorType == KiAttackData.KiType.AREA) {
+            creatorSize = Mth.clamp(requestedAreaSize, 0.1F, 15.0F);
+            if (dmzrevamp$areaBothEnabled()) creatorSecondaryType = requestedAreaEffect;
+        } else if (creatorType != KiAttackData.KiType.AREA) {
+            dmzrevamp$areaBothUtility = false;
+        }
+        dmzrevamp$applyExtendedDerivedValues();
+        dmzrevamp$writeDraft(true);
+    }
+
+    @Unique
+    private void setCreatorType(KiAttackData.KiType newType) {
+        draft.setType(newType);
+        dmzrevamp$readDraft();
+        recomputeDerivedValues();
+    }
+
+    @Unique
+    private void updateAdjusterVisibility() {
+        updateWidgetStates();
+    }
+
     @Inject(method = "m_7856_", at = @At("RETURN"), remap = false)
     private void dmzrevamp$addExtendedTechniqueControls(CallbackInfo ci) {
+        dmzrevamp$readDraft();
         if (ClientStrikeCreatorMode.consumeNextCreatorIsStrike()) {
             dmzrevamp$strikeCreator = true;
             dmzrevamp$applyStrikeCreatorDefaults();
+            recomputeDerivedValues();
         }
         int x = this.panelX;
         int y = this.panelY;
-        dmzrevamp$disableVanillaTypeArrows(x, y);
-        dmzrevamp$addTypeSelectorOverlay(x, y);
+        if (dmzrevamp$strikeCreator) {
+            dmzrevamp$addTypeSelectorOverlay(x, y);
+        }
         dmzrevamp$addAreaSizeControls(x, y);
+        dmzrevamp$addUtilityAndAreaEffectOverlays(x, y);
         if (!dmzrevamp$skillProgressionCreator()) {
             dmzrevamp$addProjectileCountControls(x, y);
             dmzrevamp$addThirdEffectControls(x + 19, x + 139, y + 18);
@@ -220,11 +308,30 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         }
         // Vanilla initialized these arrows before strike mode was known, leaving Armor Pen hidden/disabled.
         updateAdjusterVisibility();
+        dmzrevamp$replaceStrikeStatControls();
+        dmzrevamp$configureBottomButtonsForMode();
         dmzrevamp$updateCreatorPageWidgets();
+    }
+
+    @Inject(method = "updateWidgetStates", at = @At("HEAD"), remap = false)
+    private void dmzrevamp$keepDraftCostsAndCreatorStateSynchronized(CallbackInfo ci) {
+        if (dmzrevamp$strikeCreator) {
+            creatorName = draft.getName();
+        } else {
+            dmzrevamp$readDraft();
+        }
+        recomputeDerivedValues();
     }
 
     @Inject(method = "createSkill", at = @At("HEAD"), remap = false)
     private void dmzrevamp$normalizeCustomArchetypeBeforeCreate(CallbackInfo ci) {
+        if (dmzrevamp$strikeCreator) {
+            creatorName = draft.getName();
+        } else {
+            dmzrevamp$readDraft();
+        }
+        recomputeDerivedValues();
+        dmzrevamp$creationAllowed = draft.canAfford() && !draft.isDuplicateName();
         if (dmzrevamp$strikeCreator) {
             return;
         }
@@ -236,6 +343,10 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     @Inject(method = "createSkill", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$createCustomStrike(CallbackInfo ci) {
         if (!dmzrevamp$strikeCreator) {
+            return;
+        }
+        if (!draft.canAfford() || draft.isDuplicateName()) {
+            ci.cancel();
             return;
         }
         String name = creatorName == null || creatorName.trim().isEmpty()
@@ -275,7 +386,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
 
     @Inject(method = "createSkill", at = @At("RETURN"), remap = false)
     private void dmzrevamp$sendExtendedTechniqueData(CallbackInfo ci) {
-        if (dmzrevamp$strikeCreator) {
+        if (dmzrevamp$strikeCreator || !dmzrevamp$creationAllowed) {
             return;
         }
         String name = creatorName == null || creatorName.trim().isEmpty()
@@ -357,79 +468,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         }
     }
 
-    @Inject(method = "recomputeDerivedValues", at = @At("HEAD"), cancellable = true, remap = false)
-    private void dmzrevamp$rememberDomainSecondary(CallbackInfo ci) {
-        if (dmzrevamp$strikeCreator) {
-            dmzrevamp$applyStrikeCreatorDerivedValues();
-            ci.cancel();
-            return;
-        }
-        dmzrevamp$domainSecondaryBeforeRecompute = dmzrevamp$areaBothEnabled() ? creatorSecondaryType : null;
-    }
-
-    @Inject(method = "recomputeDerivedValues", at = @At("RETURN"), remap = false)
-    private void dmzrevamp$includeExtendedCreatorCosts(CallbackInfo ci) {
-        if (dmzrevamp$strikeCreator) {
-            dmzrevamp$applyStrikeCreatorDerivedValues();
-            return;
-        }
-        if (dmzrevamp$areaBothEnabled() && dmzrevamp$domainSecondaryBeforeRecompute != null) {
-            creatorSecondaryType = dmzrevamp$domainSecondaryBeforeRecompute;
-        }
-        if (creatorType == KiAttackData.KiType.AREA) {
-            creatorSize = Mth.clamp(creatorSize, 0.1F, 15.0F);
-        } else {
-            dmzrevamp$areaBothUtility = false;
-        }
-        dmzrevamp$applyExtendedDerivedValues();
-    }
-
-    @Inject(method = "cycleSecondaryType", at = @At("HEAD"), cancellable = true, remap = false)
-    private void dmzrevamp$cycleDomainSecondaryFreely(CallbackInfo ci) {
-        if (dmzrevamp$strikeCreator) {
-            return;
-        }
-        if (!dmzrevamp$areaBothEnabled()) {
-            return;
-        }
-        creatorSecondaryType = switch (creatorSecondaryType) {
-            case NONE -> KiAttackData.SecondaryEffectType.BUFF;
-            case BUFF -> KiAttackData.SecondaryEffectType.DEBUFF;
-            case DEBUFF -> KiAttackData.SecondaryEffectType.NONE;
-        };
-        recomputeDerivedValues();
-        ci.cancel();
-    }
-
-    @Inject(method = "toggleUtility", at = @At("HEAD"), cancellable = true, remap = false)
-    private void dmzrevamp$cycleAreaBothUtility(CallbackInfo ci) {
-        if (dmzrevamp$strikeCreator) {
-            creatorUtility = KiAttackData.Utility.DAMAGE;
-            recomputeDerivedValues();
-            ci.cancel();
-            return;
-        }
-        if (dmzrevamp$archetype == KiAttackArchetype.NORMAL && creatorType == KiAttackData.KiType.AREA) {
-            if (dmzrevamp$areaBothUtility) {
-                dmzrevamp$areaBothUtility = false;
-                creatorUtility = KiAttackData.Utility.DAMAGE;
-            } else if (creatorUtility == KiAttackData.Utility.DAMAGE) {
-                creatorUtility = KiAttackData.Utility.HEAL;
-            } else {
-                creatorUtility = KiAttackData.Utility.HEAL;
-                dmzrevamp$areaBothUtility = true;
-            }
-            recomputeDerivedValues();
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "toggleUtility", at = @At("RETURN"), remap = false)
-    private void dmzrevamp$lockDomainUtilityToHeal(CallbackInfo ci) {
-        // Domain was removed; Area + Both now provides that role through normal Area rules.
-    }
-
-    @Inject(method = "updateAdjusterVisibility", at = @At("RETURN"), remap = false)
+    @Inject(method = "updateWidgetStates", at = @At("RETURN"), remap = false)
     private void dmzrevamp$updateProjectileControls(CallbackInfo ci) {
         if (dmzrevamp$projectilesLeft != null && dmzrevamp$projectilesRight != null) {
             boolean enabled = dmzrevamp$projectilesEnabled();
@@ -442,6 +481,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
             }
         }
         dmzrevamp$updateAreaSizeControls();
+        dmzrevamp$updateUtilityAndAreaEffectOverlays();
         dmzrevamp$updateExtraEffectControls(dmzrevamp$extraOne, dmzrevamp$extraOneModeDependentButtons);
         dmzrevamp$updateExtraEffectControls(dmzrevamp$extraTwo, dmzrevamp$extraTwoModeDependentButtons);
         if (dmzrevamp$strikeCreator) {
@@ -452,17 +492,19 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
                 sizeRight.active = false;
             }
             if (armorLeft != null && armorRight != null) {
-                armorLeft.visible = true;
-                armorRight.visible = true;
-                armorLeft.active = true;
-                armorRight.active = true;
+                // These are the DMZ Ki-attack armor controls. Strike attacks
+                // use the Overhaul controls created in replaceStrikeStatControls.
+                armorLeft.visible = false;
+                armorRight.visible = false;
+                armorLeft.active = false;
+                armorRight.active = false;
             }
         }
         dmzrevamp$updateCreatorPageWidgets();
     }
 
     @Redirect(
-            method = {"updateAdjusterVisibility", "renderBaseEffects"},
+            method = {"updateWidgetStates", "renderBaseEffects"},
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/techniques/KiAttackData;usesCustomArmorPen(Lcom/dragonminez/common/stats/techniques/KiAttackData$KiType;)Z"),
             require = 0,
             remap = false
@@ -472,50 +514,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         return dmzrevamp$strikeCreator || KiAttackData.usesCustomArmorPen(type);
     }
 
-    @Inject(method = "adjustDamage", at = @At("HEAD"), cancellable = true, remap = false)
-    private void dmzrevamp$adjustStrikeDamage(boolean increase, CallbackInfo ci) {
-        if (!dmzrevamp$strikeCreator) {
-            return;
-        }
-        float step = hasShiftDown() ? 0.01F : 0.05F;
-        creatorDamage = Mth.clamp(creatorDamage + (increase ? step : -step), dmzrevamp$strikeType.minDamageMultiplier(), dmzrevamp$strikeType.maxDamageMultiplier());
-        dmzrevamp$applyStrikeCreatorDerivedValues();
-        ci.cancel();
-    }
-
-    @Inject(method = "adjustSpeed", at = @At("HEAD"), cancellable = true, remap = false)
-    private void dmzrevamp$adjustStrikeSpeed(boolean increase, CallbackInfo ci) {
-        if (!dmzrevamp$strikeCreator) {
-            return;
-        }
-        float step = hasShiftDown() ? 0.01F : 0.05F;
-        creatorSpeed = Mth.clamp(creatorSpeed + (increase ? step : -step), 0.1F, 1.5F);
-        dmzrevamp$applyStrikeCreatorDerivedValues();
-        ci.cancel();
-    }
-
-    @Inject(method = "adjustSize", at = @At("HEAD"), cancellable = true, remap = false)
-    private void dmzrevamp$lockStrikeSize(boolean increase, CallbackInfo ci) {
-        if (!dmzrevamp$strikeCreator) {
-            return;
-        }
-        creatorSize = 1.0F;
-        dmzrevamp$applyStrikeCreatorDerivedValues();
-        ci.cancel();
-    }
-
-    @Inject(method = "adjustArmor", at = @At("HEAD"), cancellable = true, remap = false)
-    private void dmzrevamp$adjustStrikeArmor(boolean increase, CallbackInfo ci) {
-        if (!dmzrevamp$strikeCreator) {
-            return;
-        }
-        int step = 1;
-        creatorArmorPen = Mth.clamp(creatorArmorPen + (increase ? step : -step), 0, 10);
-        dmzrevamp$applyStrikeCreatorDerivedValues();
-        ci.cancel();
-    }
-
-    @Inject(method = "m_6375_", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "m_6348_", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$handleTechniqueCreatorPageArrow(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
         if (button != 0 || dmzrevamp$skillProgressionCreator()) {
             return;
@@ -541,9 +540,9 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     private void dmzrevamp$addTypeSelectorOverlay(int x, int y) {
         CustomTextureButton left = dmzrevamp$createArrowButton(x + 16, y + 34, true, btn -> dmzrevamp$cycleDisplayType(false));
         CustomTextureButton right = dmzrevamp$createArrowButton(x + 118, y + 34, false, btn -> dmzrevamp$cycleDisplayType(true));
-        // Skill Progression hides every arrow created after DMZ's compact-panel
-        // controls. These two are the one intentional exception: they select
-        // Ki type or the Overhaul Strike archetype and must remain interactive.
+        // Strike attacks skip DMZ's style preview, so these arrows exclusively
+        // select the Overhaul strike archetype. Ki attacks keep the type chosen
+        // on TechniqueStyleScreen and must not be able to change it here.
         left.visible = true;
         left.active = true;
         right.visible = true;
@@ -607,9 +606,67 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     @Unique
     private boolean dmzrevamp$isDoneOrCancelButton(AbstractWidget widget) {
         int buttonY = this.getUiHeight() - 28;
-        int createX = this.panelX + 172 - 78;
-        int cancelX = this.panelX + 172 + 4;
-        return widget.getY() == buttonY && (widget.getX() == createX || widget.getX() == cancelX);
+        int firstX = this.panelX + (345 - (74 * 3 + 4 * 2)) / 2;
+        return widget.getY() == buttonY
+                && (widget.getX() == firstX || widget.getX() == firstX + 78 || widget.getX() == firstX + 156);
+    }
+
+    @Unique
+    private void dmzrevamp$configureBottomButtonsForMode() {
+        if (!dmzrevamp$strikeCreator) return;
+        int buttonY = this.getUiHeight() - 28;
+        int backX = this.panelX + (345 - (74 * 3 + 4 * 2)) / 2;
+        for (net.minecraft.client.gui.components.events.GuiEventListener child : this.children()) {
+            if (child instanceof AbstractWidget widget && widget.getX() == backX && widget.getY() == buttonY) {
+                widget.visible = false;
+                widget.active = false;
+                break;
+            }
+        }
+    }
+
+    @Unique
+    private void dmzrevamp$replaceStrikeStatControls() {
+        if (!dmzrevamp$strikeCreator) return;
+        int leftX = panelX + 18;
+        int rightX = panelX + 150;
+        for (net.minecraft.client.gui.components.events.GuiEventListener child : this.children()) {
+            if (!(child instanceof AbstractWidget widget)) continue;
+            boolean column = widget.getX() == leftX || widget.getX() == rightX;
+            boolean editableRow = widget.getY() == panelY + 126 || widget.getY() == panelY + 166
+                    || widget.getY() == panelY + 186;
+            if (column && editableRow) {
+                widget.visible = false;
+                widget.active = false;
+            }
+        }
+        addRenderableWidget(dmzrevamp$createArrowButton(leftX, panelY + 130, true, btn -> dmzrevamp$adjustStrikeDamage(false)));
+        addRenderableWidget(dmzrevamp$createArrowButton(rightX, panelY + 130, false, btn -> dmzrevamp$adjustStrikeDamage(true)));
+        addRenderableWidget(dmzrevamp$createArrowButton(leftX, panelY + 170, true, btn -> dmzrevamp$adjustStrikeSpeed(false)));
+        addRenderableWidget(dmzrevamp$createArrowButton(rightX, panelY + 170, false, btn -> dmzrevamp$adjustStrikeSpeed(true)));
+        addRenderableWidget(dmzrevamp$createArrowButton(leftX, panelY + 190, true, btn -> dmzrevamp$adjustStrikeArmor(false)));
+        addRenderableWidget(dmzrevamp$createArrowButton(rightX, panelY + 190, false, btn -> dmzrevamp$adjustStrikeArmor(true)));
+    }
+
+    @Unique
+    private void dmzrevamp$adjustStrikeDamage(boolean increase) {
+        float step = hasShiftDown() ? 0.01F : 0.05F;
+        creatorDamage = Mth.clamp(creatorDamage + (increase ? step : -step),
+                dmzrevamp$strikeType.minDamageMultiplier(), dmzrevamp$strikeType.maxDamageMultiplier());
+        recomputeDerivedValues();
+    }
+
+    @Unique
+    private void dmzrevamp$adjustStrikeSpeed(boolean increase) {
+        float step = hasShiftDown() ? 0.01F : 0.05F;
+        creatorSpeed = Mth.clamp(creatorSpeed + (increase ? step : -step), 0.1F, 1.5F);
+        recomputeDerivedValues();
+    }
+
+    @Unique
+    private void dmzrevamp$adjustStrikeArmor(boolean increase) {
+        creatorArmorPen = Mth.clamp(creatorArmorPen + (increase ? 1 : -1), 0, 10);
+        recomputeDerivedValues();
     }
 
     @Unique
@@ -648,6 +705,68 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
             }
         }));
         dmzrevamp$updateAreaSizeControls();
+    }
+
+    @Unique
+    private void dmzrevamp$addUtilityAndAreaEffectOverlays(int x, int y) {
+        dmzrevamp$utilityLeft = addRenderableWidget(dmzrevamp$createArrowButton(x + 16, y + 48, true,
+                btn -> dmzrevamp$cycleUtilityWithAreaBoth()));
+        dmzrevamp$utilityRight = addRenderableWidget(dmzrevamp$createArrowButton(x + 118, y + 48, false,
+                btn -> dmzrevamp$cycleUtilityWithAreaBoth()));
+        dmzrevamp$secondaryTypeLeft = addRenderableWidget(dmzrevamp$createArrowButton(x + 192, y + 130, true,
+                btn -> dmzrevamp$cycleAreaBothSecondary()));
+        dmzrevamp$secondaryTypeRight = addRenderableWidget(dmzrevamp$createArrowButton(x + 326, y + 130, false,
+                btn -> dmzrevamp$cycleAreaBothSecondary()));
+        dmzrevamp$updateUtilityAndAreaEffectOverlays();
+    }
+
+    @Unique
+    private void dmzrevamp$cycleUtilityWithAreaBoth() {
+        if (creatorType == KiAttackData.KiType.AREA && dmzrevamp$archetype == KiAttackArchetype.NORMAL) {
+            if (dmzrevamp$areaBothUtility) {
+                dmzrevamp$areaBothUtility = false;
+                creatorUtility = KiAttackData.Utility.DAMAGE;
+            } else if (creatorUtility == KiAttackData.Utility.DAMAGE) {
+                creatorUtility = KiAttackData.Utility.HEAL;
+            } else {
+                creatorUtility = KiAttackData.Utility.HEAL;
+                dmzrevamp$areaBothUtility = true;
+            }
+            recomputeDerivedValues();
+            return;
+        }
+        draft.toggleUtility();
+        dmzrevamp$readDraft();
+        recomputeDerivedValues();
+    }
+
+    @Unique
+    private void dmzrevamp$cycleAreaBothSecondary() {
+        creatorSecondaryType = switch (creatorSecondaryType) {
+            case NONE -> KiAttackData.SecondaryEffectType.BUFF;
+            case BUFF -> KiAttackData.SecondaryEffectType.DEBUFF;
+            case DEBUFF -> KiAttackData.SecondaryEffectType.NONE;
+        };
+        recomputeDerivedValues();
+    }
+
+    @Unique
+    private void dmzrevamp$updateUtilityAndAreaEffectOverlays() {
+        if (dmzrevamp$utilityLeft == null) return;
+        boolean utility = !dmzrevamp$strikeCreator && draft.allowsUtility();
+        utilityLeft.visible = false;
+        utilityLeft.active = false;
+        utilityRight.visible = false;
+        utilityRight.active = false;
+        dmzrevamp$utilityLeft.visible = utility;
+        dmzrevamp$utilityLeft.active = utility;
+        dmzrevamp$utilityRight.visible = utility;
+        dmzrevamp$utilityRight.active = utility;
+        boolean areaBoth = !dmzrevamp$strikeCreator && dmzrevamp$areaBothEnabled();
+        dmzrevamp$secondaryTypeLeft.visible = areaBoth;
+        dmzrevamp$secondaryTypeLeft.active = areaBoth;
+        dmzrevamp$secondaryTypeRight.visible = areaBoth;
+        dmzrevamp$secondaryTypeRight.active = areaBoth;
     }
 
     @Unique
@@ -1198,15 +1317,35 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
 
     @Redirect(
             method = "renderHeader",
-            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/techniques/KiAttackData$KiType;name()Ljava/lang/String;", ordinal = 0),
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/client/gui/character/TechniqueDraft;typeKey()Ljava/lang/String;"),
             require = 0,
             remap = false
     )
-    private String dmzrevamp$displayCustomKiTypeName(KiAttackData.KiType instance) {
-        if (dmzrevamp$strikeCreator) {
-            return dmzrevamp$strikeType.translationSuffix();
+    private String dmzrevamp$displayCustomTechniqueType(TechniqueDraft currentDraft) {
+        return dmzrevamp$strikeCreator
+                ? "technique.type." + dmzrevamp$strikeType.translationSuffix()
+                : currentDraft.typeKey();
+    }
+
+    @Inject(method = "renderBaseEffects", at = @At("HEAD"), cancellable = true, remap = false)
+    private void dmzrevamp$renderStrikeBaseEffects(GuiGraphics graphics, CallbackInfo ci) {
+        if (!dmzrevamp$strikeCreator) {
+            return;
         }
-        return instance.name();
+
+        int center = panelX + 84;
+        TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+                tr("gui.dragonminez.technique.base_effects"), center, panelY + 108, 0xFFFFD700);
+        TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+                tr("gui.dragonminez.technique.damage").append(": ").append(txt(Math.round(creatorDamage * 100.0F) + "%")),
+                center, panelY + 128, 0xFFFFFFFF);
+        TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+                tr("gui.dragonminez.technique.speed").append(": ").append(txt(String.format(Locale.US, "%.2fx", creatorSpeed))),
+                center, panelY + 168, 0xFFFFFFFF);
+        TextUtil.drawCenteredStringWithBorder(graphics, this.font,
+                tr("gui.dragonminez.technique.armor_pen").append(": ").append(txt(creatorArmorPen + "%")),
+                center, panelY + 188, 0xFFFFFFFF);
+        ci.cancel();
     }
 
     @Redirect(
@@ -1276,38 +1415,16 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
         return this.tr(key, args);
     }
 
-    @Inject(method = "getDamageHealingExpression", at = @At("RETURN"), cancellable = true, remap = false)
-    private void dmzrevamp$useMeleeDamageExpressionForStrikeTooltip(CallbackInfoReturnable<String> cir) {
-        if (!dmzrevamp$strikeCreator) {
-            return;
-        }
-        cir.setReturnValue(String.format(Locale.US, "%.2f", dmzrevamp$clientMeleeDamage() * creatorDamage));
-    }
-
     @Redirect(
-            method = "getDamageHealingExpression",
-            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/StatsData;getKiDamage()D"),
+            method = "renderEffectTooltip",
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/client/gui/character/TechniqueDraft;damageOutput()D"),
             require = 0,
             remap = false
     )
-    private double dmzrevamp$useMeleeDamageForStrikeDamageExpression(StatsData data) {
-        if (dmzrevamp$strikeCreator) {
-            return dmzrevamp$clientMeleeDamage();
-        }
-        return data.getKiDamage();
-    }
-
-    @Redirect(
-            method = "getDamageHealingExpression",
-            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/config/TechniqueConfig$TechniqueTypeConfig;getDamageMultiplier()D"),
-            require = 0,
-            remap = false
-    )
-    private double dmzrevamp$skipKiTypeDamageMultiplierForStrikeTooltip(TechniqueConfig.TechniqueTypeConfig config) {
-        if (dmzrevamp$strikeCreator) {
-            return 1.0D;
-        }
-        return config.getDamageMultiplier();
+    private double dmzrevamp$useMeleeDamageForStrikeDamageExpression(TechniqueDraft currentDraft) {
+        return dmzrevamp$strikeCreator
+                ? dmzrevamp$clientMeleeDamage() * creatorDamage
+                : currentDraft.damageOutput();
     }
 
     @Unique
@@ -1316,7 +1433,7 @@ public abstract class TechniqueCreatorScreenRevampMixin extends ScaledScreen {
     }
 
     @Invoker(value = "createArrowButton", remap = false)
-    protected abstract CustomTextureButton dmzrevamp$createArrowButton(int x, int y, boolean left, net.minecraft.client.gui.components.Button.OnPress onPress);
+    protected abstract CustomTextureButton dmzrevamp$createArrowButton(int x, int y, boolean left, CustomTextureButton.OnPress onPress);
 
     @Unique
     private void dmzrevamp$applyStrikeCreatorDefaults() {
