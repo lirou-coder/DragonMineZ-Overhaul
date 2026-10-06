@@ -12,6 +12,7 @@ import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
 import com.dmzrevamp.config.WeightMovementPenaltyConfig;
+import com.dmzrevamp.config.WorldBossesConfig;
 import com.dmzrevamp.config.AdaptiveDefenseMoreConfigured;
 import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
 import com.dmzrevamp.effect.DmzRevampEffects;
@@ -68,6 +69,7 @@ public class DmzRevampMod {
         StrikeClashConfigured.initialize();
         LevelingRevampConfig.initialize();
         WeightMovementPenaltyConfig.initialize();
+        WorldBossesConfig.initialize();
         DmzRevampNetwork.register();
         CustomRacialSkillRegistry.bootstrap();
         DmzNativeRacialBridge.register();
