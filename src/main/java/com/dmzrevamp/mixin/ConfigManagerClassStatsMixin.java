@@ -167,7 +167,10 @@ public abstract class ConfigManagerClassStatsMixin {
                                                                    CallbackInfoReturnable<RaceCharacterConfig> cir) {
         String requestedRace = raceName == null ? "human" : raceName.toLowerCase(Locale.ROOT);
         RaceCharacterConfig returned = cir.getReturnValue();
-        if (returned != null && requestedRace.equalsIgnoreCase(returned.getRaceName())) {
+        // DMZ 2.2 removed RaceCharacterConfig#getRaceName(). Do not link against
+        // that removed accessor; the map lookup below is sufficient to avoid the
+        // transient cross-race fallback while synchronized configs are arriving.
+        if (returned != null) {
             return;
         }
 

@@ -850,7 +850,7 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         return String.format(Locale.US, "%.1f", value);
     }
 
-    private static Component smoothNumber(double value) {
+    private static net.minecraft.network.chat.MutableComponent smoothNumber(double value) {
         return Component.literal(formatOneDecimal(value))
                 .withStyle(style -> style.withFont(DMZ_FONT).withColor(TextColor.fromRgb(0x55FFFF)));
     }
@@ -873,9 +873,14 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         if (key.contains("character_stats.strike_damage") || key.contains("character_stats.speed")) {
             adjusted.removeIf(CharacterStatsScreenMixin::isStrikeDamageOnlyExtraLine);
             adjusted.add(Component.translatable(
-                    "gui.dmzrevamp.character_stats.speed.max_running",
+                    "gui.dmzrevamp.character_stats.speed.movement",
                     smoothNumber(DmzRevampHelper.getCurrentSpeedDisplayPercent(statsData))
             ).withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.AQUA)));
+            adjusted.add(Component.translatable(
+                    "gui.dmzrevamp.character_stats.speed.no_running_cap",
+                    smoothNumber(100D + com.dmzrevamp.config.DmzRevampConfig.REVAMP_SPEED_BASE_CAP_PERCENT.get())
+                            .withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.GOLD))
+            ).withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.GOLD)));
             adjusted.add(Component.translatable(
                     "gui.dmzrevamp.character_stats.speed.total_attack",
                     smoothNumber(DmzRevampHelper.getCurrentAttackSpeedDisplayPercent(statsData))

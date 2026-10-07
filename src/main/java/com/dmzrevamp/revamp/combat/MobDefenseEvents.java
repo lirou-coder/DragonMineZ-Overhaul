@@ -62,9 +62,10 @@ public final class MobDefenseEvents {
 
         CombatConfig config = ConfigManager.getCombatConfig();
         double incoming = incomingAmount;
-        double flat = defense * config.getFlatMitigationFactor();
-        double minimum = incoming * (1D - config.getFlatMitigationMaxAbsorbFraction());
-        double afterFlat = Math.max(minimum, incoming - flat);
+        // DMZ 2.2 removed flatMitigationFactor. Its current flat stage absorbs
+        // defense directly, capped by flatMitigationMaxAbsorbFraction.
+        double flat = Math.min(defense, incoming * config.getFlatMitigationMaxAbsorbFraction());
+        double afterFlat = Math.max(0D, incoming - flat);
 
         // Mirrors the player's max-Defense damage-reduction stage, but deliberately uses only
         // mob_defense. Vanilla armor and Protection remain independent mitigation systems.

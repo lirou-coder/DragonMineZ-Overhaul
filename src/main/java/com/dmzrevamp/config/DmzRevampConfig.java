@@ -25,9 +25,13 @@ public final class DmzRevampConfig {
             .comment("When true, Lock On can target Android Upgraded players. When false, Dragon Mine Z's original Android targeting restriction is preserved.")
             .define("allowLockOnAndroid", true);
 
-    public static final ForgeConfigSpec.DoubleValue REVAMP_SPEED_PERCENT_PER_POINT = BUILDER
-            .comment("Base speed percentage gained per point of Speed before movement-type formulas, caps, and multipliers are applied. 0.5 means each SPD grants +0.5% speed.")
-            .defineInRange("revamp.speed.basePercentPerSpeed", 0.5D, 0D, 1_000_000D);
+    public static final ForgeConfigSpec.DoubleValue SPEED_REFERENCE_VALUE = BUILDER
+            .comment("Speed value that grants the configured reference movement bonus.")
+            .defineInRange("revamp.speed.speedReferenceValue", 10000D, 1D, 1_000_000_000D);
+
+    public static final ForgeConfigSpec.DoubleValue MOVE_SPEED_REF_BONUS_VALUE = BUILDER
+            .comment("Movement bonus at the speed reference. 0.5 means +50%.")
+            .defineInRange("revamp.speed.MoveSpeedRefBonusValue", 0.5D, 0D, 100D);
 
     public static final ForgeConfigSpec.BooleanValue ATTACK_SPEED_CHANGE = BUILDER
             .comment("When false, Overhaul does not change player attack speed through Speed or Melee Damage.")
@@ -41,9 +45,6 @@ public final class DmzRevampConfig {
             .comment("Lowest attack-speed multiplier Overhaul may produce. 0.5 means no less than 50 percent of normal attack speed.")
             .defineInRange("revamp.speed.maxAttackSpeedDecreasePercentage", 0.5D, 0D, 1D);
 
-    public static final ForgeConfigSpec.DoubleValue REVAMP_SPEED_MAX_LEVEL_SCALING_COEFFICIENT = BUILDER
-            .comment("This value divided by the DMZ max level (thisValue / maxLevel) determines the general speed gain multiplier. Examples: 10000 with max level 10000 = x1.0; 10000 with max level 1000000 = x0.01.")
-            .defineInRange("revamp.speed.maxLevelScalingCoefficient", 10000D, 0D, 1_000_000_000D);
 
     public static final ForgeConfigSpec.DoubleValue REVAMP_MOVEMENT_SPEED_BONUS_MULTIPLIER = BUILDER
             .comment("Multiplier applied to SPD movement speed bonus. 1.0 = 100 percent.")

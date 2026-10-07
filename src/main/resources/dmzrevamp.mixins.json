@@ -115,7 +115,6 @@
     "StatsDataPrestigeDataMixin",
     "StatsDataLevelingRevampMixin",
     "StatsDataPrestigeTpMixin",
-    "MinigameSessionTpRewardMixin",
     "CharacterPrestigeMasteryMixin",
     "TPSRewardPrestigeMixin",
     "StatsDataAdaptiveDefenseMoreConfiguredMixin",
@@ -151,7 +150,6 @@
     "TickHandlerAuraOverchargeMixin",
     "TickHandlerClashTransformationMixin",
     "TickHandlerTechniqueOverchargeMixin",
-    "TrainingRewardTpBoostMixin",
     "UpgradeTechniqueC2SCustomStrikeMixin",
     "WeightItemRevampLimitMixin"
   ],

@@ -267,11 +267,13 @@ public final class DmzRevampHelper {
 
     // Base conversion from SPD points to percentage before caps and movement-specific multipliers.
     public static double getScaledSpeedBonusPercent(double rawSkpValue) {
-        return Math.max(0D, rawSkpValue * DmzRevampConfig.REVAMP_SPEED_PERCENT_PER_POINT.get());
+        double reference = Math.max(1D, DmzRevampConfig.SPEED_REFERENCE_VALUE.get());
+        double referenceBonus = Math.max(0D, DmzRevampConfig.MOVE_SPEED_REF_BONUS_VALUE.get());
+        return Math.max(0D, rawSkpValue) / reference * referenceBonus * 100D;
     }
 
     public static double getScaledMovementSpeedBonusPercent(StatsData data, double rawSkpValue) {
-        return getScaledSpeedBonusPercent(rawSkpValue) * getMovementStatCapScale(data);
+        return getScaledSpeedBonusPercent(rawSkpValue);
     }
 
     // Swim speed uses the average of SPD and STR before the same percent conversion.
@@ -288,20 +290,7 @@ public final class DmzRevampHelper {
     }
 
     public static double getScaledPairedSpeedBonusPercent(StatsData data, double speedValue, double pairedDamageValue) {
-        return getScaledPairedSpeedBonusPercent(speedValue, pairedDamageValue) * getMovementStatCapScale(data);
-    }
-
-    public static double getMovementStatCapScale(StatsData data) {
-        if (data == null) {
-            return 1D;
-        }
-        int configuredMax = LevelingRevampConfig.levelsEnabled()
-                ? com.dmzrevamp.revamp.prestige.PrestigeSystem.movementFormulaMaximum()
-                : data.getConfiguredMaxValue();
-        if (configuredMax <= 0) {
-            return 1D;
-        }
-        return DmzRevampConfig.REVAMP_SPEED_MAX_LEVEL_SCALING_COEFFICIENT.get() / configuredMax;
+        return getScaledPairedSpeedBonusPercent(speedValue, pairedDamageValue);
     }
 
     public static double getScaledAttackSpeedBonusPercent(double rawSkpValue, double rawStrValue) {
@@ -316,7 +305,7 @@ public final class DmzRevampHelper {
     }
 
     public static double getScaledAttackSpeedBonusPercent(StatsData data, double rawSkpValue, double rawStrValue) {
-        return getScaledAttackSpeedBonusPercent(rawSkpValue, rawStrValue) * getMovementStatCapScale(data);
+        return getScaledAttackSpeedBonusPercent(rawSkpValue, rawStrValue);
     }
 
     // Returns the value used by getSoftCappedBonusPercent.
