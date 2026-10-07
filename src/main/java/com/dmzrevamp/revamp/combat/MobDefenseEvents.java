@@ -19,7 +19,23 @@ import net.minecraftforge.fml.common.Mod;
 /** DMZ-style flat and adaptive defense for every non-player living entity. */
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class MobDefenseEvents {
+    private static final ThreadLocal<LivingEntity> PREMITIGATED_BOSS_DAMAGE = new ThreadLocal<>();
     private MobDefenseEvents() {}
+
+    public static void markPreMitigatedBossDamage(LivingEntity entity) {
+        PREMITIGATED_BOSS_DAMAGE.set(entity);
+    }
+
+    public static boolean consumePreMitigatedBossDamage(LivingEntity entity) {
+        LivingEntity marked = PREMITIGATED_BOSS_DAMAGE.get();
+        if (marked != entity) return false;
+        PREMITIGATED_BOSS_DAMAGE.remove();
+        return true;
+    }
+
+    public static void clearPreMitigatedBossDamage() {
+        PREMITIGATED_BOSS_DAMAGE.remove();
+    }
 
     // DMZ rebuilds player melee damage at HIGH and writes it back to the event. Run after that
     // authoritative calculation so mob defense cannot be overwritten by CombatEvent.
@@ -27,6 +43,7 @@ public final class MobDefenseEvents {
     public static void mitigate(LivingHurtEvent event) {
         LivingEntity entity = event.getEntity();
         if (entity instanceof Player || event.getAmount() <= 0F) return;
+        if (consumePreMitigatedBossDamage(entity)) return;
         AttributeInstance attribute = entity.getAttribute(DmzRevampAttributes.MOB_DEFENSE.get());
         if (attribute == null) return;
         double defense = Math.max(0D, attribute.getValue());

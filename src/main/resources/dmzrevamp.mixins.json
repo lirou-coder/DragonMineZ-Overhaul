@@ -81,6 +81,7 @@
     "DynamicGrowthServiceStrSkpLinkMixin",
     "WorldBossConfigMixin",
     "WorldBossMinionStatsMixin",
+    "WorldBossFinalDamageGuardMixin",
     "DynamicGrowthMathCurveMixin",
     "MobBattlePowerHelperSpellPowerMixin",
     "PassiveResetWishRevampMixin",

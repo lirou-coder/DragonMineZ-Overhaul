@@ -2,6 +2,7 @@ package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.client.KiSenseDangerStyle;
 import com.dmzrevamp.revamp.battlepower.ManualBattlePowerStatEvents;
+import com.dmzrevamp.revamp.battlepower.AccurateMobBattlePowerCalculator;
 import com.dragonminez.client.render.effects.KiSenseAuraRenderer;
 import com.dragonminez.client.systems.kisense.KiSenseScan;
 import net.minecraft.client.Minecraft;
@@ -49,8 +50,13 @@ public abstract class KiSenseAuraRendererHiddenBpMixin {
                                                                   CallbackInfoReturnable<float[][]> cir) {
         // Deliberately ignore hostile/passive/neutral classification. If Ki Sense scanned the
         // LivingEntity, its aura color and scale are determined only by this exact BP ratio.
-        DMZREVAMP_AURA_BP_RATIO.set(ratio);
-        cir.setReturnValue(KiSenseDangerStyle.auraColors(ratio));
+        double effectiveRatio = ratio;
+        if (entity != null && !(entity instanceof net.minecraft.world.entity.player.Player)) {
+            double target = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(entity);
+            effectiveRatio = KiSenseDangerStyle.ratio(KiSenseScan.getMyBP(), (float) target);
+        }
+        DMZREVAMP_AURA_BP_RATIO.set(effectiveRatio);
+        cir.setReturnValue(KiSenseDangerStyle.auraColors(effectiveRatio));
     }
 
     @Redirect(

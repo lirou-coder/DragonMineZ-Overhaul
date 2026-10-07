@@ -62,7 +62,7 @@ public final class AccurateMobBattlePowerCalculator {
         double total = 0D;
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "maxHealth", attributeValue(entity, Attributes.MAX_HEALTH));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "attackDamage", attributeValue(entity, Attributes.ATTACK_DAMAGE));
-        total += CustomBattlePowerConfig.weightedValue(config.mobStats, "defense", attributeValue(entity, DmzRevampAttributes.MOB_DEFENSE.get()));
+        total += CustomBattlePowerConfig.weightedValue(config.mobStats, "defense", defenseValue(entity));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "armor", attributeValue(entity, Attributes.ARMOR));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "armorToughness", attributeValue(entity, Attributes.ARMOR_TOUGHNESS));
         total += CustomBattlePowerConfig.weightedValue(config.mobStats, "protection", protectionLevels(entity));
@@ -81,7 +81,7 @@ public final class AccurateMobBattlePowerCalculator {
         CustomBattlePowerConfig.Config config = CustomBattlePowerConfig.get();
         double core = CustomBattlePowerConfig.weightedValue(config.mobStats, "maxHealth", attributeValue(entity, Attributes.MAX_HEALTH))
                 + CustomBattlePowerConfig.weightedValue(config.mobStats, "attackDamage", attributeValue(entity, Attributes.ATTACK_DAMAGE))
-                + CustomBattlePowerConfig.weightedValue(config.mobStats, "defense", attributeValue(entity, DmzRevampAttributes.MOB_DEFENSE.get()))
+                + CustomBattlePowerConfig.weightedValue(config.mobStats, "defense", defenseValue(entity))
                 + weightedMobValue(config.mobStats, "kiDamage", "kiBlastDamage", kiDamage(entity));
         return Math.max(0D, calculateTotalPower(entity) - core);
     }
@@ -99,6 +99,14 @@ public final class AccurateMobBattlePowerCalculator {
             levels += armor.getEnchantmentLevel(Enchantments.ALL_DAMAGE_PROTECTION);
         }
         return levels + QuestSpawnAttributeApplier.protectionValue(entity);
+    }
+
+    private static double defenseValue(LivingEntity entity) {
+        double attribute = attributeValue(entity, DmzRevampAttributes.MOB_DEFENSE.get());
+        if (attribute > 0D) return attribute;
+        CompoundTag tag = entity.getPersistentData();
+        return tag.contains(QuestSpawnAttributeApplier.DEFENSE_TAG)
+                ? sanitize(tag.getDouble(QuestSpawnAttributeApplier.DEFENSE_TAG)) : 0D;
     }
 
     private static double resistanceEffectPower(LivingEntity entity) {

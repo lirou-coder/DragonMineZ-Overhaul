@@ -26,6 +26,7 @@ import com.dmzrevamp.sound.DmzRevampSounds;
 import com.dmzrevamp.revamp.classes.skills.ClassPassiveAliases;
 import com.dmzrevamp.revamp.classes.DmzClassConfigManager;
 import com.dmzrevamp.compat.DmzJackClassCompat;
+import com.dmzrevamp.compat.AttributeFixCompatEvents;
 import com.dmzrevamp.revamp.defaults.PrestigeSagaDefaults;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.common.MinecraftForge;
@@ -47,6 +48,7 @@ public class DmzRevampMod {
         DmzRevampEffects.register(modEventBus);
         DmzRevampEntities.register(modEventBus);
         DmzRevampAttributes.register(modEventBus);
+        AttributeFixCompatEvents.makeCombatAttributesSyncable();
         DmzRevampItems.register(modEventBus);
         DmzRevampSounds.register(modEventBus);
         LOGGER.warn("Dragon Mine Z: Overhaul does not migrate old generated configs. Delete config/dragonminez/classes and the affected config/dragonminez/races files when class, passive, or stat defaults change.");

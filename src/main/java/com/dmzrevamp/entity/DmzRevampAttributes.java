@@ -42,7 +42,15 @@ public final class DmzRevampAttributes {
                             (EntityType<? extends LivingEntity>) type;
                     if (event.has(livingType, Attributes.ATTACK_DAMAGE)) {
                         AttributeSupplier supplier = DefaultAttributes.getSupplier(livingType);
-                        event.add(livingType, MOB_DEFENSE.get(), supplier.getBaseValue(Attributes.ATTACK_DAMAGE));
+                        // The attribute must exist on Living World fighters as well.
+                        // Living World fills its value after spawn, so leave its
+                        // initial value untouched at zero; all other mobs retain
+                        // the Overhaul default based on attack damage.
+                        net.minecraft.resources.ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(type);
+                        double defaultDefense = net.minecraftforge.fml.ModList.get().isLoaded("dmzlivingworld")
+                                && entityId != null && "dmzlivingworld".equals(entityId.getNamespace())
+                                ? 0D : supplier.getBaseValue(Attributes.ATTACK_DAMAGE);
+                        event.add(livingType, MOB_DEFENSE.get(), defaultDefense);
                     }
                 } catch (RuntimeException ignored) {
                     // Non-living types have no attribute supplier.

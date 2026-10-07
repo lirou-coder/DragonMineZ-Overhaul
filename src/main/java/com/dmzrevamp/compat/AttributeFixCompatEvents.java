@@ -8,6 +8,7 @@ import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.mixin.common.RangedAttributeMixin;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -28,6 +29,7 @@ public final class AttributeFixCompatEvents {
     }
 
     public static void refreshMainAttributeCaps() {
+        makeCombatAttributesSyncable();
         double mainStatMax = getConfiguredMainStatMax();
         setMax(MainAttributes.STRENGTH, mainStatMax);
         setMax(MainAttributes.STRIKE_POWER, mainStatMax);
@@ -46,6 +48,14 @@ public final class AttributeFixCompatEvents {
         setMax(EntityAttributes.KI_BLAST_DAMAGE, DMZ_UNBOUNDED_MAX);
         setMax(EntityAttributes.FLY_SPEED, DMZ_UNBOUNDED_MAX);
         setMax(EntityAttributes.KI_BLAST_SPEED, DMZ_UNBOUNDED_MAX);
+    }
+
+    /** Ensure values used by client-side Ki Sense are sent with entity attributes. */
+    public static void makeCombatAttributesSyncable() {
+        Attributes.ATTACK_DAMAGE.setSyncable(true);
+        if (EntityAttributes.KI_BLAST_DAMAGE.isPresent()) {
+            EntityAttributes.KI_BLAST_DAMAGE.get().setSyncable(true);
+        }
     }
 
     private static double getConfiguredMainStatMax() {
