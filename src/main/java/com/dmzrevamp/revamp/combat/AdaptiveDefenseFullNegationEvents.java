@@ -36,8 +36,8 @@ public final class AdaptiveDefenseFullNegationEvents {
         if (!(event.getEntity() instanceof Player victim) || victim.level().isClientSide()) {
             return;
         }
-        AdaptiveDefenseMoreConfigured.Config config = AdaptiveDefenseMoreConfigured.get();
-        if (!config.enable || event.getAmount() <= 0F) {
+        AdaptiveDefenseMoreConfigured.AdaptiveDefense config = AdaptiveDefenseMoreConfigured.get().adaptiveDefense;
+        if (!config.enabled || event.getAmount() <= 0F) {
             return;
         }
         if (!isEligibleOrdinaryHit(event.getSource(), victim)) {

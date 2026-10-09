@@ -871,13 +871,16 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         else if (key.endsWith("character_stats.str")) key = "character_stats.melee_damage";
 
         if (key.contains("character_stats.defense") && statsData != null
-                && com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get().damageDivisorEnabled) {
-            var divisorConfig = com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get();
+                && com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get().formReduction.enabled) {
+            var divisorConfig = com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get().formReduction;
             double multi = statsData.getFormMultiplier("DEF") * statsData.getStackFormMultiplier("DEF");
             if (Double.isFinite(multi) && Math.abs(multi - 1D) > 1.0E-9D) {
                 double influence = dmzrevamp$formDivisorInfluence(divisorConfig);
                 double divisor = 1D + (multi - 1D)
                         * influence * divisorConfig.formDivisorMulti;
+                if (divisorConfig.formReductionCap < 1D) {
+                    divisor = Math.min(divisor, 1D / (1D - divisorConfig.formReductionCap));
+                }
                 double reduction = divisor > 0D ? (1D - 1D / divisor) * 100D : 0D;
                 adjusted.add(0, Component.translatable(
                         "gui.dmzrevamp.character_stats.defense.form_damage_reduction",
@@ -953,7 +956,7 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     }
 
     @Unique
-    private double dmzrevamp$formDivisorInfluence(com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.Config config) {
+    private double dmzrevamp$formDivisorInfluence(com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.FormReduction config) {
         double sum = 0D;
         int count = 0;
         var character = statsData.getCharacter();

@@ -162,9 +162,9 @@ public final class CustomBattlePowerConfig {
         Map<String, StatRule> rules = new LinkedHashMap<>();
         rules.put("maxHealth", enabled(0.5D));
         rules.put("attackDamage", enabled(1D));
-        rules.put("armor", enabled(4D));
-        rules.put("armorToughness", enabled(4D));
-        rules.put("protection", enabled(4D));
+        rules.put("armor", new StatRule(false, 4D));
+        rules.put("armorToughness", new StatRule(false, 4D));
+        rules.put("protection", new StatRule(false, 4D));
         rules.put("resistance", enabled(20D));
         rules.put("movementOrFlyingSpeed", enabled(15D));
         rules.put("defense", enabled(1D));

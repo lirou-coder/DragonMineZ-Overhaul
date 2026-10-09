@@ -77,7 +77,7 @@ public final class MobDefenseEvents {
         );
         double afterDefenseCurve = afterFlat * (1D - defenseReduction);
 
-        if (AdaptiveDefenseMoreConfigured.get().enable) {
+        if (AdaptiveDefenseMoreConfigured.get().adaptiveDefense.enabled) {
             afterDefenseCurve *= 1D - configuredAdaptiveMitigation(incoming, defense);
         } else if (config.getEnableAdaptativeDefenseMitigation() && defense > 0D) {
             // DMZ uses incoming damage / raw defense for its adaptive curve. The mob's
@@ -100,7 +100,7 @@ public final class MobDefenseEvents {
     }
 
     private static double configuredAdaptiveMitigation(double incoming, double defense) {
-        AdaptiveDefenseMoreConfigured.Config config = AdaptiveDefenseMoreConfigured.get();
+        AdaptiveDefenseMoreConfigured.AdaptiveDefense config = AdaptiveDefenseMoreConfigured.get().adaptiveDefense;
         AdaptiveDefenseDamageContext.Entry context = AdaptiveDefenseDamageContext.current();
         double reference = context == null ? incoming : Math.max(incoming, context.totalTechniqueDamage());
         double ratio = reference / Math.max(0.0001D, defense);

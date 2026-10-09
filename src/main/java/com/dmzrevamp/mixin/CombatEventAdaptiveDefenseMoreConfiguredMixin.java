@@ -50,7 +50,7 @@ public abstract class CombatEventAdaptiveDefenseMoreConfiguredMixin {
             require = 0
     )
     private static boolean dmzrevamp$honorConfiguredFullNegation(CombatConfig originalConfig) {
-        return AdaptiveDefenseMoreConfigured.get().enable
+        return AdaptiveDefenseMoreConfigured.get().adaptiveDefense.enabled
                 || originalConfig.getCancelDamageEventIfMitigationTooHigh();
     }
 }

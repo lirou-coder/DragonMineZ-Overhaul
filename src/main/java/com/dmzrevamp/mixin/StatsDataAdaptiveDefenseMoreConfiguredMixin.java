@@ -47,7 +47,7 @@ public abstract class StatsDataAdaptiveDefenseMoreConfiguredMixin {
             require = 0
     )
     private boolean dmzrevamp$disableDmzFullNegationWhenConfigured(CombatConfig config) {
-        return !AdaptiveDefenseMoreConfigured.get().enable
+        return !AdaptiveDefenseMoreConfigured.get().adaptiveDefense.enabled
                 && config.getCancelDamageEventIfMitigationTooHigh();
     }
 
@@ -60,7 +60,7 @@ public abstract class StatsDataAdaptiveDefenseMoreConfiguredMixin {
             require = 0
     )
     private boolean dmzrevamp$disableDmzAdaptiveStepWhenConfigured(CombatConfig config) {
-        return !AdaptiveDefenseMoreConfigured.get().enable
+        return !AdaptiveDefenseMoreConfigured.get().adaptiveDefense.enabled
                 && config.getEnableAdaptativeDefenseMitigation();
     }
 
@@ -72,37 +72,41 @@ public abstract class StatsDataAdaptiveDefenseMoreConfiguredMixin {
             CallbackInfoReturnable<Double> cir
     ) {
         AdaptiveDefenseMoreConfigured.Config config = AdaptiveDefenseMoreConfigured.get();
+        AdaptiveDefenseMoreConfigured.AdaptiveDefense adaptive = config.adaptiveDefense;
         double result = cir.getReturnValue();
         if (result <= 0D || incomingDamage <= 0D) return;
 
-        if (config.enable) {
+        if (adaptive.enabled) {
             double defense = dmzrevamp$effectiveDefense(isGuardBroken, armorPenetration);
             if (defense > 0D) {
-                double mitigation = dmzrevamp$curve(dmzrevamp$referenceDamage(incomingDamage) / defense, config);
+                double mitigation = dmzrevamp$curve(dmzrevamp$referenceDamage(incomingDamage) / defense, adaptive);
                 AdaptiveDefenseDamageContext.Entry context = AdaptiveDefenseDamageContext.current();
                 if (context != null) {
                     double efficiency = context.type() == AdaptiveDefenseDamageContext.AttackType.KI
-                            ? config.adaptiveDefenseKiAttackEfficiency
-                            : config.adaptiveDefenseStrikeAttackEfficiency;
-                    mitigation = Math.min(config.adaptativeDefenseMitigationCap, mitigation * efficiency);
+                            ? adaptive.adaptiveDefenseKiAttackEfficiency
+                            : adaptive.adaptiveDefenseStrikeAttackEfficiency;
+                    mitigation = Math.min(adaptive.adaptativeDefenseMitigationCap, mitigation * efficiency);
                 }
                 result *= 1D - Math.max(0D, mitigation);
             }
         }
-        AdaptiveDefenseMoreConfigured.Config divisor = AdaptiveDefenseMoreConfigured.get();
+        AdaptiveDefenseMoreConfigured.FormReduction divisor = config.formReduction;
         double formDefense = Math.max(1.0E-9D, getFormMultiplier("DEF"));
         double stackDefense = Math.max(1.0E-9D, getStackFormMultiplier("DEF"));
-        if (divisor.damageDivisorEnabled && (Math.abs(formDefense - 1D) > 1.0E-9D
+        if (divisor.enabled && (Math.abs(formDefense - 1D) > 1.0E-9D
                 || Math.abs(stackDefense - 1D) > 1.0E-9D)) {
             double multi = formDefense * stackDefense;
             double influence = dmzrevamp$divisorInfluence(divisor);
             double damageDivisor = 1D + (multi - 1D) * influence * divisor.formDivisorMulti;
+            if (divisor.formReductionCap < 1D) {
+                damageDivisor = Math.min(damageDivisor, 1D / (1D - divisor.formReductionCap));
+            }
             if (Double.isFinite(damageDivisor) && damageDivisor > 0D) result /= damageDivisor;
         }
         cir.setReturnValue(result);
     }
 
-    private double dmzrevamp$divisorInfluence(AdaptiveDefenseMoreConfigured.Config config) {
+    private double dmzrevamp$divisorInfluence(AdaptiveDefenseMoreConfigured.FormReduction config) {
         double sum = 0D;
         int count = 0;
         if (config.masteryInfluence) {
@@ -144,7 +148,7 @@ public abstract class StatsDataAdaptiveDefenseMoreConfiguredMixin {
 
     private static double dmzrevamp$curve(
             double damageToDefenseRatio,
-            AdaptiveDefenseMoreConfigured.Config config
+            AdaptiveDefenseMoreConfigured.AdaptiveDefense config
     ) {
         if (!Double.isFinite(damageToDefenseRatio) || damageToDefenseRatio <= 0D) return 0D;
         double parityRatio = config.adaptativeMitigationParityRatio;
