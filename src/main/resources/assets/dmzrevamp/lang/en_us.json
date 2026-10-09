@@ -26,6 +26,7 @@
   "gui.dmzrevamp.character_stats.speed.tooltip2": "Upgrading Speed increases this value by %1$s points.",
   "gui.dmzrevamp.character_stats.speed.movement": "Movement: %1$s%%",
   "gui.dmzrevamp.character_stats.speed.no_running_cap": "Without running, movement is capped at %1$s%%.",
+  "gui.dmzrevamp.character_stats.defense.form_damage_reduction": "Form Damage Reduction: %1$s%%",
   "gui.dmzrevamp.character_stats.speed.total_attack": "Total Attack Speed: %1$s%%",
   "gui.dmzrevamp.character_stats.speed.cooldown_reduction": "Cooldown Reduction: %1$s%%",
   "gui.dmzrevamp.character_stats.ki_damage.ki_attack_speed": "Ki Attack Speed: +%1$s%%",
@@ -58,6 +59,7 @@
   "hud.dmzrevamp.strike_clash_title": "STRIKE CLASH!",
   "key.categories.dmzrevamp": "Dragon Mine Z: Overhaul",
   "key.dmzrevamp.lock_cycle": "Lock Cycle",
-  "gui.dmzrevamp.skills.required_dmz_level": "You need to be at level %s to unlock this form"
+  "gui.dmzrevamp.skills.required_dmz_level": "You need to be at level %s to unlock this form",
+  "gui.dmzrevamp.character_stats.defense.form_damage_reduction": "Form Damage Reduction: %1$s%%"
 }
 

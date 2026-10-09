@@ -870,6 +870,22 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         else if (key.endsWith("character_stats.ene")) key = "character_stats.max_energy";
         else if (key.endsWith("character_stats.str")) key = "character_stats.melee_damage";
 
+        if (key.contains("character_stats.defense") && statsData != null
+                && com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get().damageDivisorEnabled) {
+            var divisorConfig = com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get();
+            double multi = statsData.getFormMultiplier("DEF") * statsData.getStackFormMultiplier("DEF");
+            if (Double.isFinite(multi) && Math.abs(multi - 1D) > 1.0E-9D) {
+                double influence = dmzrevamp$formDivisorInfluence(divisorConfig);
+                double divisor = 1D + (multi - 1D)
+                        * influence * divisorConfig.formDivisorMulti;
+                double reduction = divisor > 0D ? (1D - 1D / divisor) * 100D : 0D;
+                adjusted.add(0, Component.translatable(
+                        "gui.dmzrevamp.character_stats.defense.form_damage_reduction",
+                        formatOneDecimal(Math.max(0D, reduction))
+                ).withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.RED)));
+            }
+        }
+
         if (key.contains("character_stats.strike_damage") || key.contains("character_stats.speed")) {
             adjusted.removeIf(CharacterStatsScreenMixin::isStrikeDamageOnlyExtraLine);
             adjusted.add(Component.translatable(
@@ -934,6 +950,44 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
             ).withStyle(style -> style.withFont(DMZ_FONT).withColor(ChatFormatting.AQUA)));
         }
         return adjusted;
+    }
+
+    @Unique
+    private double dmzrevamp$formDivisorInfluence(com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.Config config) {
+        double sum = 0D;
+        int count = 0;
+        var character = statsData.getCharacter();
+        if (config.masteryInfluence) {
+            double first = character.hasActiveForm()
+                    ? character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm()) : 100D;
+            double second = character.hasActiveStackForm()
+                    ? character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm()) : first;
+            double mastery = character.hasActiveForm() && character.hasActiveStackForm() ? (first + second) / 2D
+                    : (character.hasActiveForm() ? first : second);
+            double normalized = Math.max(0D, Math.min(100D, mastery)) / 100D;
+            sum += config.zeroMasteryMulti + (1D - config.zeroMasteryMulti) * normalized;
+            count++;
+        }
+        if (config.currentHealthInfluence) {
+            var localPlayer = net.minecraft.client.Minecraft.getInstance().player;
+            if (localPlayer != null) {
+                sum += dmzrevamp$resourceRatio(localPlayer.getHealth(), localPlayer.getMaxHealth(), config.zeroHealthMulti);
+                count++;
+            }
+        }
+        if (config.currentKiInfluence) {
+            sum += dmzrevamp$resourceRatio(statsData.getResources().getCurrentEnergy(), statsData.getMaxEnergy(), config.zeroKiMulti); count++;
+        }
+        if (config.currentStaminaInfluence) {
+            sum += dmzrevamp$resourceRatio(statsData.getResources().getCurrentStamina(), statsData.getMaxStamina(), config.zeroStaminaInfluence); count++;
+        }
+        return count == 0 ? 1D : sum / count;
+    }
+
+    @Unique
+    private static double dmzrevamp$resourceRatio(double current, double maximum, double zero) {
+        double ratio = maximum > 0D ? Math.max(0D, Math.min(1D, current / maximum)) : 1D;
+        return zero + (1D - zero) * ratio;
     }
 
     private static boolean isStrikeDamageOnlyExtraLine(Component line) {

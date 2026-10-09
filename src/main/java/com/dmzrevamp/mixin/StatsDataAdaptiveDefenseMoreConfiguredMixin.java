@@ -25,6 +25,19 @@ public abstract class StatsDataAdaptiveDefenseMoreConfiguredMixin {
     @Shadow
     public abstract double getTotalMultiplier(String stat);
 
+    @Shadow
+    public abstract double getFormMultiplier(String stat);
+
+    @Shadow
+    public abstract double getStackFormMultiplier(String stat);
+
+    @Shadow public abstract com.dragonminez.common.stats.character.Character getCharacter();
+    @Shadow public abstract com.dragonminez.common.stats.character.Resources getResources();
+    // DMZ 2.2 exposes resource maxima as floats.  Shadow descriptors must
+    // match exactly or Mixin aborts class transformation during startup.
+    @Shadow public abstract float getMaxEnergy();
+    @Shadow public abstract float getMaxStamina();
+
     @Redirect(
             method = "calculatePostMitigationDamage",
             at = @At(
@@ -60,21 +73,60 @@ public abstract class StatsDataAdaptiveDefenseMoreConfiguredMixin {
     ) {
         AdaptiveDefenseMoreConfigured.Config config = AdaptiveDefenseMoreConfigured.get();
         double result = cir.getReturnValue();
-        if (!config.enable || result <= 0D || incomingDamage <= 0D) return;
+        if (result <= 0D || incomingDamage <= 0D) return;
 
-        double defense = dmzrevamp$effectiveDefense(isGuardBroken, armorPenetration);
-        if (defense <= 0D) return;
-
-        double mitigation = dmzrevamp$curve(dmzrevamp$referenceDamage(incomingDamage) / defense, config);
-        AdaptiveDefenseDamageContext.Entry context = AdaptiveDefenseDamageContext.current();
-        if (context != null) {
-            double efficiency = context.type() == AdaptiveDefenseDamageContext.AttackType.KI
-                    ? config.adaptiveDefenseKiAttackEfficiency
-                    : config.adaptiveDefenseStrikeAttackEfficiency;
-            mitigation = Math.min(config.adaptativeDefenseMitigationCap, mitigation * efficiency);
+        if (config.enable) {
+            double defense = dmzrevamp$effectiveDefense(isGuardBroken, armorPenetration);
+            if (defense > 0D) {
+                double mitigation = dmzrevamp$curve(dmzrevamp$referenceDamage(incomingDamage) / defense, config);
+                AdaptiveDefenseDamageContext.Entry context = AdaptiveDefenseDamageContext.current();
+                if (context != null) {
+                    double efficiency = context.type() == AdaptiveDefenseDamageContext.AttackType.KI
+                            ? config.adaptiveDefenseKiAttackEfficiency
+                            : config.adaptiveDefenseStrikeAttackEfficiency;
+                    mitigation = Math.min(config.adaptativeDefenseMitigationCap, mitigation * efficiency);
+                }
+                result *= 1D - Math.max(0D, mitigation);
+            }
         }
-        cir.setReturnValue(result * (1D - Math.max(0D, mitigation)));
+        AdaptiveDefenseMoreConfigured.Config divisor = AdaptiveDefenseMoreConfigured.get();
+        double formDefense = Math.max(1.0E-9D, getFormMultiplier("DEF"));
+        double stackDefense = Math.max(1.0E-9D, getStackFormMultiplier("DEF"));
+        if (divisor.damageDivisorEnabled && (Math.abs(formDefense - 1D) > 1.0E-9D
+                || Math.abs(stackDefense - 1D) > 1.0E-9D)) {
+            double multi = formDefense * stackDefense;
+            double influence = dmzrevamp$divisorInfluence(divisor);
+            double damageDivisor = 1D + (multi - 1D) * influence * divisor.formDivisorMulti;
+            if (Double.isFinite(damageDivisor) && damageDivisor > 0D) result /= damageDivisor;
+        }
+        cir.setReturnValue(result);
     }
+
+    private double dmzrevamp$divisorInfluence(AdaptiveDefenseMoreConfigured.Config config) {
+        double sum = 0D;
+        int count = 0;
+        if (config.masteryInfluence) {
+            // Read active form masteries directly from the character data. A base
+            // form has no active multiplier and therefore never reaches this path.
+            var character = getCharacter();
+            double first = character.hasActiveForm() ? character.getFormMasteries().getMastery(character.getActiveFormGroup(), character.getActiveForm()) : 100D;
+            double second = character.hasActiveStackForm() ? character.getStackFormMasteries().getMastery(character.getActiveStackFormGroup(), character.getActiveStackForm()) : first;
+            double mastery = character.hasActiveForm() && character.hasActiveStackForm() ? (first + second) / 2D : (character.hasActiveForm() ? first : second);
+            double normalized = Math.max(0D, Math.min(100D, mastery)) / 100D;
+            sum += config.zeroMasteryMulti + (1D - config.zeroMasteryMulti) * normalized;
+            count++;
+        }
+        if (config.currentHealthInfluence) { sum += dmzrevamp$resourceRatio(player.getHealth(), player.getMaxHealth(), config.zeroHealthMulti); count++; }
+        if (config.currentKiInfluence) { sum += dmzrevamp$resourceRatio(getResources().getCurrentEnergy(), getMaxEnergy(), config.zeroKiMulti); count++; }
+        if (config.currentStaminaInfluence) { sum += dmzrevamp$resourceRatio(getResources().getCurrentStamina(), getMaxStamina(), config.zeroStaminaInfluence); count++; }
+        return count == 0 ? 1D : sum / count;
+    }
+
+    private static double dmzrevamp$resourceRatio(double current, double maximum, double zero) {
+        double ratio = maximum > 0D ? Math.max(0D, Math.min(1D, current / maximum)) : 1D;
+        return zero + (1D - zero) * ratio;
+    }
+
 
     private double dmzrevamp$effectiveDefense(boolean isGuardBroken, double armorPenetration) {
         double defense = getDefense() * Math.max(1D, getTotalMultiplier("DEF"));

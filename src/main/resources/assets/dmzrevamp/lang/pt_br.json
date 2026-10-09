@@ -59,5 +59,6 @@
   ,"hud.dmzrevamp.strike_clash_title": "STRIKE CLASH!",
   "key.categories.dmzrevamp": "Dragon Mine Z: Overhaul",
   "key.dmzrevamp.lock_cycle": "Alternar alvo do Lock On",
-  "gui.dmzrevamp.skills.required_dmz_level": "Você precisa estar no nível %s para desbloquear esta forma"
+  "gui.dmzrevamp.skills.required_dmz_level": "Você precisa estar no nível %s para desbloquear esta forma",
+  "gui.dmzrevamp.character_stats.defense.form_damage_reduction": "Redução de dano da forma: %1$s%%"
 }

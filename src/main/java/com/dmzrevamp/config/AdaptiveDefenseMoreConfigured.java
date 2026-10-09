@@ -44,16 +44,33 @@ public final class AdaptiveDefenseMoreConfigured {
 
     public static final class Config {
         public boolean enable = true;
+        /** Applies the additional post-mitigation form defense divisor. */
+        public boolean damageDivisorEnabled = true;
+        /** Strength of the active form defense multiplier in that divisor. */
+        public double formDivisorMulti = 0.05D;
+        public boolean masteryInfluence = true;
+        public double zeroMasteryMulti = 0.5D;
+        public boolean currentHealthInfluence = false;
+        public double zeroHealthMulti = 0.5D;
+        public boolean currentKiInfluence = true;
+        public double zeroKiMulti = 0.5D;
+        public boolean currentStaminaInfluence = false;
+        public double zeroStaminaInfluence = 0.5D;
         public double adaptativeMitigationParityRatio = 1.0D;
         public double adaptativeMitigationParityValue = 0.6D;
-        public double adaptativeMitigationZeroRatio = 6.0D;
+        public double adaptativeMitigationZeroRatio = 20.0D;
         public double adaptativeDefenseMitigationCap = 0.8D;
         public double cancelDamageMitigationThreshold = 20.0D;
-        public double adaptiveDefenseCapRatio = 4.0D;
+        public double adaptiveDefenseCapRatio = 15.0D;
         public double adaptiveDefenseKiAttackEfficiency = 1.0D;
         public double adaptiveDefenseStrikeAttackEfficiency = 1.0D;
 
         private Config sanitize() {
+            formDivisorMulti = clamp(formDivisorMulti, 0D, 1D, 0.05D);
+            zeroMasteryMulti = clamp(zeroMasteryMulti, 0D, 1D, 0.5D);
+            zeroHealthMulti = clamp(zeroHealthMulti, 0D, 1D, 0.5D);
+            zeroKiMulti = clamp(zeroKiMulti, 0D, 1D, 0.5D);
+            zeroStaminaInfluence = clamp(zeroStaminaInfluence, 0D, 1D, 0.5D);
             adaptativeMitigationParityRatio = positive(adaptativeMitigationParityRatio, 1.0D);
             adaptativeMitigationParityValue = clamp(adaptativeMitigationParityValue, 0D, 1D, 0.35D);
             adaptativeMitigationZeroRatio = Math.max(

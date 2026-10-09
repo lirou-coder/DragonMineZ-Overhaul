@@ -53,5 +53,6 @@
   "dmz.quest.prestige2.desc": "Mientras avanzas hacia un poder mayor, debes enfrentarte a tus enemigos más letales...",
   "dmz.quest.prestige3.name": "Que tu poder renazca",
   "dmz.quest.prestige3.desc": "Enfréntate a los guerreros más fuertes del universo y podrás ascender a nuevas alturas."
-  ,"gui.dmzrevamp.skills.required_dmz_level": "Debes alcanzar el nivel %s para desbloquear esta forma"
+  ,"gui.dmzrevamp.skills.required_dmz_level": "Debes alcanzar el nivel %s para desbloquear esta forma",
+  "gui.dmzrevamp.character_stats.defense.form_damage_reduction": "Reducción de daño de la forma: %1$s%%"
 }

@@ -40,6 +40,7 @@ public final class DmzClassConfigManager {
     private static final String EXCLUSIVE_RACES_KEY = "exclusiveRaces";
     private static final String CONFIG_VERSION_KEY = "configVersion";
     private static final String SAIRENS_DMZ_WORLD_MODID = "sairens_dmz_world";
+    private static final String SAIRENS_MODID = "sairens";
     private static final String CUSTOM_PASSIVE_TUTORIAL = "customRacialTutorial.txt";
     private static final String[] DEFAULT_CLASS_IDS = {
             "warrior",
@@ -52,7 +53,8 @@ public final class DmzClassConfigManager {
             "speedster",
             "duelist",
             "kiassassin",
-            "potentialist"
+            "potentialist",
+            "unversed"
     };
     private static final Set<String> SAIRENS_CLASS_IDS = Set.of(
             "celestialfist", "supremelightning", "unbreakablefortress", "ghoststep",
@@ -378,7 +380,7 @@ public final class DmzClassConfigManager {
     private static boolean isSairensDmzWorldLoaded() {
         try {
             ModList modList = ModList.get();
-            return modList != null && modList.isLoaded(SAIRENS_DMZ_WORLD_MODID);
+            return modList != null && (modList.isLoaded(SAIRENS_DMZ_WORLD_MODID) || modList.isLoaded(SAIRENS_MODID));
         } catch (Exception ignored) {
             return false;
         }
@@ -538,6 +540,9 @@ public final class DmzClassConfigManager {
             case "kiassassin" -> withRegen(createClassStats(0, 4, 0, 0, 6, 4, 0.15D, 0.75D, 0.40D, 0.85D, 1.05D, 0.95D, 1.85D),
                     -0.60D, -0.020D, 2.00D, 0.040D, -4.00D, -0.050D);
             case "potentialist" -> createClassStats(3, 3, 3, 3, 3, 3, 0.55D, 0.65D, 0.60D, 0.90D, 1.15D, 0.65D, 1.25D);
+            case "unversed" -> withRegen(createClassStats(3, 2, 2, 3, 2, 2,
+                    0.850D, 0.900D, 0.200D, 1.300D, 1.500D, 0.875D, 1.705D),
+                    0.05D, 0.005D, -0.55D, -0.015D, -0.45D, -0.060D);
             default -> createZeroClassStats();
         };
         stats.setPassive(defaultPassive(normalizedClassId));
@@ -558,6 +563,7 @@ public final class DmzClassConfigManager {
             case "duelist" -> new ClassMetadata("duelist", "Duelist", "#00AA00", List.of());
             case "kiassassin" -> new ClassMetadata("kiassassin", "Ki Assassin", "#AA00AA", List.of());
             case "potentialist" -> new ClassMetadata("potentialist", "Potentialist", "#FF5555", List.of());
+            case "unversed" -> new ClassMetadata("unversed", "Unversed", "#AA00AA", List.of());
             default -> new ClassMetadata(normalize(classId), titleCase(classId), "#FFFFFF", List.of());
         };
     }
@@ -818,6 +824,15 @@ public final class DmzClassConfigManager {
                     "PassiveType", 4.0D,
                     "Type", 6.0D,
                     "Value", 0.25D
+            );
+            case "unversed" -> Map.of(
+                    "physicalBonus", 0.15D,
+                    "kiBonus", 0.15D,
+                    "physicalCharges", 3.0D,
+                    "meleeHitsToPrime", 3.0D,
+                    "chargeDurationTicks", 160.0D,
+                    "comboResetTicks", 100.0D,
+                    "strikeWindowTicks", 60.0D
             );
             default -> Map.of();
         });
