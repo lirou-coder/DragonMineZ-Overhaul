@@ -806,8 +806,7 @@ public final class DmzClassConfigManager {
             case "duelist" -> Map.of(
                     "parryPoiseDamageBonus", 0.10D,
                     "guardBrokenDamageBonus", 0.50D,
-                    "guardBrokenKnockbackBonus", 1.0D,
-                    "kiParrySpeedBonus", 0.20D
+                    "guardBrokenKnockbackBonus", 1.0D
             );
             case "kiassassin" -> Map.of(
                     "noEffectCastTimeReduction", 0.50D,

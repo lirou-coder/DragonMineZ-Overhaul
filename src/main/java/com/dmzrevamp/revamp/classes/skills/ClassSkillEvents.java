@@ -5,7 +5,6 @@ import com.dmzrevamp.revamp.DmzRevampHelper;
 import com.dmzrevamp.revamp.ki.RevampKiAttackData;
 import com.dragonminez.common.events.DMZEvent;
 import com.dragonminez.common.init.MainAttributes;
-import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
 import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
@@ -27,13 +26,10 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class ClassSkillEvents {
-    private static final Map<UUID, AbstractKiProjectile> BLOCK_PROJECTILE_CACHE = new ConcurrentHashMap<>();
     private static final UUID BERSERKER_CRIT_CHANCE_UUID = UUID.fromString("31003f40-4e52-4d19-9614-2dd8f520e263");
     private static final UUID BERSERKER_CRIT_DAMAGE_UUID = UUID.fromString("e17c9b23-fd47-4d9d-8c7e-112a1ed781f4");
     private static final String WARRIOR_STACK_TAG = "dmzrevamp_warrior_fury_stacks";
@@ -72,20 +68,6 @@ public final class ClassSkillEvents {
         }
 
         applyOutgoingBonuses(event, attacker, attackerData);
-    }
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void rememberIncomingProjectile(LivingHurtEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player && event.getSource().getDirectEntity() instanceof AbstractKiProjectile projectile) {
-            BLOCK_PROJECTILE_CACHE.put(player.getUUID(), projectile);
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void clearIncomingProjectile(LivingHurtEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            BLOCK_PROJECTILE_CACHE.remove(player.getUUID());
-        }
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -147,7 +129,8 @@ public final class ClassSkillEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    // Improves Duelist parries, either increasing melee poise damage or redirecting the blocked Ki projectile.
+    // Duelist keeps its melee parry poise bonus; Ki projectile reflection is handled
+    // at the DMZ's confirmed-parry hook so it works for every class.
     public static void onPlayerBlock(DMZEvent.PlayerBlockEvent event) {
         if (!event.isParry() || event.getAttacker() == null || !event.getAttacker().isAlive()) {
             return;
@@ -164,11 +147,6 @@ public final class ClassSkillEvents {
 
         if (isLikelyMeleeParry(event, event.getVictim(), event.getAttacker())) {
             event.setPoiseDamage((float) (event.getPoiseDamage() * (1D + ClassSkillHelper.duelistParryPoiseDamageBonus(data))));
-        } else {
-            AbstractKiProjectile projectile = BLOCK_PROJECTILE_CACHE.remove(event.getVictim().getUUID());
-            if (projectile != null) {
-                redirectParriedKiBlast(projectile, event.getVictim(), data);
-            }
         }
     }
 
@@ -257,7 +235,6 @@ public final class ClassSkillEvents {
     public static boolean clearClassCooldowns(ServerPlayer player) {
         boolean removedAny = false;
 
-        BLOCK_PROJECTILE_CACHE.remove(player.getUUID());
         player.getPersistentData().putInt(WARRIOR_STACK_TAG, 0);
         player.getPersistentData().putInt(SPEEDSTER_STACK_TAG, 0);
         removeBerserkerCritModifiers(player);
@@ -420,13 +397,6 @@ public final class ClassSkillEvents {
         return data != null && data.getResources().getCurrentPoise() <= 0.01F;
     }
 
-    private static void redirectParriedKiBlast(AbstractKiProjectile projectile, ServerPlayer defender, StatsData data) {
-        projectile.setOwner(defender);
-        double speed = Math.max(projectile.getDeltaMovement().length(), projectile.getKiSpeed());
-        projectile.setDeltaMovement(defender.getLookAngle().normalize().scale(speed * (1D + ClassSkillHelper.duelistKiParrySpeedBonus(data))));
-        projectile.hurtMarked = true;
-    }
-
     private static double getKiUtilityCostReduction(StatsData data, KiAttackData technique) {
         if (isDamageKiAttack(technique)) {
             return ClassSkillHelper.kiCostReduction(data, ClassSkillHelper.SPIRITUALIST);
@@ -518,7 +488,6 @@ public final class ClassSkillEvents {
 
     // Removes stack counters and temporary stat modifiers when a player dies, logs out, or loses a valid character.
     private static void clearRuntime(ServerPlayer player, StatsData data) {
-        BLOCK_PROJECTILE_CACHE.remove(player.getUUID());
         player.getPersistentData().putInt(WARRIOR_STACK_TAG, 0);
         player.getPersistentData().putInt(SPEEDSTER_STACK_TAG, 0);
         removeBerserkerCritModifiers(player);

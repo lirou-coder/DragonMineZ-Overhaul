@@ -78,7 +78,7 @@
   "class.dragonminez.cleric.passive.desc": "Healing Ki attacks have 20% reduced cooldown and cost. If the attack has an effect, cooldown is reduced by 15% instead, but effects last 25% longer.",
   "class.dragonminez.martialartist.passive.desc": "Melee, Strike and Ki Attacks deal 25% more damage against enemies below 50% HP.",
   "class.dragonminez.speedster.passive.desc": "Each Melee hit grants you a Momentum Stack if not blocked, and they stack up to 10. Each stack increases SPD by 1% and you gain Additional damage equal to 5% of your SPD. Stacks refresh when you deal damage and fade if you stop.",
-  "class.dragonminez.duelist.passive.desc": "Parrying Melee attacks deals 10% more poise damage on the enemy and Parrying a Ki Blast makes it go to the way you are looking with 20% more speed and can harm the caster. Attacking someone with Guard Broken deals 50% more damage and 100% more knockback",
+  "class.dragonminez.duelist.passive.desc": "Parrying Melee attacks deals 10% more poise damage on the enemy, and parrying a Ki Blast returns it directly to where you are looking. Attacking someone with Guard Broken deals 50% more damage and 100% more knockback",
   "class.dragonminez.kiassassin.passive.desc": "Ki attacks without effects have 50% reduced cast time and 50% more speed. Ki attacks with effects have 20% reduced cast time and 20% more speed.",
   "skill.dragonminez.class_warrior": "Warrior Passive",
   "skill.dragonminez.class_spiritualist": "Spiritualist Passive",

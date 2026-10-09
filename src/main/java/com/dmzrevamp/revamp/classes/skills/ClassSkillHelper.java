@@ -155,10 +155,6 @@ public final class ClassSkillHelper {
         return hasClassPassive(data, DUELIST) ? ClassPassives.value(data, "guardBrokenKnockbackBonus", 1.0D) : 0D;
     }
 
-    public static double duelistKiParrySpeedBonus(StatsData data) {
-        return hasClassPassive(data, DUELIST) ? ClassPassives.value(data, "kiParrySpeedBonus", 0.20D) : 0D;
-    }
-
     public static double kiAssassinCastReduction(StatsData data, boolean hasEffects) {
         if (!hasClassPassive(data, KI_ASSASSIN)) {
             return 0D;
@@ -249,9 +245,7 @@ public final class ClassSkillHelper {
                     + " of your SPD. Stacks refresh when you deal damage and fade if you stop.";
             case DUELIST -> "Parrying Melee attacks deals "
                     + formatPercent(value(data, skillId, "parryPoiseDamageBonus", 0.10D))
-                    + " more poise damage on the enemy and Parrying a Ki Blast makes it go to the way you are looking with "
-                    + formatPercent(value(data, skillId, "kiParrySpeedBonus", 0.20D))
-                    + " more speed and can harm the caster. Attacking someone with Guard Broken deals "
+                    + " more poise damage on the enemy, and parrying a Ki Blast returns it directly to where you are looking. Attacking someone with Guard Broken deals "
                     + formatPercent(value(data, skillId, "guardBrokenDamageBonus", 0.50D))
                     + " more damage and "
                     + formatPercent(value(data, skillId, "guardBrokenKnockbackBonus", 1.0D))

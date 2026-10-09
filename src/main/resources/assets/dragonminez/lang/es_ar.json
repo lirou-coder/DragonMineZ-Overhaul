@@ -69,7 +69,7 @@
   "class.dragonminez.cleric.passive.desc": "Los ataques de Ki de curación tienen un 20% menos de reutilización y costo. Si el ataque tiene un efecto, la reutilización se reduce un 15% en su lugar, pero los efectos duran un 25% más.",
   "class.dragonminez.martialartist.passive.desc": "Los ataques Cuerpo a Cuerpo, de Golpe y de Ki infligen un 25% más de daño contra enemigos por debajo del 50% de HP.",
   "class.dragonminez.speedster.passive.desc": "Cada golpe Cuerpo a Cuerpo te otorga una Carga de Momentum si no es bloqueado, acumulable hasta 10. Cada carga aumenta VEL un 1% y ganas Daño adicional igual al 5% de tu VEL. Las cargas se refrescan cuando haces daño y desaparecen si te detienes.",
-  "class.dragonminez.duelist.passive.desc": "Parar ataques Cuerpo a Cuerpo causa un 10% más de daño de postura al enemigo, y parar una Explosión de Ki la envía hacia donde estás mirando con un 20% más de velocidad y puede dañar al lanzador. Atacar a alguien con Guardia Rota causa un 50% más de daño y un 100% más de empuje",
+  "class.dragonminez.duelist.passive.desc": "Parar ataques Cuerpo a Cuerpo causa un 10% más de daño de postura al enemigo, y parar un Ki Blast lo devuelve directamente hacia donde estás mirando. Atacar a alguien con Guardia Rota causa un 50% más de daño y un 100% más de empuje",
   "skill.dragonminez.class_warrior": "Pasiva de Guerrero",
   "skill.dragonminez.class_spiritualist": "Pasiva de Espiritualista",
   "skill.dragonminez.class_tank": "Pasiva de Tanque",
