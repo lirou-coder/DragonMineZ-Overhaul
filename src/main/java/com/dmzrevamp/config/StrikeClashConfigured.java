@@ -64,6 +64,8 @@ public final class StrikeClashConfigured {
         public float winnerDamageIncreaseMultiplier = 1.2F;
         public boolean strikeAttackHasDelay = true;
         public int strikeAttackDelayTicks = 10;
+        /** Ticks after a strike becomes active during which it may still enter a clash. */
+        public int strikeClashLateInputWindowTicks = 10;
 
         private Config sanitize() {
             meterSpeedMultiplier = finiteClamp(meterSpeedMultiplier, 0.05F, 8F, 1F);
@@ -79,6 +81,7 @@ public final class StrikeClashConfigured {
             goodAreaSpeedInfluenceMultiplier = finiteClamp(goodAreaSpeedInfluenceMultiplier, 0F, Float.MAX_VALUE, 1F);
             winnerDamageIncreaseMultiplier = finiteClamp(winnerDamageIncreaseMultiplier, 0F, Float.MAX_VALUE, 1.2F);
             strikeAttackDelayTicks = Math.max(0, strikeAttackDelayTicks);
+            strikeClashLateInputWindowTicks = Math.max(0, Math.min(40, strikeClashLateInputWindowTicks));
             return this;
         }
     }

@@ -126,13 +126,12 @@ public final class KiAttackOverhaulEvents {
     // Stores the original projectile size and reapplies the requested overcharge multiplier.
     private static void scaleProjectile(AbstractKiProjectile projectile, float sizeMultiplier, float chargePercent) {
         CompoundTag tag = projectile.getPersistentData();
-        float spiritBombMultiplier = SpiritBombChargeAbsorption.sizeMultiplier(projectile);
         if (!tag.contains(BASE_SIZE_TAG)) {
-            tag.putFloat(BASE_SIZE_TAG, SpiritBombChargeAbsorption.unboostedSize(projectile));
+            tag.putFloat(BASE_SIZE_TAG, Math.max(0.01F, projectile.getSize()));
         }
         tag.putFloat(OVERCHARGE_PERCENT_TAG, KiAttackOverhaul.clampChargePercent(chargePercent));
         float baseSize = Math.max(0.01F, tag.getFloat(BASE_SIZE_TAG));
-        projectile.setSize(baseSize * sizeMultiplier * spiritBombMultiplier);
+        projectile.setSize(baseSize * sizeMultiplier);
         // Waves render their charging body from castSize rather than size. Keeping
         // both values in step also makes their visible body and collision volume
         // agree once the projectile starts firing.

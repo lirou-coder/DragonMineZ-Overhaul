@@ -67,13 +67,15 @@ public abstract class BeamClashConfiguredMixin {
     }
 
     /**
-     * Overhaul applies live Ki Damage/overcharge influence when momentum is earned. Neutralize only
-     * DMZ's second stat-power multiplier in BeamClash.tick, while retaining the real statPower in
-     * ClashParticipant so DMZ 2.2's new NPC accuracy calculation still works.
+     * DMZ 2.2 derives native clash drift from each projectile's frozen statPower. When the
+     * Overhaul KiDMG module is enabled, replace that native factor so the clash is driven by the
+     * Overhaul's live, technique-weighted Ki Damage influence in KiClashTeams.applyMomentumBurst.
+     * Keep native DMZ power untouched while the module is disabled. The stored statPower itself
+     * remains intact, including its use in the native NPC timing-accuracy calculation.
      */
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/combat/clash/ClashParticipant;statPower()D"), remap = false)
-    private double dmzrevamp$neutralizeDuplicateNativePower(ClashParticipant participant) {
-        return 1.0D;
+    @Redirect(method = "advanceBias", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/combat/clash/ClashParticipant;statPower()D"), remap = false, require = 0, allow = 2)
+    private static double dmzrevamp$useConfiguredKiDamageInfluence(ClashParticipant participant) {
+        return KiClashConfigured.get().KiDMGInfluence ? 1.0D : participant.statPower();
     }
 
     @Inject(method = "resolve", at = @At("HEAD"), remap = false)

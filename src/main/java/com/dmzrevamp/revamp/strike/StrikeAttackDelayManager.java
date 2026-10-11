@@ -3,7 +3,6 @@ package com.dmzrevamp.revamp.strike;
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.mixin.StrikeAttackHandlerStateAccessor;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
@@ -17,6 +16,7 @@ import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.Mob;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -85,20 +85,22 @@ public final class StrikeAttackDelayManager {
         return true;
     }
 
-    /** Redirect target for DBSagasEntity.startCombo's validated setComboing(true). */
-    public static void beginNpcCombo(DBSagasEntity npc) {
+    /** Starts the shared telegraph for DMZ saga NPCs and Living World's copied saga entities. */
+    public static void beginNpcCombo(net.minecraft.world.entity.LivingEntity entity) {
+        if (!(entity instanceof Mob npc) || !(entity instanceof NpcStrikeDelayAccess delayAccess)) return;
         StrikeClashConfigured.Config config = StrikeClashConfigured.get();
         if (!config.strikeAttackHasDelay || config.strikeAttackDelayTicks <= 0) {
-            npc.setComboing(true);
+            delayAccess.dmzrevamp$setComboingForStrikeDelay(true);
             return;
         }
         NpcDelay existing = NPC_DELAYS.get(npc.getUUID());
         if (existing != null) return;
 
-        NpcDelay delay = new NpcDelay(npc, config.strikeAttackDelayTicks, npc.position(), npc.isCharge());
+        NpcDelay delay = new NpcDelay(npc, delayAccess, config.strikeAttackDelayTicks,
+                npc.position(), delayAccess.dmzrevamp$wasKiChargingBeforeStrikeDelay());
         NPC_DELAYS.put(npc.getUUID(), delay);
         npc.getNavigation().stop();
-        npc.setKiCharge(true);
+        delayAccess.dmzrevamp$setKiChargingForStrikeDelay(true);
         freeze(npc, delay.anchor);
     }
 
@@ -164,23 +166,25 @@ public final class StrikeAttackDelayManager {
         Iterator<NpcDelay> iterator = NPC_DELAYS.values().iterator();
         while (iterator.hasNext()) {
             NpcDelay delay = iterator.next();
-            DBSagasEntity npc = delay.npc;
+            Mob npc = delay.npc;
+            NpcStrikeDelayAccess delayAccess = delay.access;
             if (npc.level() != level) continue;
-            if (!npc.isAlive() || npc.isRemoved() || npc.isStunned() || npc.getTarget() == null) {
-                npc.setKiCharge(delay.wasCharging);
+            if (!npc.isAlive() || npc.isRemoved() || delayAccess.dmzrevamp$isStrikeDelayStunned()
+                    || delayAccess.dmzrevamp$getStrikeDelayTarget() == null) {
+                delayAccess.dmzrevamp$setKiChargingForStrikeDelay(delay.wasCharging);
                 iterator.remove();
                 continue;
             }
 
             npc.getNavigation().stop();
             freeze(npc, delay.anchor);
-            if (!npc.isCharge()) npc.setKiCharge(true);
-            if (npc.getTarget() != null) npc.lookAt(npc.getTarget(), 360F, 360F);
+            if (!delayAccess.dmzrevamp$wasKiChargingBeforeStrikeDelay()) delayAccess.dmzrevamp$setKiChargingForStrikeDelay(true);
+            if (delayAccess.dmzrevamp$getStrikeDelayTarget() != null) npc.lookAt(delayAccess.dmzrevamp$getStrikeDelayTarget(), 360F, 360F);
 
             delay.ticksRemaining--;
             if (!StrikeClashConfigured.get().strikeAttackHasDelay || delay.ticksRemaining <= 0) {
-                npc.setKiCharge(delay.wasCharging);
-                npc.setComboing(true);
+                delayAccess.dmzrevamp$setKiChargingForStrikeDelay(delay.wasCharging);
+                delayAccess.dmzrevamp$setComboingForStrikeDelay(true);
                 iterator.remove();
             }
         }
@@ -256,13 +260,15 @@ public final class StrikeAttackDelayManager {
     }
 
     private static final class NpcDelay {
-        private final DBSagasEntity npc;
+        private final Mob npc;
+        private final NpcStrikeDelayAccess access;
         private final Vec3 anchor;
         private final boolean wasCharging;
         private int ticksRemaining;
 
-        private NpcDelay(DBSagasEntity npc, int ticksRemaining, Vec3 anchor, boolean wasCharging) {
+        private NpcDelay(Mob npc, NpcStrikeDelayAccess access, int ticksRemaining, Vec3 anchor, boolean wasCharging) {
             this.npc = npc;
+            this.access = access;
             this.ticksRemaining = ticksRemaining;
             this.anchor = anchor;
             this.wasCharging = wasCharging;

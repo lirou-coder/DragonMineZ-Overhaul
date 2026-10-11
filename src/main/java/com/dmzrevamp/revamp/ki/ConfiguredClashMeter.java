@@ -2,6 +2,7 @@ package com.dmzrevamp.revamp.ki;
 
 import com.dmzrevamp.config.KiClashConfigured;
 import com.dmzrevamp.config.StrikeClashConfigured;
+import com.dmzrevamp.revamp.strike.StrikeClashManager;
 import com.dragonminez.common.combat.clash.ClashMeter;
 import net.minecraft.util.Mth;
 
@@ -23,6 +24,12 @@ public final class ConfiguredClashMeter {
         return sample(seed, time, config.meterSpeedMultiplier,
                 config.goodAreaSizeMultiplier, config.perfectAreaFraction,
                 config.goodMinimumEfficiency);
+    }
+
+    /** Server-side dispatch: native DMZ Strike Clash participants are keyed by their seeded meter. */
+    public static ClashMeter.Sample sampleNative(long seed, float time) {
+        Float strikeArea = StrikeClashManager.nativeStrikeArea(seed);
+        return strikeArea == null ? sampleKi(seed, time) : sampleStrike(seed, time, strikeArea);
     }
 
     public static ClashMeter.Sample sampleStrike(long seed, float time, float participantAreaMultiplier) {

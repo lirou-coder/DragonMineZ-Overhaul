@@ -1,7 +1,6 @@
 package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.revamp.combat.AdaptiveDefenseDamageContext;
-import com.dmzrevamp.revamp.strike.StrikeClashManager;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import com.dragonminez.common.init.entities.sagas.helper.ComboManager;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -25,15 +24,7 @@ public abstract class SagaComboManagerStrikeClashMixin {
             int timer,
             CallbackInfo ci
     ) {
-        if (user != null && StrikeClashManager.isClashing(user.getUUID())) {
-            ci.cancel();
-            return;
-        }
         if (user == null || target == null) return;
-        if (StrikeClashManager.tryStartNpcCombo(user, target)) {
-            ci.cancel();
-            return;
-        }
         DBSagasEntity.ComboType combo = DBSagasEntity.ComboType.fromId(comboId);
         if (combo == null || combo == DBSagasEntity.ComboType.SLEEP_RECOVERY) return;
 

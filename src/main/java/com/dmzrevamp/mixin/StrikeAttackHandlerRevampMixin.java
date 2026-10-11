@@ -6,7 +6,6 @@ import com.dmzrevamp.revamp.strike.StrikeAttackEffectApplier;
 import com.dmzrevamp.revamp.strike.StrikeAttackTemplates;
 import com.dmzrevamp.revamp.strike.CustomStrikeType;
 import com.dmzrevamp.revamp.strike.FlyingStrikeYLock;
-import com.dmzrevamp.revamp.strike.StrikeClashManager;
 import com.dmzrevamp.revamp.strike.StrikeAttackDelayManager;
 import com.dmzrevamp.revamp.combat.AdaptiveDefenseDamageContext;
 import com.dragonminez.common.init.MainDamageTypes;
@@ -215,10 +214,6 @@ public abstract class StrikeAttackHandlerRevampMixin {
         if (player == null || target == null || techniqueId == null) {
             return;
         }
-        if (StrikeClashManager.tryStart(player, target)) {
-            ci.cancel();
-            return;
-        }
         StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
             TechniqueData technique = data.getTechniques().getUnlockedTechniques().get(techniqueId);
             if (!(technique instanceof StrikeAttackData strike) || !(strike instanceof RevampStrikeAttackData revamp) || !revamp.dmzrevamp$isCustomStrike()) {
@@ -252,24 +247,18 @@ public abstract class StrikeAttackHandlerRevampMixin {
         double totalDamage = active instanceof StrikeAttackActiveAccessor accessor
                 ? accessor.dmzrevamp$getTotalDamage()
                 : Math.max(hitDamage, originalDamage);
-        float scaledHitDamage = StrikeClashManager.scaleWinningPlayerDamage(player, hitDamage);
-        double scaledTotalDamage = StrikeClashManager.scaleWinningPlayerDamage(player, totalDamage);
         return AdaptiveDefenseDamageContext.hurt(
                 target,
                 source,
-                scaledHitDamage,
+                hitDamage,
                 AdaptiveDefenseDamageContext.AttackType.STRIKE,
-                scaledTotalDamage
+                totalDamage
         );
     }
 
     @Inject(method = "processActiveInternal", at = @At("HEAD"), cancellable = true, remap = false)
     private static void dmzrevamp$processCustomStrikeTimeline(ServerPlayer player, CallbackInfo ci) {
         if (player == null) {
-            return;
-        }
-        if (StrikeClashManager.shouldPauseStrike(player)) {
-            ci.cancel();
             return;
         }
         Object active = ACTIVE.get(player.getUUID());
@@ -318,16 +307,6 @@ public abstract class StrikeAttackHandlerRevampMixin {
             CallbackInfo ci
     ) {
         FlyingStrikeYLock.begin(player);
-    }
-
-    @Inject(method = "startStrike", at = @At("RETURN"), remap = false)
-    private static void dmzrevamp$finishStrikeClashAbort(
-            ServerPlayer player,
-            LivingEntity target,
-            @Coerce Object pending,
-            CallbackInfo ci
-    ) {
-        StrikeClashManager.finalizePlayerStrikeAbort(player);
     }
 
     @Inject(method = "endStrike", at = @At("HEAD"), remap = false)
@@ -574,15 +553,13 @@ public abstract class StrikeAttackHandlerRevampMixin {
         double totalDamage = active instanceof StrikeAttackActiveAccessor accessor
                 ? accessor.dmzrevamp$getTotalDamage()
                 : amount;
-        float scaledAmount = StrikeClashManager.scaleWinningPlayerDamage(player, amount);
-        double scaledTotalDamage = StrikeClashManager.scaleWinningPlayerDamage(player, totalDamage);
         boolean wasAlive = target.isAlive();
         AdaptiveDefenseDamageContext.hurt(
                 target,
                 MainDamageTypes.strikeAttack(player.level(), player, strike.getId()),
-                scaledAmount,
+                amount,
                 AdaptiveDefenseDamageContext.AttackType.STRIKE,
-                scaledTotalDamage
+                totalDamage
         );
         int hitXp = strike.getXpGainPerHit();
         if (hitXp > 0) data.getTechniques().addExperienceToTechnique(strike.getId(), hitXp);

@@ -13,6 +13,6 @@ public abstract class ClashMeterConfiguredMixin {
     @Inject(method = "sample", at = @At("HEAD"), cancellable = true)
     private static void dmzrevamp$configuredKiMeter(long seed, float time,
                                                      CallbackInfoReturnable<ClashMeter.Sample> cir) {
-        cir.setReturnValue(ConfiguredClashMeter.sampleKi(seed, time));
+        cir.setReturnValue(ConfiguredClashMeter.sampleNative(seed, time));
     }
 }

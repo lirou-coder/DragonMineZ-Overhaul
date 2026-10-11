@@ -22,6 +22,7 @@ import java.util.WeakHashMap;
 public final class FlyingStrikeYLock {
     private static final int POST_STRIKE_TICKS = 10;
     private static final int SCRIPTED_VERTICAL_MOTION = -2;
+    private static final int RELEASE_FOR_CLASH = -3;
     private static final Map<Player, State> STATES = new WeakHashMap<>();
 
     private FlyingStrikeYLock() {
@@ -40,6 +41,9 @@ public final class FlyingStrikeYLock {
             }
             if (player.isDeadOrDying()) {
                 clear(player);
+                return;
+            }
+            if (state.suspendedByClash) {
                 return;
             }
             if (!state.strikeActive && player.tickCount >= state.lockUntilTick) {
@@ -80,6 +84,12 @@ public final class FlyingStrikeYLock {
             state = new State(player.getY());
             STATES.put(player, state);
         }
+        if (state.suspendedByClash) {
+            state.strikeActive = false;
+            state.anchorY = player.getY();
+            state.lockUntilTick = Integer.MIN_VALUE;
+            return;
+        }
         state.strikeActive = false;
         state.anchorY = player.getY();
         state.allowVerticalUntilTick = Integer.MIN_VALUE;
@@ -91,7 +101,7 @@ public final class FlyingStrikeYLock {
     /** Called immediately after a strike-owned teleport, before the tick lock can restore old Y. */
     public static synchronized void updateAnchorAfterStrikeTeleport(ServerPlayer player) {
         State state = STATES.get(player);
-        if (state == null || !state.strikeActive) {
+        if (state == null || state.suspendedByClash || !state.strikeActive) {
             return;
         }
         state.anchorY = player.getY();
@@ -103,7 +113,7 @@ public final class FlyingStrikeYLock {
     /** Lets a strike-owned dash change Y, then adopts the resulting position as the new lock anchor. */
     public static synchronized void allowScriptedVerticalMotion(ServerPlayer player) {
         State state = STATES.get(player);
-        if (state == null || !state.strikeActive) {
+        if (state == null || state.suspendedByClash || !state.strikeActive) {
             return;
         }
         state.allowVerticalUntilTick = Math.max(state.allowVerticalUntilTick, player.tickCount + 2);
@@ -126,7 +136,22 @@ public final class FlyingStrikeYLock {
     }
 
     public static synchronized boolean isLocked(Player player) {
-        return STATES.containsKey(player);
+        State state = STATES.get(player);
+        return state != null && !state.suspendedByClash;
+    }
+
+    /** Suspends the strike Y anchor before DMZ moves participants into a native clash. */
+    public static synchronized void suspendForClash(ServerPlayer player) {
+        State state = STATES.computeIfAbsent(player, ignored -> new State(player.getY()));
+        state.suspendedByClash = true;
+        syncAnchor(player, player.getY(), RELEASE_FOR_CLASH);
+    }
+
+    /** Drops any interrupted strike anchor when the native clash releases its participant. */
+    public static synchronized void endClash(ServerPlayer player) {
+        STATES.remove(player);
+        player.fallDistance = 0.0F;
+        syncAnchor(player, player.getY(), RELEASE_FOR_CLASH);
     }
 
     @SubscribeEvent
@@ -138,6 +163,10 @@ public final class FlyingStrikeYLock {
 
     /** Applies the authoritative server anchor to the local player after a strike teleport. */
     public static synchronized void syncClientAnchor(Player player, double anchorY, int remainingTicks) {
+        if (remainingTicks == RELEASE_FOR_CLASH) {
+            STATES.remove(player);
+            return;
+        }
         State state = STATES.computeIfAbsent(player, ignored -> new State(anchorY));
         if (remainingTicks == SCRIPTED_VERTICAL_MOTION) {
             state.anchorY = player.getY();
@@ -193,6 +222,7 @@ public final class FlyingStrikeYLock {
     private static final class State {
         private double anchorY;
         private boolean strikeActive;
+        private boolean suspendedByClash;
         private int lockUntilTick = Integer.MIN_VALUE;
         private int allowVerticalUntilTick = Integer.MIN_VALUE;
 

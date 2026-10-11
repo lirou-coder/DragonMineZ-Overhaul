@@ -21,7 +21,11 @@ public abstract class DMZPlayerModelAnimationResourceMixin {
             ResourceLocation.fromNamespaceAndPath("dragonminez", "animations/entity/races/combat.animation.json"),
             ResourceLocation.fromNamespaceAndPath("dragonminez", "animations/entity/races/ki.animation.json"),
             ResourceLocation.fromNamespaceAndPath("dragonminez", "animations/entity/races/transf.animation.json"),
-            ResourceLocation.fromNamespaceAndPath("dragonminez", "animations/entity/races/skp.animation.json")
+            ResourceLocation.fromNamespaceAndPath("dragonminez", "animations/entity/races/skp.animation.json"),
+            // DMZ 2.2 stores the race-specific base.ki_charge_<race> clips in movement.animation.json.
+            // The Overhaul movement file remains primary, so this fallback restores the native clips
+            // without overriding any animation that the Overhaul already supplies.
+            ResourceLocation.fromNamespaceAndPath("dragonminez", "animations/entity/races/movement.animation.json")
     };
 
     @Inject(method = "getAnimationResource(Lnet/minecraft/client/player/AbstractClientPlayer;)Lnet/minecraft/resources/ResourceLocation;", at = @At("HEAD"), cancellable = true, remap = false)

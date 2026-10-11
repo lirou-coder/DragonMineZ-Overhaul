@@ -1,286 +1,191 @@
 package com.dmzrevamp.revamp.strike;
 
-import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.config.StrikeClashConfigured;
-import com.dmzrevamp.mixin.StrikeAttackActiveAccessor;
 import com.dmzrevamp.mixin.StrikeAttackHandlerStateAccessor;
+import com.dmzrevamp.mixin.StrikeAttackActiveAccessor;
+import com.dmzrevamp.mixin.StrikeAttackPendingAccessor;
 import com.dmzrevamp.mixin.DBSagasEntityComboTargetAccessor;
+import com.dragonminez.common.combat.clash.StrikeClash;
+import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
+import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import com.dmzrevamp.network.DmzRevampNetwork;
 import com.dmzrevamp.network.StrikeClashModeS2CPacket;
-import com.dmzrevamp.revamp.ki.ConfiguredClashMeter;
 import com.dmzrevamp.revamp.battlepower.AccurateMobBattlePowerCalculator;
-import com.dragonminez.common.combat.clash.BeamClashManager;
-import com.dragonminez.common.combat.clash.ClashMeter;
-import com.dragonminez.common.combat.logic.player.PlayerAttackHelper;
-import com.dragonminez.common.init.MainEffects;
-import com.dragonminez.common.init.MainParticles;
-import com.dragonminez.common.init.MainSounds;
-import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
-import com.dragonminez.common.network.NetworkHandler;
-import com.dragonminez.common.network.S2C.BeamClashStateS2C;
-import com.dragonminez.common.network.S2C.MeleeAnimationS2C;
-import com.dragonminez.common.network.S2C.StatsSyncS2C;
-import com.dragonminez.common.network.S2C.TriggerAnimationS2C;
+import com.dragonminez.common.combat.clash.ClashParticipant;
 import com.dragonminez.common.stats.StatsCapability;
-import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
-import net.minecraft.commands.arguments.EntityAnchorArgument;
-import net.minecraft.server.level.ServerLevel;
+import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.RegistryObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.lang.reflect.Field;
+import java.util.concurrent.ConcurrentHashMap;
 
-/** Server-authoritative two-participant Strike/Combo clash. */
-@Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+/** Small compatibility layer for DMZ 2.2's native Strike Clash. */
 public final class StrikeClashManager {
     private static final java.util.Set<String> NON_CLASH_STRIKES = java.util.Set.of(
-            "oozaru_slam",
-            "dimensional_punch",
-            "dimensional_sword_attack",
-            "blue_hurricane",
-            StrikeAttackTemplates.NAMEKIAN_REGENERATION
+            "oozaru_slam", "dimensional_punch", "dimensional_sword_attack",
+            "blue_hurricane", StrikeAttackTemplates.NAMEKIAN_REGENERATION
     );
-    private static final float DRIFT_PER_TICK = 0.005F;
-    private static final float POWER_FLOOR = 0.6F;
-    private static final float POWER_SPAN = 0.95F;
-    private static final float MIN_TRACTION = 0.35F;
-    private static final float BURST_PER_PRESS = 0.6F;
-    private static final List<Clash> ACTIVE = new ArrayList<>();
-    private static final Map<UUID, Float> WINNER_DAMAGE_BOOST = new HashMap<>();
-    private static final Map<UUID, LivingEntity> WINNER_DAMAGE_ENTITY = new HashMap<>();
-    @SuppressWarnings("unchecked")
-    private static final RegistryObject<SoundEvent>[] PUNCH_SOUNDS = new RegistryObject[]{
-            MainSounds.GOLPE1, MainSounds.GOLPE2, MainSounds.GOLPE3,
-            MainSounds.GOLPE4, MainSounds.GOLPE5, MainSounds.GOLPE6
-    };
+    private static final Map<Long, Float> NATIVE_STRIKE_AREAS = new ConcurrentHashMap<>();
+    private static final Map<java.util.UUID, ClashParticipant> NATIVE_PARTICIPANTS = new ConcurrentHashMap<>();
+    private static final Map<String, Field> NATIVE_STATE_FIELDS = new ConcurrentHashMap<>();
 
-    private StrikeClashManager() {
-    }
+    private StrikeClashManager() {}
 
-    /**
-     * Attacks handled by DMZ as area/projectile/recovery actions never enter
-     * the target-lock timeline used by Strike Clashes. Target-optional attacks
-     * such as Wolf Fang and Deadly Dance intentionally remain eligible: when
-     * they do capture a target, their active strike contains that target UUID.
-     */
+    /** Kept as the single Overhaul policy used by the rush gate and activation delay. */
     public static boolean canTechniqueStartClash(String techniqueId) {
-        return techniqueId != null && !techniqueId.isEmpty() && !NON_CLASH_STRIKES.contains(techniqueId);
+        return techniqueId != null && !techniqueId.isBlank() && !NON_CLASH_STRIKES.contains(techniqueId);
     }
 
-    /** Called on the first hit of a newly-created player Strike, before damage is applied. */
-    public static boolean tryStart(ServerPlayer attacker, LivingEntity target) {
-        if (!StrikeClashConfigured.get().enabled || attacker == null || target == null
-                || !attacker.isAlive() || !target.isAlive()
-                || isClashing(attacker.getUUID()) || isClashing(target.getUUID())
-                || BeamClashManager.isClashing(attacker.getUUID())
-                || BeamClashManager.isClashing(target.getUUID())) {
-            return false;
-        }
+    public static boolean canPlayerStartNativeClash(ServerPlayer player) {
+        if (!StrikeClashConfigured.get().enabled || player == null) return false;
+        Object pending = StrikeAttackHandlerStateAccessor.dmzrevamp$getPendingStrikes().get(player.getUUID());
+        if (pending instanceof StrikeAttackPendingAccessor access
+                && canTechniqueStartClash(access.dmzrevamp$getTechniqueId())) return true;
 
-        Object attackerStrike = activeStrikes().get(attacker.getUUID());
-        if (!(attackerStrike instanceof StrikeAttackActiveAccessor attackerActive)
-                || attackerActive.dmzrevamp$getTargetId() == null
-                || !target.getUUID().equals(attackerActive.dmzrevamp$getTargetId())) {
-            return false;
-        }
-
-        Object opponentStrike = null;
-        if (target instanceof ServerPlayer targetPlayer) {
-            opponentStrike = activeStrikes().get(targetPlayer.getUUID());
-            if (!(opponentStrike instanceof StrikeAttackActiveAccessor targetActive)
-                    || targetActive.dmzrevamp$getTargetId() == null
-                    || !attacker.getUUID().equals(targetActive.dmzrevamp$getTargetId())) {
-                return false;
-            }
-        } else if (!(target instanceof DBSagasEntity saga) || !saga.isComboing()) {
-            return false;
-        }
-
-        Clash clash = new Clash(
-                new Participant(attacker, attackerStrike),
-                new Participant(target, opponentStrike),
-                attacker.serverLevel()
-        );
-        abortPlayerStrike(clash.a);
-        abortPlayerStrike(clash.b);
-        clash.alignAndLock();
-        ACTIVE.add(clash);
-        sendMode(clash.a, clash.b, true);
-        sendMode(clash.b, clash.a, true);
-        stopPlayerTechniqueAnimation(clash.a.entity);
-        stopPlayerTechniqueAnimation(clash.b.entity);
-        return true;
+        int graceTicks = StrikeClashConfigured.get().strikeClashLateInputWindowTicks;
+        if (graceTicks <= 0) return false;
+        Object active = StrikeAttackHandlerStateAccessor.dmzrevamp$getActiveStrikes().get(player.getUUID());
+        return active instanceof StrikeAttackActiveAccessor access
+                && access.dmzrevamp$getTicksElapsed() <= graceTicks
+                && canTechniqueStartClash(access.dmzrevamp$getTechniqueId());
     }
 
-    /** Starts a Strike Clash when two saga NPCs launch Combo Attacks at each other. */
-    public static boolean tryStartNpcCombo(DBSagasEntity attacker, LivingEntity target) {
-        if (!StrikeClashConfigured.get().enabled || attacker == null
-                || !(target instanceof DBSagasEntity opponent)
-                || attacker == opponent || !attacker.isAlive() || !opponent.isAlive()
-                || !attacker.isComboing() || !opponent.isComboing()
-                || isClashing(attacker.getUUID()) || isClashing(opponent.getUUID())
-                || BeamClashManager.isClashing(attacker.getUUID())
-                || BeamClashManager.isClashing(opponent.getUUID())) {
-            return false;
-        }
-
-        LivingEntity attackerTarget = ((DBSagasEntityComboTargetAccessor) attacker).dmzrevamp$getComboTarget();
-        LivingEntity opponentTarget = ((DBSagasEntityComboTargetAccessor) opponent).dmzrevamp$getComboTarget();
-        if (attackerTarget != opponent || opponentTarget != attacker) return false;
-
-        DBSagasEntity.ComboType attackerCombo = DBSagasEntity.ComboType.fromId(attacker.getComboId());
-        DBSagasEntity.ComboType opponentCombo = DBSagasEntity.ComboType.fromId(opponent.getComboId());
-        if (attackerCombo == null || opponentCombo == null
-                || attackerCombo == DBSagasEntity.ComboType.SLEEP_RECOVERY
-                || opponentCombo == DBSagasEntity.ComboType.SLEEP_RECOVERY
-                || !(attacker.level() instanceof ServerLevel level)) {
-            return false;
-        }
-
-        Clash clash = new Clash(new Participant(attacker, null), new Participant(opponent, null), level);
-        clash.alignAndLock();
-        ACTIVE.add(clash);
-        sendMode(clash.a, clash.b, true);
-        sendMode(clash.b, clash.a, true);
-        return true;
+    /** NPC combos use DMZ's native rush state only for a few combo types; admit other targeted combos too. */
+    public static boolean canNpcStartNativeClash(DBSagasEntity npc) {
+        if (!StrikeClashConfigured.get().enabled || npc == null || !npc.isAlive()
+                || !npc.isComboing() || npc.isStrikeClashing()) return false;
+        DBSagasEntity.ComboType combo = DBSagasEntity.ComboType.fromId(npc.getComboId());
+        if (combo == null || combo == DBSagasEntity.ComboType.SLEEP_RECOVERY) return false;
+        LivingEntity target = ((DBSagasEntityComboTargetAccessor) npc).dmzrevamp$getComboTarget();
+        return target != null && target.isAlive() && target.level() == npc.level();
     }
 
-    public static boolean isClashing(UUID entityId) {
-        if (entityId == null) return false;
-        for (Clash clash : ACTIVE) {
-            if (clash.involves(entityId)) return true;
+    public static java.util.UUID nativePlayerStrikeTarget(ServerPlayer player) {
+        if (player == null) return null;
+        Object pending = StrikeAttackHandlerStateAccessor.dmzrevamp$getPendingStrikes().get(player.getUUID());
+        if (pending instanceof StrikeAttackPendingAccessor access) {
+            return access.dmzrevamp$getPreferredTargetId();
         }
-        return false;
+        Object active = StrikeAttackHandlerStateAccessor.dmzrevamp$getActiveStrikes().get(player.getUUID());
+        return active instanceof StrikeAttackActiveAccessor access ? access.dmzrevamp$getTargetId() : null;
     }
 
-    /** Pauses native ActiveStrike timelines until this manager resolves the clash. */
-    public static boolean shouldPauseStrike(ServerPlayer player) {
-        return player != null && isClashing(player.getUUID());
+    /** Called by DMZ's own StrikeClash.start after the participant has been accepted. */
+    public static StrikeAttackHandler.ClashRush takePlayerRushForNativeClash(ServerPlayer player) {
+        StrikeAttackHandler.ClashRush rush = StrikeAttackHandler.takeRushForClash(player);
+        if (rush != null || player == null) return rush;
+
+        Object active = StrikeAttackHandlerStateAccessor.dmzrevamp$getActiveStrikes().get(player.getUUID());
+        if (StrikeClashConfigured.get().strikeClashLateInputWindowTicks <= 0
+                || !(active instanceof StrikeAttackActiveAccessor access)
+                || access.dmzrevamp$getTicksElapsed() > StrikeClashConfigured.get().strikeClashLateInputWindowTicks
+                || !canTechniqueStartClash(access.dmzrevamp$getTechniqueId())) return null;
+
+        StrikeAttackHandler.ClashRush activeRush = new StrikeAttackHandler.ClashRush(
+                access.dmzrevamp$getTechniqueId(), access.dmzrevamp$getCooldownTicks());
+        // A launched strike must not keep ticking or dealing hits while its owner is in the clash.
+        StrikeAttackHandler.interrupt(player);
+        return activeRush;
     }
 
-    /** startStrike continues after its first damage hook; clean up the lock/animation it reapplies. */
-    public static void finalizePlayerStrikeAbort(ServerPlayer player) {
-        if (player == null) return;
-        for (Clash clash : ACTIVE) {
-            Participant participant = clash.participant(player.getUUID());
-            if (participant != null) {
-                abortPlayerStrike(clash.a);
-                abortPlayerStrike(clash.b);
-                return;
-            }
+    /** Called for the DMZ StrikeClash participant constructor (not Ki beam participants). */
+    public static void registerNativeParticipant(ClashParticipant participant) {
+        if (participant == null || participant.beam() != null) return;
+        NATIVE_STRIKE_AREAS.put(participant.meterSeed(), 1.0F);
+        NATIVE_PARTICIPANTS.put(participant.owner().getUUID(), participant);
+    }
+
+    public static void registerNativeClash(ClashParticipant first, ClashParticipant second) {
+        if (first == null || second == null) return;
+        NATIVE_STRIKE_AREAS.put(first.meterSeed(), goodAreaMultiplier(first.owner(), second.owner()));
+        NATIVE_STRIKE_AREAS.put(second.meterSeed(), goodAreaMultiplier(second.owner(), first.owner()));
+    }
+
+    public static void unregisterNativeParticipant(ClashParticipant participant) {
+        if (participant != null) {
+            NATIVE_STRIKE_AREAS.remove(participant.meterSeed());
+            NATIVE_PARTICIPANTS.remove(participant.owner().getUUID(), participant);
         }
     }
 
-    /**
-     * Routes DMZ 2.2's native ClashMeter input to a Strike Clash before BeamClash handles it.
-     * The client sends the simulated press time and marker; the server resamples the same
-     * deterministic meter and accepts at most one contribution per cycle.
-     */
-    public static boolean handlePlayerPress(ServerPlayer player, float pressTime, float marker) {
-        if (player == null) return false;
-        for (Clash clash : ACTIVE) {
-            Participant participant = clash.participant(player.getUUID());
-            if (participant != null) {
-                float serverTime = (float) (player.level().getGameTime() - clash.startGameTime);
-                ClashMeter.Grade grade = participant.registerPlayerPress(
-                        clash.other(participant), pressTime, marker, serverTime,
-                        clash.realElapsedTicks(), player.latency);
-                if (grade == ClashMeter.Grade.PERFECT || grade == ClashMeter.Grade.GOOD) {
-                    playPunch(player);
+    public static void beginNativeClash(LivingEntity first, LivingEntity second) {
+        ClashParticipant firstParticipant = NATIVE_PARTICIPANTS.get(first.getUUID());
+        ClashParticipant secondParticipant = NATIVE_PARTICIPANTS.get(second.getUUID());
+        registerNativeClash(firstParticipant, secondParticipant);
+        sendNativeMode(first, goodAreaMultiplier(first, second), true);
+        sendNativeMode(second, goodAreaMultiplier(second, first), true);
+    }
+
+    public static void refreshNativeMeleePower(ClashParticipant participant) {
+        if (participant == null || !(participant.owner() instanceof ServerPlayer player)) return;
+        double melee = StatsProvider.get(StatsCapability.INSTANCE, player)
+                .map(data -> data.getMeleeDamage()).orElse(1D);
+        double power = configuredMeleePower(melee);
+        if (participant instanceof ClashParticipantPowerAccess access) {
+            access.dmzrevamp$setStatPower(Double.isFinite(power) ? Math.max(1D, power) : 1D);
+        }
+    }
+
+    /** Reads the private Side records without mixin accessors whose descriptors vary by DMZ build. */
+    public static void refreshNativeClashState(Object clash) {
+        Object first = readNativeStateField(clash, "a");
+        Object second = readNativeStateField(clash, "b");
+        refreshNativeSide(first);
+        refreshNativeSide(second);
+
+        Object firstEntity = readNativeStateField(first, "entity");
+        Object secondEntity = readNativeStateField(second, "entity");
+        if (firstEntity instanceof LivingEntity a && secondEntity instanceof LivingEntity b) {
+            beginNativeClash(a, b);
+        }
+    }
+
+    public static void endNativeClashSide(Object side) {
+        Object participant = readNativeStateField(side, "participant");
+        if (participant instanceof ClashParticipant clashParticipant) endNativeClash(clashParticipant);
+    }
+
+    private static void refreshNativeSide(Object side) {
+        Object participant = readNativeStateField(side, "participant");
+        if (participant instanceof ClashParticipant clashParticipant) refreshNativeMeleePower(clashParticipant);
+    }
+
+    private static Object readNativeStateField(Object target, String name) {
+        if (target == null) return null;
+        String key = target.getClass().getName() + '#' + name;
+        try {
+            Field field = NATIVE_STATE_FIELDS.computeIfAbsent(key, ignored -> {
+                try {
+                    Field found = target.getClass().getDeclaredField(name);
+                    found.setAccessible(true);
+                    return found;
+                } catch (ReflectiveOperationException exception) {
+                    throw new IllegalStateException(exception);
                 }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static float scaleWinningPlayerDamage(ServerPlayer attacker, float damage) {
-        if (attacker == null || damage <= 0F) return damage;
-        Float multiplier = WINNER_DAMAGE_BOOST.get(attacker.getUUID());
-        return multiplier == null ? damage : damage * multiplier;
-    }
-
-    public static double scaleWinningPlayerDamage(ServerPlayer attacker, double damage) {
-        if (attacker == null || damage <= 0D) return damage;
-        Float multiplier = WINNER_DAMAGE_BOOST.get(attacker.getUUID());
-        return multiplier == null ? damage : damage * multiplier;
-    }
-
-    @SubscribeEvent
-    public static void tick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.level instanceof ServerLevel level)) return;
-
-        Iterator<Clash> iterator = ACTIVE.iterator();
-        while (iterator.hasNext()) {
-            Clash clash = iterator.next();
-            if (clash.level != level) continue;
-            Result result = clash.tick(level);
-            if (result == Result.ONGOING) continue;
-            clash.finish(result);
-            iterator.remove();
-        }
-        cleanupDamageBoosts();
-    }
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void protectParticipants(LivingAttackEvent event) {
-        if (!event.getEntity().level().isClientSide() && isClashing(event.getEntity().getUUID())) {
-            event.setCanceled(true);
+            });
+            return field.get(target);
+        } catch (ReflectiveOperationException | IllegalStateException exception) {
+            return null;
         }
     }
 
-    /** NPC combo damage receives the winner multiplier while that original combo continues. */
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void boostWinningNpcCombo(LivingHurtEvent event) {
-        if (!(event.getSource().getEntity() instanceof DBSagasEntity saga) || !saga.isComboing()) return;
-        Float multiplier = WINNER_DAMAGE_BOOST.get(saga.getUUID());
-        if (multiplier != null && event.getAmount() > 0F) {
-            event.setAmount(event.getAmount() * multiplier);
-        }
+    public static double configuredMeleePower(double melee) {
+        var config = StrikeClashConfigured.get();
+        return config.meleeDMGInfluence
+                ? 1D + (Math.max(0D, melee) - 1D) * config.meleeDMGInfluenceMultiplier
+                : 1D;
     }
 
-    private static void cleanupDamageBoosts() {
-        WINNER_DAMAGE_BOOST.entrySet().removeIf(entry -> {
-            UUID id = entry.getKey();
-            if (activeStrikes().containsKey(id)) return false;
-            LivingEntity entity = WINNER_DAMAGE_ENTITY.get(id);
-            if (entity instanceof DBSagasEntity saga && saga.isAlive() && saga.isComboing()) return false;
-            for (Clash clash : ACTIVE) if (clash.involves(id)) return false;
-            WINNER_DAMAGE_ENTITY.remove(id);
-            return true;
-        });
+    public static void endNativeClash(ClashParticipant participant) {
+        unregisterNativeParticipant(participant);
+        if (participant != null) sendNativeMode(participant.owner(), 1F, false);
     }
 
-    private static Map<UUID, Object> activeStrikes() {
-        return StrikeAttackHandlerStateAccessor.dmzrevamp$getActiveStrikes();
-    }
-
-    private static void sendMode(Participant participant, Participant opponent, boolean active) {
-        LivingEntity entity = participant.entity;
-        float areaMultiplier = active ? participant.goodAreaMultiplier(opponent) : 1.0F;
+    private static void sendNativeMode(LivingEntity entity, float areaMultiplier, boolean active) {
         StrikeClashConfigured.Config config = StrikeClashConfigured.get();
         DmzRevampNetwork.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity),
                 new StrikeClashModeS2CPacket(entity.getId(), active, areaMultiplier,
@@ -288,468 +193,27 @@ public final class StrikeClashManager {
                         config.perfectAreaFraction, config.goodMinimumEfficiency));
     }
 
-    private static void stopPlayerTechniqueAnimation(LivingEntity entity) {
-        if (!(entity instanceof ServerPlayer player)) return;
-        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(
-                player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP,
-                0, -1, ""), player);
+    public static Float nativeStrikeArea(long meterSeed) {
+        return NATIVE_STRIKE_AREAS.get(meterSeed);
     }
 
-    private static void sendState(Clash clash, Participant participant) {
-        if (!(participant.entity instanceof ServerPlayer player)) return;
-        Participant opponent = clash.other(participant);
-        Vec3 point = clash.clashPoint();
-        NetworkHandler.sendToPlayer(new BeamClashStateS2C(
-                true,
-                clash.startGameTime,
-                participant.meterSeed,
-                clash.advantageFor(participant),
-                auraColor(participant.entity),
-                auraColor(opponent.entity),
-                opponent.entity.getId(),
-                point.x, point.y, point.z, 0
-        ), player);
-    }
-
-    private static void notifyEnded(LivingEntity entity) {
-        if (entity instanceof ServerPlayer player) {
-            NetworkHandler.sendToPlayer(BeamClashStateS2C.inactive(0), player);
-            DmzRevampNetwork.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player),
-                    new StrikeClashModeS2CPacket(player.getId(), false, 1.0F,
-                            1.0F, 1.0F, 0.35F, 0.5F));
+    /** Area advantage is relative: player-v-player uses DMZ Speed; NPC-v-NPC uses custom BP. */
+    public static float goodAreaMultiplier(LivingEntity entity, LivingEntity opponent) {
+        StrikeClashConfigured.Config config = StrikeClashConfigured.get();
+        if (!config.goodAreaSpeedInfluence || entity == null || opponent == null) return 1.0F;
+        double own;
+        double other;
+        if (entity instanceof ServerPlayer first && opponent instanceof ServerPlayer second) {
+            own = StatsProvider.get(StatsCapability.INSTANCE, first).map(data -> data.getSpeed()).orElse(0D);
+            other = StatsProvider.get(StatsCapability.INSTANCE, second).map(data -> data.getSpeed()).orElse(0D);
+        } else if (!(entity instanceof ServerPlayer) && !(opponent instanceof ServerPlayer)) {
+            own = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(entity);
+            other = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(opponent);
+        } else {
+            return 1.0F;
         }
-    }
-
-    private static void playPunch(LivingEntity entity) {
-        SoundEvent sound = PUNCH_SOUNDS[entity.getRandom().nextInt(PUNCH_SOUNDS.length)].get();
-        entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), sound,
-                SoundSource.PLAYERS, 1F, 0.9F + entity.getRandom().nextFloat() * 0.2F);
-    }
-
-    private static int auraColor(LivingEntity entity) {
-        if (entity instanceof DBSagasEntity saga) return saga.getAuraColor();
-        if (!(entity instanceof ServerPlayer player)) return 0xFFFFFF;
-        StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
-        if (data == null) return 0xFFFFFF;
-        float[] rgb = data.getCharacter().getRgbAuraColor();
-        if (data.getCharacter().hasActiveForm() && data.getCharacter().getActiveFormData() != null
-                && data.getCharacter().getActiveFormData().getRgbAuraColor() != null) {
-            rgb = data.getCharacter().getActiveFormData().getRgbAuraColor();
-        }
-        if (data.getCharacter().hasActiveStackForm() && data.getCharacter().getActiveStackFormData() != null
-                && data.getCharacter().getActiveStackFormData().getRgbAuraColor() != null) {
-            rgb = data.getCharacter().getActiveStackFormData().getRgbAuraColor();
-        }
-        if (rgb == null || rgb.length < 3) return 0xFFFFFF;
-        int r = Mth.clamp(Math.round(rgb[0] * 255F), 0, 255);
-        int g = Mth.clamp(Math.round(rgb[1] * 255F), 0, 255);
-        int b = Mth.clamp(Math.round(rgb[2] * 255F), 0, 255);
-        return (r << 16) | (g << 8) | b;
-    }
-
-    private static double meleeDamage(LivingEntity entity) {
-        if (entity instanceof ServerPlayer player) {
-            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
-            if (data != null) return Math.max(1D, data.getMeleeDamage());
-        }
-        AttributeInstance attack = entity.getAttribute(Attributes.ATTACK_DAMAGE);
-        return Math.max(1D, attack == null ? 1D : attack.getValue());
-    }
-
-    private static double speed(LivingEntity entity) {
-        if (entity instanceof ServerPlayer player) {
-            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
-            if (data != null) return Math.max(0.0001D, data.getSpeed());
-        }
-        AttributeInstance movement = entity.getAttribute(Attributes.MOVEMENT_SPEED);
-        return Math.max(0.0001D, movement == null ? 1D : movement.getValue() / 0.1D);
-    }
-
-    private static double battlePower(LivingEntity entity) {
-        if (entity instanceof ServerPlayer player) {
-            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
-            if (data != null) {
-                double exact = data.getBattlePowerExact();
-                if (Double.isFinite(exact) && exact > 0D) return exact;
-            }
-        }
-        double exact = AccurateMobBattlePowerCalculator.calculateCurvedBattlePowerExact(entity);
-        return Double.isFinite(exact) && exact > 0D ? exact : 1D;
-    }
-
-    private static int visualAttackInterval(LivingEntity entity) {
-        AttributeInstance attackSpeed = entity.getAttribute(Attributes.ATTACK_SPEED);
-        double value = attackSpeed != null && attackSpeed.getValue() > 0D ? attackSpeed.getValue() : 4D;
-        return Math.max(1, (int) Math.ceil(20D / value));
-    }
-
-    private static void face(LivingEntity source, LivingEntity target) {
-        source.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
-        source.setYHeadRot(source.getYRot());
-        source.setYBodyRot(source.getYRot());
-    }
-
-    private static void lockAt(LivingEntity entity, Vec3 position) {
-        if (entity instanceof ServerPlayer player) player.teleportTo(position.x, position.y, position.z);
-        else entity.setPos(position.x, position.y, position.z);
-        entity.setDeltaMovement(Vec3.ZERO);
-        entity.hurtMarked = true;
-        entity.fallDistance = 0F;
-    }
-
-    private static void stopPlayerStrike(Participant participant) {
-        if (!(participant.entity instanceof ServerPlayer player)) return;
-        Object removed = activeStrikes().remove(player.getUUID());
-        Object captured = removed != null ? removed : participant.strike;
-        StrikeAttackActiveAccessor accessor = captured instanceof StrikeAttackActiveAccessor value ? value : null;
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-                data.getStatus().setStrikeLocked(false);
-            if (accessor != null) {
-                data.getCooldowns().setCooldown("TechniqueCooldown_" + accessor.dmzrevamp$getTechniqueId(),
-                        accessor.dmzrevamp$getCooldownTicks());
-            }
-            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-        });
-        FlyingStrikeYLock.finish(player);
-        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(
-                player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION_STOP, 0, -1, ""), player);
-    }
-
-    private static void abortPlayerStrike(Participant participant) {
-        if (!(participant.entity instanceof ServerPlayer player)) return;
-        activeStrikes().remove(player.getUUID());
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            data.getStatus().setStrikeLocked(false);
-            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-        });
-        FlyingStrikeYLock.finish(player);
-        stopPlayerTechniqueAnimation(player);
-    }
-
-    private static void restartWinningPlayerStrike(Participant winner, LivingEntity target) {
-        if (!(winner.entity instanceof ServerPlayer player)
-                || !(winner.strike instanceof StrikeAttackActiveAccessor active)
-                || target == null || !target.isAlive()) return;
-
-        activeStrikes().put(player.getUUID(), winner.strike);
-        FlyingStrikeYLock.begin(player);
-        player.invulnerableTime = Math.max(player.invulnerableTime, 20);
-        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
-            data.getStatus().setStrikeLocked(true);
-            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
-        });
-        if (target instanceof ServerPlayer targetPlayer) {
-            StatsProvider.get(StatsCapability.INSTANCE, targetPlayer).ifPresent(data -> {
-                data.getStatus().setStrikeLocked(true);
-                NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(targetPlayer), targetPlayer);
-            });
-        }
-
-        NetworkHandler.sendToTrackingEntityAndSelf(new TriggerAnimationS2C(
-                player.getUUID(), TriggerAnimationS2C.AnimationType.KI_ANIMATION,
-                0, -1, active.dmzrevamp$getAnimationId()), player);
-        StrikeAttackHandlerStateAccessor.dmzrevamp$invokeApplyStrikeDamage(
-                player, target, active.dmzrevamp$getPerHitDamage(), active.dmzrevamp$getTechniqueId(), false);
-    }
-
-    private enum Result { ONGOING, A_WINS, B_WINS, DISSOLVED }
-
-    private static final class Participant {
-        private static final float MARKER_MISMATCH = 0.06F;
-        private static final float MAX_LAG_TICKS = 12.0F;
-        private static final float LAG_GRACE_TICKS = 2.0F;
-        private static final int INPUT_STRIKE_LIMIT = 4;
-        private static final float INVALID_INPUT_DAMPEN = 0.4F;
-
-        private final LivingEntity entity;
-        private final Object strike;
-        private final boolean wasNoAi;
-        private final int lockedNpcComboTimer;
-        private final double initialMeleeDamage;
-        private final double initialBattlePower;
-        private final long meterSeed;
-        private final float npcAccuracy;
-        private float momentum;
-        private int consumedCycle = -1;
-        private float lastPressTime = -Float.MAX_VALUE;
-        private int invalidInputStrikes;
-        private boolean inputDampened;
-        private Vec3 lockedPosition;
-        private int visualComboCount;
-
-        private Participant(LivingEntity entity, Object strike) {
-            this.entity = entity;
-            this.strike = strike;
-            this.wasNoAi = entity instanceof Mob mob && mob.isNoAi();
-            this.lockedNpcComboTimer = entity instanceof DBSagasEntity saga ? saga.comboTimer : 0;
-            this.initialMeleeDamage = meleeDamage(entity);
-            this.initialBattlePower = battlePower(entity);
-            this.meterSeed = entity.getRandom().nextLong();
-            this.npcAccuracy = resolveNpcAccuracy(initialMeleeDamage, !(entity instanceof ServerPlayer));
-        }
-
-        private static float resolveNpcAccuracy(double attackPower, boolean npc) {
-            if (!npc) return 0F;
-            double t = Math.log10(Math.max(0D, attackPower) + 1D) / 3D;
-            return (float) Math.min(0.92D, 0.45D + t * 0.45D);
-        }
-
-        private void tickMeter(Participant opponent, int age) {
-            StrikeClashConfigured.Config config = StrikeClashConfigured.get();
-            momentum *= config.momentumDecayPerTick;
-            if (entity instanceof ServerPlayer) return;
-
-            float areaMultiplier = goodAreaMultiplier(opponent);
-            ClashMeter.Sample now = ConfiguredClashMeter.sampleStrike(meterSeed, age, areaMultiplier);
-            if (now.cycle().index() <= consumedCycle || now.grade() == ClashMeter.Grade.MISS) return;
-            ClashMeter.Sample next = ConfiguredClashMeter.sampleStrike(meterSeed, age + 1, areaMultiplier);
-            boolean closest = next.cycle().index() != now.cycle().index() || next.distance() >= now.distance();
-            if (!closest) return;
-
-            consumedCycle = now.cycle().index();
-            float jitter = 0.7F + entity.getRandom().nextFloat() * 0.3F;
-            addBurst(opponent, now.efficiency() * npcAccuracy * jitter);
-        }
-
-        private ClashMeter.Grade registerPlayerPress(Participant opponent, float claimedTime, float claimedMarker,
-                                                     float serverTime, float realElapsed, int latencyMs) {
-            float tolerance = Math.min(MAX_LAG_TICKS, Math.max(0, latencyMs) / 50.0F + LAG_GRACE_TICKS);
-            float earliest = serverTime - tolerance;
-            float latest = Math.max(serverTime, realElapsed) + 1.0F + LAG_GRACE_TICKS;
-            float pressTime = claimedTime;
-
-            if (!Float.isFinite(pressTime)) {
-                noteInvalidInput();
-                pressTime = serverTime;
-            } else if (pressTime < earliest || pressTime > latest) {
-                noteInvalidInput();
-                pressTime = Mth.clamp(pressTime, earliest, latest);
-            }
-            if (pressTime <= lastPressTime) return null;
-            lastPressTime = pressTime;
-
-            ClashMeter.Sample sample = ConfiguredClashMeter.sampleStrike(
-                    meterSeed, pressTime, goodAreaMultiplier(opponent));
-            if (!Float.isFinite(claimedMarker) || Math.abs(sample.marker() - claimedMarker) > MARKER_MISMATCH) {
-                noteInvalidInput();
-            }
-            if (sample.cycle().index() <= consumedCycle) return null;
-            consumedCycle = sample.cycle().index();
-
-            if (sample.grade() != ClashMeter.Grade.MISS) {
-                float efficiency = sample.efficiency();
-                if (inputDampened) efficiency *= INVALID_INPUT_DAMPEN;
-                addBurst(opponent, efficiency);
-            }
-            return sample.grade();
-        }
-
-        private void noteInvalidInput() {
-            if (++invalidInputStrikes >= INPUT_STRIKE_LIMIT) inputDampened = true;
-        }
-
-        private void addBurst(Participant opponent, float efficiency) {
-            StrikeClashConfigured.Config config = StrikeClashConfigured.get();
-            double influence = 1D;
-            if (config.meleeDMGInfluence) {
-                double ratio = meleeDamage(entity) / Math.max(0.0001D, meleeDamage(opponent.entity));
-                influence = Math.max(1D, 1D + (ratio - 1D) * config.meleeDMGInfluenceMultiplier);
-            }
-            momentum += efficiency * BURST_PER_PRESS
-                    * config.momentumGainDefaultMultiplier * (float) influence;
-        }
-
-        private float goodAreaMultiplier(Participant opponent) {
-            StrikeClashConfigured.Config config = StrikeClashConfigured.get();
-            if (!config.goodAreaSpeedInfluence) return 1.0F;
-            boolean againstNpc = (entity instanceof ServerPlayer) != (opponent.entity instanceof ServerPlayer);
-            double advantageValue;
-            if (againstNpc) {
-                advantageValue = initialBattlePower / Math.max(0.0001D, opponent.initialBattlePower);
-            } else {
-                advantageValue = speed(entity);
-            }
-            if (!Double.isFinite(advantageValue) || advantageValue <= 1D) return 1.0F;
-            double multiplier = 1D + (advantageValue - 1D) * config.goodAreaSpeedInfluenceMultiplier;
-            return (float) Math.min(Float.MAX_VALUE, Math.max(1D, multiplier));
-        }
-    }
-
-    private static final class Clash {
-        private final Participant a;
-        private final Participant b;
-        private final ServerLevel level;
-        private final long startGameTime;
-        private final long startNanos = System.nanoTime();
-        private float bias = 0.5F;
-        private int age;
-
-        private Clash(Participant a, Participant b, ServerLevel level) {
-            this.a = a;
-            this.b = b;
-            this.level = level;
-            this.startGameTime = level.getGameTime();
-        }
-
-        private float realElapsedTicks() {
-            return (System.nanoTime() - startNanos) / 50_000_000.0F;
-        }
-
-        private Vec3 clashPoint() {
-            return a.entity.getEyePosition().add(b.entity.getEyePosition()).scale(0.5D);
-        }
-
-        private boolean involves(UUID id) {
-            return a.entity.getUUID().equals(id) || b.entity.getUUID().equals(id);
-        }
-
-        private Participant participant(UUID id) {
-            if (a.entity.getUUID().equals(id)) return a;
-            if (b.entity.getUUID().equals(id)) return b;
-            return null;
-        }
-
-        private Participant other(Participant participant) {
-            return participant == a ? b : a;
-        }
-
-        private void alignAndLock() {
-            Participant higher = a.entity.getY() >= b.entity.getY() ? a : b;
-            Participant lower = higher == a ? b : a;
-            Vec3 direction = lower.entity.position().subtract(higher.entity.position()).multiply(1D, 0D, 1D);
-            if (direction.lengthSqr() < 1.0E-6D) {
-                direction = higher.entity.getLookAngle().multiply(1D, 0D, 1D);
-            }
-            if (direction.lengthSqr() < 1.0E-6D) direction = new Vec3(0D, 0D, 1D);
-            direction = direction.normalize();
-            higher.lockedPosition = higher.entity.position();
-            lower.lockedPosition = higher.lockedPosition.add(direction.x, 0D, direction.z);
-            lockAt(higher.entity, higher.lockedPosition);
-            lockAt(lower.entity, lower.lockedPosition);
-            if (higher.entity instanceof ServerPlayer player) FlyingStrikeYLock.updateAnchorAfterStrikeTeleport(player);
-            if (lower.entity instanceof ServerPlayer player) FlyingStrikeYLock.updateAnchorAfterStrikeTeleport(player);
-            if (a.entity instanceof Mob mob) mob.setNoAi(true);
-            if (b.entity instanceof Mob mob) mob.setNoAi(true);
-            face(a.entity, b.entity);
-            face(b.entity, a.entity);
-        }
-
-        private Result tick(ServerLevel level) {
-            if (!StrikeClashConfigured.get().enabled) return Result.DISSOLVED;
-            if (!a.entity.isAlive() || !b.entity.isAlive()) return Result.DISSOLVED;
-            // Keep the NPC combo alive before testing it. DMZ 2.2 decrements comboTimer during
-            // the entity tick, which could otherwise dissolve the clash before its first meter hit.
-            if (a.entity instanceof DBSagasEntity saga) saga.comboTimer = a.lockedNpcComboTimer;
-            if (b.entity instanceof DBSagasEntity saga) saga.comboTimer = b.lockedNpcComboTimer;
-            if (a.entity instanceof DBSagasEntity saga && !saga.isComboing()) return Result.DISSOLVED;
-            if (b.entity instanceof DBSagasEntity saga && !saga.isComboing()) return Result.DISSOLVED;
-
-            age++;
-            lockAt(a.entity, a.lockedPosition);
-            lockAt(b.entity, b.lockedPosition);
-            face(a.entity, b.entity);
-            face(b.entity, a.entity);
-            a.tickMeter(b, age);
-            b.tickMeter(a, age);
-
-            double powerA = meleeDamage(a.entity);
-            double powerB = meleeDamage(b.entity);
-            float shareA = (float) (powerA / Math.max(0.0001D, powerA + powerB));
-            float shareB = 1F - shareA;
-            float tractionA = Mth.clamp(2F * bias, MIN_TRACTION, 1F);
-            float tractionB = Mth.clamp(2F * (1F - bias), MIN_TRACTION, 1F);
-            float pushA = a.momentum * (POWER_FLOOR + POWER_SPAN * shareA) * tractionA;
-            float pushB = b.momentum * (POWER_FLOOR + POWER_SPAN * shareB) * tractionB;
-            bias = Mth.clamp(bias + DRIFT_PER_TICK * (pushA - pushB), 0F, 1F);
-
-            renderCombat(level, a);
-            renderCombat(level, b);
-            if (age % 5 == 0) playPunch(age % 10 == 0 ? a.entity : b.entity);
-            sendState(this, a);
-            sendState(this, b);
-
-            StrikeClashConfigured.Config config = StrikeClashConfigured.get();
-            if (bias >= config.innerAdvantageHigh) return Result.A_WINS;
-            if (bias <= config.innerAdvantageLow) return Result.B_WINS;
-            if (age >= config.maxClashDurationTicks) {
-                if (bias > 0.5F) return Result.A_WINS;
-                if (bias < 0.5F) return Result.B_WINS;
-                return Result.DISSOLVED;
-            }
-            return Result.ONGOING;
-        }
-
-        private void renderCombat(ServerLevel level, Participant participant) {
-            int interval = visualAttackInterval(participant.entity);
-            if (age % interval != 0) return;
-            playBasicAttackAnimation(participant);
-            double angle = level.random.nextDouble() * Math.PI * 2D;
-            double radius = level.random.nextDouble() * 3D;
-            double x = (a.entity.getX() + b.entity.getX()) * 0.5D + Math.cos(angle) * radius;
-            double y = (a.entity.getEyeY() + b.entity.getEyeY()) * 0.5D + (level.random.nextDouble() - 0.5D) * 2D;
-            double z = (a.entity.getZ() + b.entity.getZ()) * 0.5D + Math.sin(angle) * radius;
-            level.sendParticles(MainParticles.PUNCH_PARTICLE.get(), x, y, z, 0,
-                    1D, 1D, 1D, 1D);
-        }
-
-        private void playBasicAttackAnimation(Participant participant) {
-            if (!(participant.entity instanceof ServerPlayer player)) {
-                participant.entity.swing(InteractionHand.MAIN_HAND, true);
-                return;
-            }
-
-            var hand = PlayerAttackHelper.getCurrentAttack(player, participant.visualComboCount);
-            if (hand == null) {
-                participant.visualComboCount = 0;
-                hand = PlayerAttackHelper.getCurrentAttack(player, 0);
-            }
-            if (hand == null || hand.attack() == null) {
-                player.swing(InteractionHand.MAIN_HAND, true);
-                return;
-            }
-
-            float cooldownTicks = PlayerAttackHelper.getAttackCooldownTicksCapped(player);
-            float animationSpeed = Mth.clamp(12F / Math.max(cooldownTicks, 0.001F), 0.55F, 1.35F);
-            InteractionHand interactionHand = hand.isOffHand() ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-            player.swing(interactionHand, true);
-            NetworkHandler.sendToTrackingEntityAndSelf(new MeleeAnimationS2C(
-                    player.getId(), hand.attack().animation(), hand.isOffHand(), animationSpeed), player);
-            participant.visualComboCount++;
-        }
-
-        private float advantageFor(Participant participant) {
-            return participant == a ? bias : 1F - bias;
-        }
-
-        private void finish(Result result) {
-            notifyEnded(a.entity);
-            notifyEnded(b.entity);
-            restoreAi(a);
-            restoreAi(b);
-            if (result == Result.DISSOLVED) {
-                if (a.entity instanceof ServerPlayer) stopPlayerStrike(a);
-                if (b.entity instanceof ServerPlayer) stopPlayerStrike(b);
-                return;
-            }
-
-            Participant winner = result == Result.A_WINS ? a : b;
-            Participant loser = winner == a ? b : a;
-            if (loser.entity instanceof ServerPlayer) stopPlayerStrike(loser);
-            else if (loser.entity instanceof DBSagasEntity saga) saga.stopCombo();
-
-            loser.entity.addEffect(new MobEffectInstance(MainEffects.STUN.get(), 40, 0, false, true, true));
-            double liveDamageRatio = meleeDamage(winner.entity)
-                    / Math.max(0.0001D, winner.initialMeleeDamage);
-            float finalDamageMultiplier = (float) Math.min(Float.MAX_VALUE,
-                    StrikeClashConfigured.get().winnerDamageIncreaseMultiplier
-                            * (Double.isFinite(liveDamageRatio) ? Math.max(0D, liveDamageRatio) : 1D));
-            WINNER_DAMAGE_BOOST.put(winner.entity.getUUID(), finalDamageMultiplier);
-            WINNER_DAMAGE_ENTITY.put(winner.entity.getUUID(), winner.entity);
-            restartWinningPlayerStrike(winner, loser.entity);
-        }
-
-        private static void restoreAi(Participant participant) {
-            if (participant.entity instanceof Mob mob) mob.setNoAi(participant.wasNoAi);
-        }
+        if (!Double.isFinite(own) || !Double.isFinite(other) || own <= other || other <= 0D) return 1.0F;
+        double multiplier = 1D + ((own / other) - 1D) * config.goodAreaSpeedInfluenceMultiplier;
+        return (float) Math.max(1D, Math.min(Float.MAX_VALUE, multiplier));
     }
 }

@@ -3,6 +3,7 @@ package com.dmzrevamp.mixin.client;
 import com.dmzrevamp.client.DmzRevampClientHooks;
 import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.revamp.DmzSpeedRevampEvents;
+import com.dmzrevamp.revamp.combat.SpdCombatScalingEvents;
 import com.dragonminez.client.events.FlySkillEvent;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
@@ -42,5 +43,14 @@ public abstract class FlySkillEventRevampSpeedMixin {
             );
             cir.setReturnValue((float) Math.max(cir.getReturnValue(), revampScale));
         });
+    }
+
+    /** Strike Rush replaced StrikeAttackHandler#dashForward; carry Overhaul's SPD bonus onto
+     * the native rush velocity while preserving DMZ's fly-skill, flight-limit and base-speed math. */
+    @Inject(method = "strikeRushSpeed", at = @At("RETURN"), cancellable = true, remap = false)
+    private static void dmzrevamp$scaleStrikeRushSpeed(LocalPlayer player, CallbackInfoReturnable<Double> cir) {
+        if (!DmzRevampConfig.ENABLE_SPD_MOVEMENT_SPEED_MODIFIERS.get()) return;
+        double multiplier = 1D + SpdCombatScalingEvents.getAttackSpeedIncrease(player);
+        cir.setReturnValue(Math.max(0D, cir.getReturnValue() * multiplier));
     }
 }

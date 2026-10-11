@@ -514,7 +514,10 @@ public final class KiClashTeams {
     /** Complete live projectile damage: current Ki Damage, technique output and launch charge. */
     private static double refreshedProjectileDamage(LivingEntity entity, AbstractKiProjectile projectile) {
         double ownDamage = Math.max(0.0001D, attackWeightedKiDamage(entity, projectile) * chargeMultiplier(projectile));
-        return SpiritBombChargeAbsorption.withStoredDamageBonus(projectile, ownDamage);
+        if (projectile instanceof KiBlastEntity blast && blast.getGenkiDonatedSize() > 0.0F) {
+            return ownDamage * blast.genkiDamageMultiplier();
+        }
+        return ownDamage;
     }
 
     private static double attackDamageMultiplier(LivingEntity entity, AbstractKiProjectile projectile, double base) {

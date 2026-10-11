@@ -28,7 +28,8 @@ public final class ClientKiClashTransformationEvents {
         if (event.phase != TickEvent.Phase.END) return;
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.screen != null || !ClientBeamClashState.isActive()) {
+        boolean clashActive = ClientBeamClashState.isActive() || ClientStrikeClashState.isActive();
+        if (minecraft.player == null || minecraft.screen != null || !clashActive) {
             if (wasKiChargeDown && minecraft.player != null) {
                 NetworkHandler.sendToServer(new UpdateStatC2S(UpdateStatC2S.StatAction.CHARGE_KI, false));
             }

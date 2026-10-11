@@ -38,14 +38,9 @@ public abstract class BeamClashManagerConfiguredMixin {
     /**
      * DMZ 2.2 sends the client-simulated press time and marker to the server. Helpers must be
      * validated through the same ClashParticipant path instead of the old parameterless press.
-     * Strike Clash also reuses this native input route while its overlay is active.
      */
     @Inject(method = "handlePlayerPress", at = @At("HEAD"), cancellable = true, remap = false)
     private static void dmzrevamp$customParticipantPress(ServerPlayer player, float pressTime, float marker, CallbackInfo ci) {
-        if (com.dmzrevamp.revamp.strike.StrikeClashManager.handlePlayerPress(player, pressTime, marker)) {
-            ci.cancel();
-            return;
-        }
         if (KiClashTeams.handleHelperPress(player, pressTime, marker)) ci.cancel();
     }
 

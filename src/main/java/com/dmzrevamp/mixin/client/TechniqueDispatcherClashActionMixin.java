@@ -2,6 +2,7 @@ package com.dmzrevamp.mixin.client;
 
 import com.dmzrevamp.config.KiClashConfigured;
 import com.dragonminez.client.clash.ClientBeamClashState;
+import com.dmzrevamp.client.ClientStrikeClashState;
 import com.dragonminez.common.stats.techniques.TechniqueDispatcher;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -25,7 +26,8 @@ public abstract class TechniqueDispatcherClashActionMixin {
             remap = false
     )
     private static void dmzrevamp$allowActionsDuringConfiguredClash(CallbackInfoReturnable<Boolean> cir) {
-        if (ClientBeamClashState.isActive() && KiClashConfigured.get().allowTransformationMidClash) {
+        if ((ClientBeamClashState.isActive() || ClientStrikeClashState.isActive())
+                && KiClashConfigured.get().allowTransformationMidClash) {
             cir.setReturnValue(false);
         }
     }
