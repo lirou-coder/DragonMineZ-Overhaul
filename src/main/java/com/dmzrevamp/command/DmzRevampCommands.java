@@ -6,17 +6,20 @@ import com.dmzrevamp.racial.CustomRacialCooldownEvents;
 import com.dmzrevamp.revamp.classes.skills.ClassSkillEvents;
 import com.dmzrevamp.revamp.fusion.FusionRevampLogic;
 import com.dmzrevamp.revamp.prestige.PrestigeSystem;
+import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.network.S2C.StatsSyncS2C;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsProvider;
+import com.dragonminez.common.util.GodRitualHelper;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -45,7 +48,9 @@ public final class DmzRevampCommands {
                 .then(Commands.literal("resetcooldowns")
                         .executes(context -> resetCooldowns(context.getSource(), List.of(context.getSource().getPlayerOrException())))
                         .then(Commands.argument("targets", EntityArgument.players())
-                                .executes(context -> resetCooldowns(context.getSource(), EntityArgument.getPlayers(context, "targets"))))));
+                                .executes(context -> resetCooldowns(context.getSource(), EntityArgument.getPlayers(context, "targets")))))
+                .then(Commands.literal("ritualtest")
+                        .executes(context -> ritualTest(context.getSource(), context.getSource().getPlayerOrException()))));
         dispatcher.register(Commands.literal("dmzfusion")
                 .then(Commands.literal("finish")
                         .executes(context -> finishFusion(context.getSource(), context.getSource().getPlayerOrException()))));
@@ -137,5 +142,46 @@ public final class DmzRevampCommands {
             source.sendFailure(Component.literal("You are not fused."));
         }
         return changed;
+    }
+
+    private static int ritualTest(CommandSourceStack source, ServerPlayer player) {
+        StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+        if (data == null) {
+            source.sendFailure(Component.literal("Could not access your DMZ stats."));
+            return 0;
+        }
+        if (!GodRitualHelper.isSaiyan(data)) {
+            source.sendFailure(Component.literal("non-saiyans can't use the saiyan god ritual")
+                    .withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        var config = GodRitualHelper.config();
+        var form = GodRitualHelper.formData();
+        if (config == null || form == null) {
+            source.sendFailure(Component.literal("The configured Saiyan God Ritual form could not be found."));
+            return 0;
+        }
+
+        var character = data.getCharacter();
+        if (!character.getFormsUsedBefore().getFormGroup(config.getGroupName()).contains(form.getName())) {
+            character.getFormsUsedBefore().putForm(config.getGroupName(), form.getName());
+        }
+        float[] resourceSnapshot = data.snapshotMultiplierResources();
+        character.clearPreviousFormRecord();
+        character.setActiveForm(config.getGroupName(), form.getName());
+        data.restoreMultiplierGains(player, resourceSnapshot);
+        data.getStatus().setGodRitualTicks(30 * 20);
+        data.getResources().setActionCharge(0);
+        if (!player.hasEffect(MainEffects.TRANSFORMED.get())) {
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    MainEffects.TRANSFORMED.get(), -1, 0, false, false, true));
+        }
+        player.refreshDimensions();
+        player.resetFallDistance();
+        NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+        player.sendSystemMessage(Component.literal("you are now under the god ritual effect for 30s")
+                .withStyle(ChatFormatting.GREEN));
+        return 1;
     }
 }

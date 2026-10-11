@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * Single source of truth for every Overhaul default written to general-server.json.
@@ -40,6 +41,12 @@ public abstract class GeneralServerDefaultsMixin {
         dmzrevamp$set(gravity, "resistanceScale", 1000.0D);
         dmzrevamp$set(gravity, "tpIdealBaseDivisor", 1.0D);
         dmzrevamp$set(gravity, "tpPeakMultiplier", 3.0D);
+
+        GeneralServerConfig.GodRitualConfig godRitual = config.getSuperSaiyanGodRitual();
+        dmzrevamp$set(godRitual, "donorForms", List.of(
+                "ssgrades.supersaiyan", "supersaiyan.supersaiyanmastered", "supersaiyan.supersaiyan"));
+        dmzrevamp$set(godRitual, "recipientForms", List.of(
+                "supersaiyan.supersaiyanmastered", "supersaiyan.supersaiyan"));
     }
 
     @Unique

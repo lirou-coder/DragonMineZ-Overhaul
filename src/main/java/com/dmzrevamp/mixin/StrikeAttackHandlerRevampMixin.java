@@ -8,6 +8,7 @@ import com.dmzrevamp.revamp.strike.CustomStrikeType;
 import com.dmzrevamp.revamp.strike.FlyingStrikeYLock;
 import com.dmzrevamp.revamp.strike.StrikeAttackDelayManager;
 import com.dmzrevamp.revamp.combat.AdaptiveDefenseDamageContext;
+import com.dmzrevamp.revamp.combat.CombatFlightDashRushManager;
 import com.dragonminez.common.init.MainDamageTypes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.init.MainSounds;
@@ -58,6 +59,14 @@ public abstract class StrikeAttackHandlerRevampMixin {
 
     @Unique
     private static Method dmzrevamp$withTicksElapsedMethod;
+
+    @Inject(method = "startStrike", at = @At("HEAD"), remap = false)
+    private static void dmzrevamp$cancelDashRushWhenNormalStrikeConnects(
+            ServerPlayer attacker, LivingEntity target, @Coerce Object pending, CallbackInfo ci) {
+        if (target instanceof ServerPlayer dashPlayer) {
+            CombatFlightDashRushManager.cancelForNormalStrike(dashPlayer);
+        }
+    }
 
     @Redirect(
             method = "lambda$requestStrike$0",

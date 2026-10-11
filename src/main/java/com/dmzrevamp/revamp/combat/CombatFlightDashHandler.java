@@ -18,6 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.PacketDistributor;
@@ -72,6 +73,15 @@ public final class CombatFlightDashHandler {
 
         if (kiCost > 0) {
             data.getResources().removeEnergy(kiCost);
+        }
+        LivingEntity lockTarget = xInput == 0F && zInput >= 0F
+                ? CombatFlightDashRushManager.getValidLockTarget(player)
+                : null;
+        if (lockTarget != null) {
+            applyCooldownsAndEffects(player, data, config);
+            CombatFlightDashRushManager.start(player, lockTarget);
+            NetworkHandler.sendToTrackingEntityAndSelf(new StatsSyncS2C(player), player);
+            return true;
         }
         applyCombatFlightMotion(player, xInput, zInput, distance);
         applyCooldownsAndEffects(player, data, config);

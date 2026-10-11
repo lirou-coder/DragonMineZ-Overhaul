@@ -19,7 +19,7 @@ public final class DmzRevampConfig {
 
     public static final ForgeConfigSpec.BooleanValue COMBAT_FLIGHT_TRIDIMENSIONAL = BUILDER
             .comment("When true, Combat Flight movement while locked on follows the target in three dimensions. When false, locked Combat Flight keeps Dragon Mine Z's original movement.")
-            .define("combatFlightTridimensional", true);
+            .define("combatFlightTridimensional", false);
 
     public static final ForgeConfigSpec.BooleanValue ALLOW_LOCK_ON_ANDROID = BUILDER
             .comment("When true, Lock On can target Android Upgraded players. When false, Dragon Mine Z's original Android targeting restriction is preserved.")

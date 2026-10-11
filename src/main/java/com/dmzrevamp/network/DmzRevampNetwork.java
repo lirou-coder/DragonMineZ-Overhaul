@@ -45,5 +45,6 @@ public final class DmzRevampNetwork {
         CHANNEL.registerMessage(packetId++, RequestSduClassEditorC2SPacket.class, RequestSduClassEditorC2SPacket::encode, RequestSduClassEditorC2SPacket::decode, RequestSduClassEditorC2SPacket::handle);
         CHANNEL.registerMessage(packetId++, OpenSduClassEditorS2CPacket.class, OpenSduClassEditorS2CPacket::encode, OpenSduClassEditorS2CPacket::decode, OpenSduClassEditorS2CPacket::handle);
         CHANNEL.registerMessage(packetId++, SaveSduClassC2SPacket.class, SaveSduClassC2SPacket::encode, SaveSduClassC2SPacket::decode, SaveSduClassC2SPacket::handle);
+        CHANNEL.registerMessage(packetId++, SyncLockOnTargetC2SPacket.class, SyncLockOnTargetC2SPacket::encode, SyncLockOnTargetC2SPacket::decode, SyncLockOnTargetC2SPacket::handle);
     }
 }
