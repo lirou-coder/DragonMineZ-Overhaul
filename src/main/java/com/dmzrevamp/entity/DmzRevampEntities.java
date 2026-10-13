@@ -20,10 +20,6 @@ public final class DmzRevampEntities {
             "saga_gogeta_base", () -> EntityType.Builder.of(SagaGogetaEntity.Base::new, MobCategory.MONSTER)
                     .sized(0.6F, 1.8F).clientTrackingRange(10).build("saga_gogeta_base"));
 
-    public static final RegistryObject<EntityType<SagaGogetaEntity.Ssj>> SAGA_GOGETA_SSJ = ENTITIES.register(
-            "saga_gogeta_ssj", () -> EntityType.Builder.of(SagaGogetaEntity.Ssj::new, MobCategory.MONSTER)
-                    .sized(0.6F, 1.8F).clientTrackingRange(10).build("saga_gogeta_ssj"));
-
     private DmzRevampEntities() {}
 
     public static void register(IEventBus bus) {
@@ -37,7 +33,6 @@ public final class DmzRevampEntities {
         @SubscribeEvent
         public static void register(EntityAttributeCreationEvent event) {
             event.put(SAGA_GOGETA_BASE.get(), DBSagasEntity.createAttributes().build());
-            event.put(SAGA_GOGETA_SSJ.get(), DBSagasEntity.createAttributes().build());
         }
     }
 }

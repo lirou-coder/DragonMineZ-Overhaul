@@ -18,7 +18,6 @@ public final class DmzRevampEntityRenderers {
     @SubscribeEvent
     public static void register(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(DmzRevampEntities.SAGA_GOGETA_BASE.get(), GogetaBaseRenderer::new);
-        event.registerEntityRenderer(DmzRevampEntities.SAGA_GOGETA_SSJ.get(), GogetaSsjRenderer::new);
     }
 
     private static final class GogetaBaseRenderer extends DBSagasRenderer<SagaGogetaEntity.Base> {
@@ -31,20 +30,6 @@ public final class DmzRevampEntityRenderers {
 
         @Override
         public ResourceLocation getTextureLocation(SagaGogetaEntity.Base entity) {
-            return TEXTURE;
-        }
-    }
-
-    private static final class GogetaSsjRenderer extends DBSagasRenderer<SagaGogetaEntity.Ssj> {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
-                DmzRevampMod.MODID, "textures/entity/sagas/saga_gogeta_ssj.png");
-
-        private GogetaSsjRenderer(EntityRendererProvider.Context context) {
-            super(context);
-        }
-
-        @Override
-        public ResourceLocation getTextureLocation(SagaGogetaEntity.Ssj entity) {
             return TEXTURE;
         }
     }

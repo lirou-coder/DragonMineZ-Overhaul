@@ -22,6 +22,10 @@ public abstract class ConfigManagerEntitiesConfigOverrideMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String ENTITIES_SNAPSHOT = "data/dmzrevamp/defaults/config/entities.json";
     private static final String RADIAL_LAYOUT_SNAPSHOT = "data/dmzrevamp/defaults/config/radial_layout.json";
+    private static final String RAID_DEFAULTS_ROOT = "data/dmzrevamp/defaults/config/raids/";
+    private static final String RAID_DEFAULTS_INDEX = RAID_DEFAULTS_ROOT + "index.txt";
+    private static final String TOURNAMENT_DEFAULTS_ROOT = "data/dmzrevamp/defaults/config/tournaments/";
+    private static final String TOURNAMENT_DEFAULTS_INDEX = TOURNAMENT_DEFAULTS_ROOT + "index.txt";
     private static final String SAIRENS_DMZ_WORLD = "sairens_dmz_world";
 
     @Shadow(remap = false)
@@ -59,10 +63,34 @@ public abstract class ConfigManagerEntitiesConfigOverrideMixin {
 
     private static void dmzrevamp$seedMissingEntitiesConfig() {
         dmzrevamp$copyMissingSnapshot(ENTITIES_SNAPSHOT, CONFIG_DIR.resolve("entities.json"), "Dragon Mine Z entities config");
+        dmzrevamp$copyMissingIndexedSnapshots(RAID_DEFAULTS_INDEX, RAID_DEFAULTS_ROOT,
+                CONFIG_DIR.resolve("raids"), "raid");
+        dmzrevamp$copyMissingIndexedSnapshots(TOURNAMENT_DEFAULTS_INDEX, TOURNAMENT_DEFAULTS_ROOT,
+                CONFIG_DIR.resolve("tournaments"), "tournament");
         if (ModList.get().isLoaded(SAIRENS_DMZ_WORLD)) {
             return;
         }
         dmzrevamp$copyMissingSnapshot(RADIAL_LAYOUT_SNAPSHOT, CONFIG_DIR.resolve("radial_layout.json"), "Dragon Mine Z radial layout config");
+    }
+
+    private static void dmzrevamp$copyMissingIndexedSnapshots(String indexPath, String snapshotRoot,
+                                                               Path targetRoot, String description) {
+        try (InputStream index = ConfigManagerEntitiesConfigOverrideMixin.class.getClassLoader()
+                .getResourceAsStream(indexPath)) {
+            if (index == null) return;
+            String entries = new String(index.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            for (String entry : entries.lines().map(String::trim)
+                    .filter(line -> !line.isBlank() && line.endsWith(".json") && !line.contains(".."))
+                    .toList()) {
+                Path target = targetRoot.resolve(entry).normalize();
+                if (!target.startsWith(targetRoot.normalize()) || Files.exists(target)) continue;
+                String snapshot = snapshotRoot + entry.replace('\\', '/');
+                dmzrevamp$copyMissingSnapshot(snapshot, target,
+                        "Dragon Mine Z " + description + " config " + entry);
+            }
+        } catch (Exception exception) {
+            LOGGER.warn("Could not seed missing Dragon Mine Z {} defaults: {}", description, exception.getMessage());
+        }
     }
 
     private static void dmzrevamp$copyMissingSnapshot(String snapshot, Path target, String description) {

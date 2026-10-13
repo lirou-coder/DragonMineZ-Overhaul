@@ -1,5 +1,6 @@
 package com.dmzrevamp.mixin;
 
+import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.revamp.forms.RequiredDmzLevelForm;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.stats.StatsData;
@@ -24,6 +25,7 @@ public abstract class FormRequisitesRequiredDmzLevelMixin {
                                                           boolean clientSide,
                                                           CallbackInfoReturnable<FormRequisites.Lock> cir) {
         DMZREVAMP_LEVEL_LOCK.remove();
+        if (!DmzRevampConfig.ENABLE_FORM_LEVEL_REQUIREMENT.get()) return;
         if (data == null || !(form instanceof RequiredDmzLevelForm extension)) return;
         int required = Math.max(1, extension.dmzrevamp$getRequiredDMZLevel());
         if (required <= 1 || data.getLevel() >= required) return;

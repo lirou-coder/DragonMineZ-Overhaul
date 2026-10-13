@@ -50,13 +50,13 @@ public final class QuestSpawnAttributeApplier {
     public static final String CAN_TRANSFORM_3_TAG = "dmzrevamp_can_transform_3";
     public static final String CAN_TRANSFORM_4_TAG = "dmzrevamp_can_transform_4";
     public static final String TRANSFORM_ENTITY_TAG_PREFIX = "dmzrevamp_transform_entity_";
-    private static final String DMZ_TF_HP_ABS = "dmz_quest_tf_hp_abs";
-    private static final String DMZ_TF_HP_MULT = "dmz_quest_tf_hp_mult";
-    private static final String DMZ_TF_MELEE_ABS = "dmz_quest_tf_melee_abs";
-    private static final String DMZ_TF_MELEE_MULT = "dmz_quest_tf_melee_mult";
-    private static final String DMZ_TF_KI_ABS = "dmz_quest_tf_ki_abs";
-    private static final String DMZ_TF_KI_MULT = "dmz_quest_tf_ki_mult";
-    private static final String DMZ_TF_TRIGGER = "dmz_quest_tf_trigger";
+    public static final String DMZ_TF_HP_ABS = "dmz_quest_tf_hp_abs";
+    public static final String DMZ_TF_HP_MULT = "dmz_quest_tf_hp_mult";
+    public static final String DMZ_TF_MELEE_ABS = "dmz_quest_tf_melee_abs";
+    public static final String DMZ_TF_MELEE_MULT = "dmz_quest_tf_melee_mult";
+    public static final String DMZ_TF_KI_ABS = "dmz_quest_tf_ki_abs";
+    public static final String DMZ_TF_KI_MULT = "dmz_quest_tf_ki_mult";
+    public static final String DMZ_TF_TRIGGER = "dmz_quest_tf_trigger";
 
     private QuestSpawnAttributeApplier() {
     }
@@ -167,6 +167,56 @@ public final class QuestSpawnAttributeApplier {
         if (tag.contains(MOVEMENT_SPEED_TAG)) {
             setAttributeBase(entity, Attributes.MOVEMENT_SPEED, tag.getDouble(MOVEMENT_SPEED_TAG));
         }
+    }
+
+    /** Applies Overhaul fields on Raid/Tournament spawns without requiring a Quest object. */
+    public static void applyConfiguredEntityData(LivingEntity entity, RevampKillObjectiveData data,
+                                                  boolean canTransform, double healthScale,
+                                                  double damageScale, double defenseScale) {
+        CompoundTag tag = entity.getPersistentData();
+        putNullableScaled(tag, DEFENSE_TAG, data.dmzrevamp$getDefense(), defenseScale);
+        putNullable(tag, ARMOR_TAG, data.dmzrevamp$getArmor());
+        putNullable(tag, ARMOR_TOUGHNESS_TAG, data.dmzrevamp$getArmorToughness());
+        putNullable(tag, PROTECTION_TAG, data.dmzrevamp$getProtection());
+        putNullable(tag, MOVEMENT_SPEED_TAG, data.dmzrevamp$getMovementSpeed());
+        if (data.dmzrevamp$getArmor() != null) tag.putBoolean(ARMOR_CONFIGURED_TAG, true);
+
+        putNullableScaled(tag, DMZ_TF_HP_ABS, data.dmzrevamp$getTransformHealth(), healthScale);
+        putNullable(tag, DMZ_TF_HP_MULT, data.dmzrevamp$getTransformHealthMultiplier());
+        putNullableScaled(tag, DMZ_TF_MELEE_ABS, data.dmzrevamp$getTransformMeleeDamage(), damageScale);
+        putNullable(tag, DMZ_TF_MELEE_MULT, data.dmzrevamp$getTransformMeleeDamageMultiplier());
+        putNullableScaled(tag, DMZ_TF_KI_ABS, data.dmzrevamp$getTransformKiDamage(), damageScale);
+        putNullable(tag, DMZ_TF_KI_MULT, data.dmzrevamp$getTransformKiDamageMultiplier());
+        putNullable(tag, DMZ_TF_TRIGGER, data.dmzrevamp$getTransformTriggerPercent());
+        putNullable(tag, TF_ARMOR_TAG, data.dmzrevamp$getTransformArmor());
+        putNullableScaled(tag, TF_DEFENSE_TAG, data.dmzrevamp$getTransformDefense(), defenseScale);
+        putNullable(tag, TF_ARMOR_TOUGHNESS_TAG, data.dmzrevamp$getTransformArmorToughness());
+        putNullable(tag, TF_PROTECTION_TAG, data.dmzrevamp$getTransformProtection());
+        putNullable(tag, TF_MOVEMENT_SPEED_TAG, data.dmzrevamp$getTransformMovementSpeed());
+        putNullable(tag, TF_ARMOR_MULT_TAG, data.dmzrevamp$getTransformArmorMultiplier());
+        putNullable(tag, TF_DEFENSE_MULT_TAG, data.dmzrevamp$getTransformDefenseMultiplier());
+        putNullable(tag, TF_ARMOR_TOUGHNESS_MULT_TAG, data.dmzrevamp$getTransformArmorToughnessMultiplier());
+        putNullable(tag, TF_PROTECTION_MULT_TAG, data.dmzrevamp$getTransformProtectionMultiplier());
+        putNullable(tag, TF_MOVEMENT_SPEED_MULT_TAG, data.dmzrevamp$getTransformMovementSpeedMultiplier());
+        saveMobEffects(tag, data.dmzrevamp$getMobEffects());
+        saveMobEffects(tag, TF_MOB_EFFECTS_TAG, data.dmzrevamp$getTransformMobEffects());
+        for (int stage = 2; stage <= 4; stage++) {
+            TransformStageOverridesWriter.save(tag, data.dmzrevamp$getTransformStage(stage), stage,
+                    true, healthScale, damageScale, defenseScale);
+            tag.putBoolean(stage == 2 ? CAN_TRANSFORM_2_TAG : stage == 3 ? CAN_TRANSFORM_3_TAG : CAN_TRANSFORM_4_TAG,
+                    data.dmzrevamp$canTransformStage(stage));
+            String entityId = data.dmzrevamp$getTransformEntity(stage);
+            if (entityId != null) tag.putString(TRANSFORM_ENTITY_TAG_PREFIX + stage, entityId);
+        }
+        if (!canTransform) {
+            tag.putBoolean(QUEST_NO_TRANSFORM_TAG, true);
+            if (entity instanceof DBSagasEntity saga) saga.setTransformationDisabled(true);
+        } else {
+            tag.remove(QUEST_NO_TRANSFORM_TAG);
+            if (entity instanceof DBSagasEntity saga) saga.setTransformationDisabled(false);
+        }
+        applyConfiguredSpawnAttributes(entity);
+        applyMobEffects(entity);
     }
 
     public static void applyTransformAttributes(LivingEntity previous, LivingEntity transformed) {
@@ -363,8 +413,8 @@ public final class QuestSpawnAttributeApplier {
         }
     }
 
-    private static void putNullableScaled(CompoundTag tag, String key, Double value, double multiplier) {
-        if (value != null) tag.putDouble(key, value * multiplier);
+    private static void putNullableScaled(CompoundTag tag, String key, Double value, double scale) {
+        if (value != null && Double.isFinite(value)) tag.putDouble(key, value * scale);
     }
 
     private static double questDamageMultiplier(CompoundTag tag) {

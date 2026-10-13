@@ -2,7 +2,6 @@ package com.dmzrevamp.entity;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dragonminez.common.init.entities.ki.AbstractKiProjectile;
-import com.dragonminez.common.init.entities.ki.KiBlastEntity;
 import com.dragonminez.common.init.entities.ki.KiWaveEntity;
 import com.dragonminez.common.init.entities.sagas.DBSagasEntity;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -21,8 +20,6 @@ public final class FusionNpcProjectileEvents {
         int main = owner.getCurrentPoolColorMain();
         int border = owner.getCurrentPoolColorBorder();
         int outline = owner.getCurrentPoolColorOutline();
-        float size = owner.getCurrentPoolSkillSize();
-
         if (projectile instanceof KiWaveEntity
                 && main == FusionNpcArsenal.FINAL_KAME_CORE
                 && border == FusionNpcArsenal.FINAL_KAME_OUTER
@@ -33,11 +30,6 @@ public final class FusionNpcProjectileEvents {
                 && border == FusionNpcArsenal.BIG_BANG_KAME_OUTER
                 && outline == FusionNpcArsenal.BIG_BANG_KAME_OUTLINE) {
             markAndSetDamage(projectile, "big_bang_kamehameha", owner.getKiBlastDamage() * 2.0F);
-        } else if (owner instanceof SagaGogetaEntity.Base || owner instanceof SagaGogetaEntity.Ssj) {
-            if (projectile instanceof KiBlastEntity && main == FusionNpcArsenal.SOUL_PUNISHER_COLOR
-                    && border == FusionNpcArsenal.SOUL_PUNISHER_COLOR && size >= 4.99F) {
-                markAndSetDamage(projectile, "soul_punisher", owner.getKiBlastDamage() * 3.5F);
-            }
         }
     }
 

@@ -95,6 +95,9 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         if ("com.dmzrevamp.mixin.compat.LivingWorldSagasEntityStrikeDelayMixin".equals(mixinClassName)) {
             return isModLoadedEarly("dmzlivingworld") && hasClass(targetClassName);
         }
+        if ("com.dmzrevamp.mixin.compat.LivingWorldStrikeClashGraceMixin".equals(mixinClassName)) {
+            return isModLoadedEarly("dmzlivingworld") && hasClass(targetClassName);
+        }
         if ("com.dmzrevamp.mixin.AttributeFixDefaultsMixin".equals(mixinClassName)) {
             return hasClass(targetClassName);
         }

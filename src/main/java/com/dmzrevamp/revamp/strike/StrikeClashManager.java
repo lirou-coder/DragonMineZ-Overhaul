@@ -17,11 +17,14 @@ import com.dragonminez.common.stats.StatsProvider;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.Map;
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
+import java.lang.reflect.Method;
 
 /** Small compatibility layer for DMZ 2.2's native Strike Clash. */
 public final class StrikeClashManager {
@@ -32,8 +35,85 @@ public final class StrikeClashManager {
     private static final Map<Long, Float> NATIVE_STRIKE_AREAS = new ConcurrentHashMap<>();
     private static final Map<java.util.UUID, ClashParticipant> NATIVE_PARTICIPANTS = new ConcurrentHashMap<>();
     private static final Map<String, Field> NATIVE_STATE_FIELDS = new ConcurrentHashMap<>();
+    private static final Map<java.util.UUID, Long> LIVING_WORLD_GRACE_WINDOWS = new ConcurrentHashMap<>();
+    private static volatile Method LIVING_WORLD_TRY_START;
+    private static volatile Method LIVING_WORLD_IS_COMBOING;
 
     private StrikeClashManager() {}
+
+    /** Starts the same late-input retry window for Living World rushes that DMZ rushes get. */
+    public static void scheduleLivingWorldGrace(LivingEntity fighter) {
+        if (!ModList.get().isLoaded("dmzlivingworld") || !StrikeClashConfigured.get().enabled
+                || fighter == null || fighter.level().isClientSide) return;
+        int window = StrikeClashConfigured.get().strikeClashLateInputWindowTicks;
+        if (window <= 0) return;
+        LIVING_WORLD_GRACE_WINDOWS.put(fighter.getUUID(), fighter.level().getGameTime() + window);
+    }
+
+    /** Retry Living World's one-shot clash discovery until its configured grace window expires. */
+    public static void tickLivingWorldGrace(LivingEntity fighter) {
+        if (!(fighter.level() instanceof ServerLevel) || !ModList.get().isLoaded("dmzlivingworld")) return;
+        Long expiresAt = LIVING_WORLD_GRACE_WINDOWS.get(fighter.getUUID());
+        if (expiresAt == null) return;
+        if (!StrikeClashConfigured.get().enabled || !fighter.isAlive()
+                || com.dragonminez.common.combat.clash.BeamClashManager.isClashing(fighter.getUUID())) {
+            LIVING_WORLD_GRACE_WINDOWS.remove(fighter.getUUID());
+            return;
+        }
+        long now = fighter.level().getGameTime();
+        if (isLivingWorldComboing(fighter)) {
+            LIVING_WORLD_GRACE_WINDOWS.put(fighter.getUUID(), now + StrikeClashConfigured.get().strikeClashLateInputWindowTicks);
+            expiresAt = now + StrikeClashConfigured.get().strikeClashLateInputWindowTicks;
+        } else if (now > expiresAt) {
+            LIVING_WORLD_GRACE_WINDOWS.remove(fighter.getUUID());
+            return;
+        }
+        try {
+            Method method = livingWorldTryStartMethod();
+            if (method != null) method.invoke(null, fighter);
+            if (com.dragonminez.common.combat.clash.BeamClashManager.isClashing(fighter.getUUID())) {
+                LIVING_WORLD_GRACE_WINDOWS.remove(fighter.getUUID());
+            }
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            LIVING_WORLD_GRACE_WINDOWS.remove(fighter.getUUID());
+        }
+    }
+
+    /** Eligibility used inside Living World's own rushing predicate, including its grace tail. */
+    public static boolean isLivingWorldRushing(Object fighter) {
+        if (!(fighter instanceof LivingEntity entity) || entity.level().isClientSide
+                || !StrikeClashConfigured.get().enabled || !entity.isAlive()
+                || com.dragonminez.common.combat.clash.BeamClashManager.isClashing(entity.getUUID())) return false;
+        Long expiresAt = LIVING_WORLD_GRACE_WINDOWS.get(entity.getUUID());
+        return expiresAt != null && (isLivingWorldComboing(fighter) || entity.level().getGameTime() <= expiresAt);
+    }
+
+    private static boolean isLivingWorldComboing(Object fighter) {
+        try {
+            Method method = LIVING_WORLD_IS_COMBOING;
+            if (method == null) {
+                method = fighter.getClass().getMethod("isComboing");
+                LIVING_WORLD_IS_COMBOING = method;
+            }
+            return Boolean.TRUE.equals(method.invoke(fighter));
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    private static Method livingWorldTryStartMethod() {
+        Method method = LIVING_WORLD_TRY_START;
+        if (method != null) return method;
+        try {
+            Class<?> compat = Class.forName("com.dmzlivingworld.world.StrikeClashCompat");
+            method = compat.getMethod("tryStart", LivingEntity.class);
+            method.setAccessible(true);
+            LIVING_WORLD_TRY_START = method;
+            return method;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return null;
+        }
+    }
 
     /** Kept as the single Overhaul policy used by the rush gate and activation delay. */
     public static boolean canTechniqueStartClash(String techniqueId) {

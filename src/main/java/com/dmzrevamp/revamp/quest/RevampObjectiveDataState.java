@@ -10,6 +10,13 @@ public final class RevampObjectiveDataState {
     Double protection;
     Double movementSpeed;
     Double transformArmor;
+    Double transformHealth;
+    Double transformHealthMultiplier;
+    Double transformMeleeDamage;
+    Double transformMeleeDamageMultiplier;
+    Double transformKiDamage;
+    Double transformKiDamageMultiplier;
+    Double transformTriggerPercent;
     Double transformDefense;
     Double transformArmorToughness;
     Double transformProtection;

@@ -39,6 +39,20 @@ public interface RevampKillObjectiveData extends RevampDefenseObjectiveData {
     default void dmzrevamp$setMovementSpeed(Double value) { dmzrevamp$getState().movementSpeed = value; }
     default Double dmzrevamp$getTransformArmor() { return dmzrevamp$getState().transformArmor; }
     default void dmzrevamp$setTransformArmor(Double value) { dmzrevamp$getState().transformArmor = value; }
+    default Double dmzrevamp$getTransformHealth() { return dmzrevamp$getState().transformHealth; }
+    default void dmzrevamp$setTransformHealth(Double value) { dmzrevamp$getState().transformHealth = value; }
+    default Double dmzrevamp$getTransformHealthMultiplier() { return dmzrevamp$getState().transformHealthMultiplier; }
+    default void dmzrevamp$setTransformHealthMultiplier(Double value) { dmzrevamp$getState().transformHealthMultiplier = value; }
+    default Double dmzrevamp$getTransformMeleeDamage() { return dmzrevamp$getState().transformMeleeDamage; }
+    default void dmzrevamp$setTransformMeleeDamage(Double value) { dmzrevamp$getState().transformMeleeDamage = value; }
+    default Double dmzrevamp$getTransformMeleeDamageMultiplier() { return dmzrevamp$getState().transformMeleeDamageMultiplier; }
+    default void dmzrevamp$setTransformMeleeDamageMultiplier(Double value) { dmzrevamp$getState().transformMeleeDamageMultiplier = value; }
+    default Double dmzrevamp$getTransformKiDamage() { return dmzrevamp$getState().transformKiDamage; }
+    default void dmzrevamp$setTransformKiDamage(Double value) { dmzrevamp$getState().transformKiDamage = value; }
+    default Double dmzrevamp$getTransformKiDamageMultiplier() { return dmzrevamp$getState().transformKiDamageMultiplier; }
+    default void dmzrevamp$setTransformKiDamageMultiplier(Double value) { dmzrevamp$getState().transformKiDamageMultiplier = value; }
+    default Double dmzrevamp$getTransformTriggerPercent() { return dmzrevamp$getState().transformTriggerPercent; }
+    default void dmzrevamp$setTransformTriggerPercent(Double value) { dmzrevamp$getState().transformTriggerPercent = value; }
     default Double dmzrevamp$getTransformDefense() { return dmzrevamp$getState().transformDefense; }
     default void dmzrevamp$setTransformDefense(Double value) { dmzrevamp$getState().transformDefense = value; }
     default Double dmzrevamp$getTransformArmorToughness() { return dmzrevamp$getState().transformArmorToughness; }
