@@ -604,6 +604,19 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     }
 
     @Redirect(
+            method = "previewStatPurchase",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lcom/dragonminez/common/stats/StatsData;calculateStatIncrease(IDI)I"
+            ),
+            remap = false,
+            require = 0
+    )
+    private int dmzrevamp$calculateAffordablePurchaseQuickly(StatsData data, int maxIncrease, double availableTp, int maxStats) {
+        return LongTpCostHelper.calculateAffordableIncrease(data, maxIncrease, availableTp);
+    }
+
+    @Redirect(
             method = "renderStatsInfo",
             slice = @Slice(from = @At(value = "CONSTANT", args = "stringValue=gui.dragonminez.character_stats.tpc")),
             at = @At(
@@ -871,8 +884,8 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         else if (key.endsWith("character_stats.str")) key = "character_stats.melee_damage";
 
         if (key.contains("character_stats.defense") && statsData != null
-                && com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get().formReduction.enabled) {
-            var divisorConfig = com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.get().formReduction;
+                && com.dmzrevamp.config.FormMitigationConfig.get().formReduction.enabled) {
+            var divisorConfig = com.dmzrevamp.config.FormMitigationConfig.get().formReduction;
             double multi = statsData.getFormMultiplier("DEF") * statsData.getStackFormMultiplier("DEF");
             if (Double.isFinite(multi) && Math.abs(multi - 1D) > 1.0E-9D) {
                 double influence = dmzrevamp$formDivisorInfluence(divisorConfig);
@@ -956,7 +969,7 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
     }
 
     @Unique
-    private double dmzrevamp$formDivisorInfluence(com.dmzrevamp.config.AdaptiveDefenseMoreConfigured.FormReduction config) {
+    private double dmzrevamp$formDivisorInfluence(com.dmzrevamp.config.FormMitigationConfig.FormReduction config) {
         double sum = 0D;
         int count = 0;
         var character = statsData.getCharacter();

@@ -3,6 +3,7 @@ package com.dmzrevamp.mixin;
 import com.dmzrevamp.revamp.DmzRevampHelper;
 import com.dmzrevamp.config.LevelingRevampConfig;
 import com.dmzrevamp.revamp.battlepower.BattlePowerCacheControl;
+import com.dmzrevamp.revamp.battlepower.CustomBattlePowerCalculator;
 import com.dmzrevamp.compat.NoeaCompat;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.skills.Skill;
@@ -48,7 +49,8 @@ public abstract class StatsDataRevampMixin implements BattlePowerCacheControl {
             dmzrevamp$cachedBattlePower = NoeaCompat.calculateBaseBattlePower(data);
             dmzrevamp$battlePowerSignature = signature;
         }
-        cir.setReturnValue(NoeaCompat.applyDynamicBattlePower(data, dmzrevamp$cachedBattlePower));
+        double battlePower = NoeaCompat.applyDynamicBattlePower(data, dmzrevamp$cachedBattlePower);
+        cir.setReturnValue(CustomBattlePowerCalculator.enforcePlayerReleaseFloor(data, battlePower));
     }
 
     @Unique

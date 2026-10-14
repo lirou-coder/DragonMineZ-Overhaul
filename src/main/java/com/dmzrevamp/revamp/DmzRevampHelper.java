@@ -2,7 +2,6 @@ package com.dmzrevamp.revamp;
 
 import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.config.LevelingRevampConfig;
-import com.dmzrevamp.config.WeightMovementPenaltyConfig;
 import com.dragonminez.common.config.ConfigManager;
 import com.dragonminez.common.config.FormConfig;
 import com.dragonminez.common.config.GeneralServerConfig;
@@ -405,7 +404,7 @@ public final class DmzRevampHelper {
             return 0D;
         }
         double gravityPenalty = gravityPenalty(player, gravity, true);
-        double weightPenalty = WeightMovementPenaltyConfig.weightPenaltyOrOriginal(player);
+        double weightPenalty = GravityLogic.getWeightPenaltyFactor(player);
         return clamp(gravityPenalty + weightPenalty, 0D, gravity.getMaxMovementPenalty());
     }
 
@@ -415,8 +414,7 @@ public final class DmzRevampHelper {
             return 0D;
         }
         double gravityPenalty = gravityPenalty(player, gravity, false);
-        double weightPenalty = WeightMovementPenaltyConfig.weightPenaltyOrOriginal(player);
-        return clamp(gravityPenalty + weightPenalty, 0D, gravity.getMaxAttackPenalty());
+        return clamp(gravityPenalty, 0D, gravity.getMaxAttackPenalty());
     }
 
     private static double gravityPenalty(Player player, GeneralServerConfig.GravityConfig gravity, boolean movement) {

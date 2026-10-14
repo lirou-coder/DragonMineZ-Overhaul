@@ -52,7 +52,10 @@ public abstract class QuestParserRevampKillFieldsMixin {
     private static final ThreadLocal<ArrayDeque<Map<String, JsonElement>>> DMZREVAMP_REMOVED_KEYS =
             ThreadLocal.withInitial(ArrayDeque::new);
 
-    @Inject(method = "parseObjective", at = @At("RETURN"), cancellable = true)
+    // QuestParser.parseObjectiveList calls parseObjectiveOrPlaceholder directly in DMZ 2.2.
+    // Hook the shared parser so fields are applied during normal registry loading as well
+    // as when callers use the public parseObjective wrapper.
+    @Inject(method = "parseObjectiveOrPlaceholder", at = @At("RETURN"), cancellable = true)
     private static void dmzrevamp$parseKillExtraFields(JsonObject object, CallbackInfoReturnable<QuestObjective> cir) {
         if (cir.getReturnValue() instanceof SparObjective spar
                 && !(spar instanceof TransformingSparObjective)

@@ -131,12 +131,12 @@ public final class DmzRevampConfig {
             .defineInRange("dynamicGrowth.notificationSuppressionStart", 1000, 1, 1_000_000_000);
 
     public static final ForgeConfigSpec.DoubleValue CUSTOM_DYNAMIC_GROWTH_FIXED_XP_PER_UNIT = BUILDER
-            .comment("Fixed Dynamic XP granted per unit by Overhaul custom actions. 0.5 is half of the former value 1.0.")
-            .defineInRange("dynamicGrowth.customActions.fixedXpPerUnit", 0.5D, 0D, 1_000_000D);
+            .comment("Fixed Dynamic XP granted per unit by Overhaul custom actions. This is added to the stat-based XP fraction.")
+            .defineInRange("dynamicGrowth.customActions.fixedXpPerUnit", 1.0D, 0D, 1_000_000D);
 
     public static final ForgeConfigSpec.DoubleValue CUSTOM_DYNAMIC_GROWTH_STAT_PERCENT_PER_UNIT = BUILDER
-            .comment("Fraction of the relevant stat added as Dynamic XP per unit by Overhaul custom actions. 0.005 means 0.5 percent, half of the former 1 percent.")
-            .defineInRange("dynamicGrowth.customActions.statFractionPerUnit", 0.005D, 0D, 100D);
+            .comment("Fraction of the relevant stat added as Dynamic XP per unit by Overhaul custom actions. 0.001 means 0.1 percent.")
+            .defineInRange("dynamicGrowth.customActions.statFractionPerUnit", 0.001D, 0D, 100D);
 
     public static final ForgeConfigSpec.DoubleValue CUSTOM_DYNAMIC_GROWTH_OTHER_ACTION_MULTIPLIER = BUILDER
             .comment("Multiplier for Overhaul custom Dynamic Growth actions that are not unit-based movement, such as block, parry, dodge, counter and gravity training.")

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -21,6 +22,11 @@ public final class AttributeFixCompatEvents {
     private static final double FALLBACK_MAIN_STAT_MAX = 10000D;
 
     private AttributeFixCompatEvents() {
+    }
+
+    @SubscribeEvent
+    public static void syncCombatAttributesBeforeWorlds(FMLCommonSetupEvent event) {
+        event.enqueueWork(AttributeFixCompatEvents::makeCombatAttributesSyncable);
     }
 
     @SubscribeEvent

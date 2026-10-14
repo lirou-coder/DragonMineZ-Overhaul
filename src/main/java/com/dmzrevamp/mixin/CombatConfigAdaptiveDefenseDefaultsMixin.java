@@ -25,9 +25,13 @@ public abstract class CombatConfigAdaptiveDefenseDefaultsMixin {
     private Double speedDodgeRatioAtMaxLevel;
     @Shadow(remap = false)
     private Double speedDodgeMeditationChanceFloor;
+    @Shadow(remap = false)
+    private Double flatMitigationMaxAbsorbFraction;
+    @Shadow(remap = false)
+    private Double cancelDamageMitigationThreshold;
 
     @Inject(method = "<init>", at = @At("RETURN"), remap = false)
-    private void dmzrevamp$setAdaptiveDefenseDefaults(CallbackInfo ci) {
+    private void dmzrevamp$setDmzCombatDefaults(CallbackInfo ci) {
         this.staminaConsumptionRatio = 0.05D;
         this.blockStaminaCost = 0.125D;
         this.combatFlyBaseSpeed = 0.1D;
@@ -36,5 +40,7 @@ public abstract class CombatConfigAdaptiveDefenseDefaultsMixin {
         this.speedDodgeRatioAtLevel1 = 10D;
         this.speedDodgeRatioAtMaxLevel = 5D;
         this.speedDodgeMeditationChanceFloor = 0.2D;
+        this.flatMitigationMaxAbsorbFraction = 0.8D;
+        this.cancelDamageMitigationThreshold = 20.0D;
     }
 }

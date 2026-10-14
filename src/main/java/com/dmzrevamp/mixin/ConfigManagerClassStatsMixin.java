@@ -10,8 +10,7 @@ import com.dmzrevamp.config.KiClashConfigured;
 import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
-import com.dmzrevamp.config.WeightMovementPenaltyConfig;
-import com.dmzrevamp.config.AdaptiveDefenseMoreConfigured;
+import com.dmzrevamp.config.FormMitigationConfig;
 import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
 import com.dmzrevamp.revamp.classes.DmzClassConfigManager;
 import com.dmzrevamp.compat.AttributeFixCompatEvents;
@@ -89,7 +88,7 @@ public abstract class ConfigManagerClassStatsMixin {
 
     private static void dmzrevamp$reloadRevampConfigs() {
         dmzrevamp$reloadForgeCommonConfig();
-        AdaptiveDefenseMoreConfigured.reload();
+        FormMitigationConfig.reload();
         KiSenseBlacklistConfig.reload();
         DmzRevampRacialConfigs.loadAll();
         KiAttackExtraEffectRules.reload();
@@ -103,7 +102,6 @@ public abstract class ConfigManagerClassStatsMixin {
         StrikeClashConfigured.reload();
         LevelingRevampConfig.reload();
         TransformChainConfig.reload();
-        WeightMovementPenaltyConfig.reload();
     }
 
     private static void dmzrevamp$reloadForgeCommonConfig() {

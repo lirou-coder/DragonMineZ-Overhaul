@@ -11,9 +11,8 @@ import com.dmzrevamp.config.KiClashConfigured;
 import com.dmzrevamp.config.KiSenseBlacklistConfig;
 import com.dmzrevamp.config.StrikeClashConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
-import com.dmzrevamp.config.WeightMovementPenaltyConfig;
 import com.dmzrevamp.config.WorldBossesConfig;
-import com.dmzrevamp.config.AdaptiveDefenseMoreConfigured;
+import com.dmzrevamp.config.FormMitigationConfig;
 import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
 import com.dmzrevamp.effect.DmzRevampEffects;
 import com.dmzrevamp.entity.DmzRevampEntities;
@@ -53,7 +52,7 @@ public class DmzRevampMod {
         DmzRevampSounds.register(modEventBus);
         LOGGER.warn("Dragon Mine Z: Overhaul does not migrate old generated configs. Delete config/dragonminez/classes and the affected config/dragonminez/races files when class, passive, or stat defaults change.");
         DmzRevampRacialConfigs.loadAll();
-        AdaptiveDefenseMoreConfigured.initialize();
+        FormMitigationConfig.initialize();
         KiSenseBlacklistConfig.initialize();
         ClassPassiveAliases.register();
         DmzJackClassCompat.registerIfPresent();
@@ -70,7 +69,6 @@ public class DmzRevampMod {
         KiClashConfigured.initialize();
         StrikeClashConfigured.initialize();
         LevelingRevampConfig.initialize();
-        WeightMovementPenaltyConfig.initialize();
         WorldBossesConfig.initialize();
         DmzRevampNetwork.register();
         CustomRacialSkillRegistry.bootstrap();

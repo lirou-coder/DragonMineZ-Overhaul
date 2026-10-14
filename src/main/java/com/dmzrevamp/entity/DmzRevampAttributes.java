@@ -22,6 +22,9 @@ public final class DmzRevampAttributes {
 
     public static final RegistryObject<Attribute> MOB_DEFENSE = ATTRIBUTES.register("mob_defense",
             () -> new RangedAttribute("attribute.name.dmzrevamp.mob_defense", 0D, 0D, Double.MAX_VALUE).setSyncable(true));
+    /** Quest-only KI input for BP calculation when a mob has no DMZ KI attribute. */
+    public static final RegistryObject<Attribute> QUEST_KI_DAMAGE = ATTRIBUTES.register("quest_ki_damage",
+            () -> new RangedAttribute("attribute.name.dmzrevamp.quest_ki_damage", 0D, 0D, Double.MAX_VALUE).setSyncable(true));
 
     private DmzRevampAttributes() {}
 
@@ -40,6 +43,10 @@ public final class DmzRevampAttributes {
                 try {
                     @SuppressWarnings("unchecked") EntityType<? extends LivingEntity> livingType =
                             (EntityType<? extends LivingEntity>) type;
+                    if (event.has(livingType, Attributes.MAX_HEALTH)) {
+                        // Separate BP input; presence has no combat effect.
+                        event.add(livingType, QUEST_KI_DAMAGE.get(), 0D);
+                    }
                     if (event.has(livingType, Attributes.ATTACK_DAMAGE)) {
                         AttributeSupplier supplier = DefaultAttributes.getSupplier(livingType);
                         // The attribute must exist on Living World fighters as well.

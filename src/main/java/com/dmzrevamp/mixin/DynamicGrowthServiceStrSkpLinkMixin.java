@@ -1,5 +1,6 @@
 package com.dmzrevamp.mixin;
 
+import com.dmzrevamp.revamp.growth.DynamicGrowthAwardContext;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
@@ -10,10 +11,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * DMZ links each practiced stat to a second stat.  In particular, STR and
- * SKP share practice XP, which makes movement growth (SKP) also train STR.
- * The Overhaul awards swimming STR explicitly, so removing only this linked
- * award preserves that intended swimming behaviour.
+ * DMZ can award a linked stat alongside the stat explicitly trained. Suppress
+ * that second award only while an Overhaul custom activity is being credited;
+ * native DMZ activities retain their configured linked-stat behavior.
  */
 @Mixin(value = DynamicGrowthService.class, remap = false)
 public abstract class DynamicGrowthServiceStrSkpLinkMixin {
@@ -32,7 +32,7 @@ public abstract class DynamicGrowthServiceStrSkpLinkMixin {
                                                          DynamicGrowthStat stat, double baseXp,
                                                          net.minecraft.world.entity.LivingEntity repeatedTarget,
                                                          CallbackInfo ci) {
-        if (stat == DynamicGrowthStat.STR || stat == DynamicGrowthStat.SKP) {
+        if (DynamicGrowthAwardContext.isCustomGrowthAward()) {
             ci.cancel();
         }
     }

@@ -2,7 +2,6 @@ package com.dmzrevamp.revamp.combat;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.entity.DmzRevampAttributes;
-import com.dmzrevamp.config.AdaptiveDefenseMoreConfigured;
 import com.dmzrevamp.config.LevelingRevampConfig;
 import com.dmzrevamp.revamp.DmzRevampHelper;
 import com.dmzrevamp.revamp.prestige.PrestigeSystem;
@@ -16,7 +15,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** DMZ-style flat and adaptive defense for every non-player living entity. */
+/** Flat and maximum-defense mitigation for the Overhaul's mob_defense attribute. */
 @Mod.EventBusSubscriber(modid = DmzRevampMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class MobDefenseEvents {
     private static final ThreadLocal<LivingEntity> PREMITIGATED_BOSS_DAMAGE = new ThreadLocal<>();
@@ -77,14 +76,15 @@ public final class MobDefenseEvents {
         );
         double afterDefenseCurve = afterFlat * (1D - defenseReduction);
 
-        if (AdaptiveDefenseMoreConfigured.get().adaptiveDefense.enabled) {
-            afterDefenseCurve *= 1D - configuredAdaptiveMitigation(incoming, defense);
-        } else if (config.getEnableAdaptativeDefenseMitigation() && defense > 0D) {
-            // DMZ uses incoming damage / raw defense for its adaptive curve. The mob's
-            // separate flat-mitigation factor must not alter that ratio.
-            afterDefenseCurve *= 1D - adaptiveMitigation(incoming / defense, config);
+        if (config.getEnableAdaptativeDefenseMitigation()) {
+            AdaptiveDefenseDamageContext.Entry context = AdaptiveDefenseDamageContext.current();
+            double referenceDamage = context == null
+                    ? incoming
+                    : Math.max(incoming, context.totalTechniqueDamage());
+            double ratio = referenceDamage / defense;
+            afterDefenseCurve *= 1D - adaptiveMitigation(ratio, config);
         }
-        // Mob Defense never invokes the player's complete-negation rule.
+
         return (float) Math.max(0.0001D, afterDefenseCurve);
     }
 
@@ -99,44 +99,17 @@ public final class MobDefenseEvents {
                 : configuredMaximum;
     }
 
-    private static double configuredAdaptiveMitigation(double incoming, double defense) {
-        AdaptiveDefenseMoreConfigured.AdaptiveDefense config = AdaptiveDefenseMoreConfigured.get().adaptiveDefense;
-        AdaptiveDefenseDamageContext.Entry context = AdaptiveDefenseDamageContext.current();
-        double reference = context == null ? incoming : Math.max(incoming, context.totalTechniqueDamage());
-        double ratio = reference / Math.max(0.0001D, defense);
-        double capPoint = 1D / config.adaptiveDefenseCapRatio;
-        double mitigation;
-        if (ratio <= capPoint) mitigation = config.adaptativeDefenseMitigationCap;
-        else if (ratio < config.adaptativeMitigationParityRatio) {
-            double progress = (config.adaptativeMitigationParityRatio - ratio)
-                    / Math.max(0.0001D, config.adaptativeMitigationParityRatio - capPoint);
-            mitigation = config.adaptativeMitigationParityValue
-                    + (config.adaptativeDefenseMitigationCap - config.adaptativeMitigationParityValue) * progress;
-        } else if (ratio < config.adaptativeMitigationZeroRatio) {
-            mitigation = config.adaptativeMitigationParityValue
-                    * (config.adaptativeMitigationZeroRatio - ratio)
-                    / Math.max(0.0001D, config.adaptativeMitigationZeroRatio - config.adaptativeMitigationParityRatio);
-        } else mitigation = 0D;
-        if (context != null) {
-            mitigation *= context.type() == AdaptiveDefenseDamageContext.AttackType.KI
-                    ? config.adaptiveDefenseKiAttackEfficiency : config.adaptiveDefenseStrikeAttackEfficiency;
-        }
-        return Math.min(config.adaptativeDefenseMitigationCap, clamp(mitigation));
-    }
-
+    /** Uses DMZ 2.2's configured curve for the mob_defense extension. */
     private static double adaptiveMitigation(double ratio, CombatConfig config) {
         if (!Double.isFinite(ratio) || ratio <= 0D) return 0D;
         double parityRatio = config.getAdaptativeMitigationParityRatio();
         double parityValue = config.getAdaptativeMitigationParityValue();
         double zeroRatio = config.getAdaptativeMitigationZeroRatio();
         double cap = config.getAdaptativeDefenseMitigationCap();
-        double slope = parityValue / (zeroRatio - parityRatio);
+        double slope = parityValue / Math.max(0.0001D, zeroRatio - parityRatio);
         double mitigation = parityValue + slope * (parityRatio - ratio);
         if (!Double.isFinite(mitigation) || mitigation <= 0D) return 0D;
         return Math.min(mitigation, cap);
     }
 
-    private static double clamp(double value) {
-        return Double.isFinite(value) ? Math.max(0D, Math.min(1D, value)) : 0D;
-    }
 }

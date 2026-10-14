@@ -18,10 +18,10 @@ public final class CustomBattlePowerConfig {
     private static final Path CONFIG_DIR = FMLPaths.CONFIGDIR.get().resolve("dmzrevamp");
     private static final Path CONFIG_PATH = CONFIG_DIR.resolve("custom_BP.json");
     private static final Path LEGACY_CONFIG_PATH = CONFIG_DIR.resolve("custom BP.json");
-    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1500D;
-    private static final double DEFAULT_TOTAL_STATS_DIVISOR = 500D;
+    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1200D;
+    private static final double DEFAULT_TOTAL_STATS_DIVISOR = 1200D;
     private static final double DEFAULT_EXPONENT = 2.425D;
-    private static final int CURRENT_CONFIG_VERSION = 4;
+    private static final int CURRENT_CONFIG_VERSION = 5;
 
     private static Config cached = Config.createDefault();
 
@@ -104,11 +104,6 @@ public final class CustomBattlePowerConfig {
             }
             if (!Double.isFinite(exponent) || exponent <= 0D) {
                 exponent = DEFAULT_EXPONENT;
-            }
-            if (loadedVersion < 4) {
-                if (closeTo(referenceMultiplier, 1200D)) referenceMultiplier = DEFAULT_REFERENCE_MULTIPLIER;
-                if (closeTo(totalStatsDivisor, 100D) || closeTo(totalStatsDivisor, 500D)) totalStatsDivisor = DEFAULT_TOTAL_STATS_DIVISOR;
-                if (closeTo(exponent, 1.2D)) exponent = DEFAULT_EXPONENT;
             }
             playerStats = sanitizeRules(playerStats, defaultPlayerStats(), false);
             mobStats = sanitizeRules(mobStats, defaultMobStats(), legacyConfig);

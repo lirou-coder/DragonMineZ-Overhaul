@@ -16,7 +16,8 @@ public final class RaidTournamentConfigBridge {
         data.dmzrevamp$setMovementSpeed(number(json, "movementSpeed", "MovementSpeed"));
 
         data.dmzrevamp$setTransformHealth(number(json, "TransformHealth", "transformHealth"));
-        data.dmzrevamp$setTransformHealthMultiplier(number(json, "TransformHealthMultiplier", "TransformHealthMulti"));
+        data.dmzrevamp$setTransformHealthMultiplier(number(json,
+                "TransformHealthMultiplier", "TransformHealthMulti"));
         data.dmzrevamp$setTransformMeleeDamage(number(json, "TransformMeleeDamage", "transformMeleeDamage"));
         data.dmzrevamp$setTransformMeleeDamageMultiplier(number(json,
                 "TransformMeleeDamageMultiplier", "TransformMeleeDamageMulti", "TransformMeleeMulti"));
@@ -56,6 +57,11 @@ public final class RaidTournamentConfigBridge {
         for (String key : keys) {
             JsonElement value = json.get(key);
             if (value != null && !value.isJsonNull()) return value;
+        }
+        for (var entry : json.entrySet()) {
+            for (String key : keys) {
+                if (entry.getKey().equalsIgnoreCase(key) && !entry.getValue().isJsonNull()) return entry.getValue();
+            }
         }
         return null;
     }

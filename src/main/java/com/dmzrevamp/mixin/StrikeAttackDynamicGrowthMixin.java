@@ -1,5 +1,6 @@
 package com.dmzrevamp.mixin;
 
+import com.dmzrevamp.revamp.growth.DynamicGrowthAwardContext;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.extras.DynamicGrowthStat;
 import com.dragonminez.server.dynamicgrowth.DynamicGrowthService;
@@ -30,7 +31,8 @@ public abstract class StrikeAttackDynamicGrowthMixin {
         }
 
         double xp = DynamicGrowthService.practiceDamageXp(player, target, (float) damage);
-        DynamicGrowthService.award(player, data, DynamicGrowthStat.STR, xp, target);
+        DynamicGrowthAwardContext.runWithCustomGrowthAward(
+                () -> DynamicGrowthService.award(player, data, DynamicGrowthStat.STR, xp, target));
         ci.cancel();
     }
 }

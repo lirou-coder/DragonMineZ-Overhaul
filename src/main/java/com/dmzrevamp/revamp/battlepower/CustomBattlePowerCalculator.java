@@ -6,9 +6,10 @@ import com.dragonminez.common.stats.StatsData;
 public final class CustomBattlePowerCalculator {
     private static final double ANDROID_UPGRADED_BATTLE_POWER = 3.4028234663852886E38D;
     private static final double DEFAULT_SCOUTER_BREAK_BATTLE_POWER = 500000D;
-    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1500D;
-    private static final double DEFAULT_TOTAL_STATS_DIVISOR = 500D;
+    private static final double DEFAULT_REFERENCE_MULTIPLIER = 1200D;
+    private static final double DEFAULT_TOTAL_STATS_DIVISOR = 1200D;
     private static final double DEFAULT_EXPONENT = 2.425D;
+    private static final double MIN_NONZERO_PLAYER_BATTLE_POWER = 2D;
     private static final double SCOUTER_BREAK_REFERENCE_STATS = DEFAULT_TOTAL_STATS_DIVISOR
             * Math.pow(DEFAULT_SCOUTER_BREAK_BATTLE_POWER / DEFAULT_REFERENCE_MULTIPLIER, 1D / DEFAULT_EXPONENT);
 
@@ -19,15 +20,21 @@ public final class CustomBattlePowerCalculator {
         if (data == null) {
             return 0D;
         }
+        if (data.getResources().getPowerRelease() <= 0) {
+            return 0D;
+        }
         if (data.getStatus().isAndroidUpgraded()) {
             return ANDROID_UPGRADED_BATTLE_POWER;
         }
 
-        return calculateFinitePlayerBattlePower(data);
+        return enforcePlayerReleaseFloor(data, calculateFinitePlayerBattlePower(data));
     }
 
     public static double calculateFinitePlayerBattlePower(StatsData data) {
         if (data == null) {
+            return 0D;
+        }
+        if (data.getResources().getPowerRelease() <= 0) {
             return 0D;
         }
 
@@ -42,7 +49,18 @@ public final class CustomBattlePowerCalculator {
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxKi", data.getMaxEnergy());
 
         double release = data.getResources().getPowerRelease() / 100D;
-        return calculate(config, totalStats, release);
+        return enforcePlayerReleaseFloor(data, calculate(config, totalStats, release));
+    }
+
+    /** Keeps the visible custom BP at zero only when the player has no release. */
+    public static double enforcePlayerReleaseFloor(StatsData data, double battlePower) {
+        if (data == null || data.getResources().getPowerRelease() <= 0) {
+            return 0D;
+        }
+        if (!Double.isFinite(battlePower) || battlePower < MIN_NONZERO_PLAYER_BATTLE_POWER) {
+            return MIN_NONZERO_PLAYER_BATTLE_POWER;
+        }
+        return battlePower;
     }
 
     public static double calculatePlayerBattlePowerFromValues(double meleeDamage,
@@ -61,7 +79,9 @@ public final class CustomBattlePowerCalculator {
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxHealth", maxHealth);
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "kiDamage", kiDamage);
         totalStats += CustomBattlePowerConfig.weightedValue(config.playerStats, "maxKi", maxKi);
-        return calculate(config, totalStats, 1D);
+        double battlePower = calculate(config, totalStats, 1D);
+        return Double.isFinite(battlePower) && battlePower >= MIN_NONZERO_PLAYER_BATTLE_POWER
+                ? battlePower : MIN_NONZERO_PLAYER_BATTLE_POWER;
     }
 
     public static long calculateMobBattlePower(double totalStats) {

@@ -10,11 +10,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameRenderer.class)
 public abstract class GameRendererFullNegationMixin {
-    // Same SRG/runtime constraint as LivingEntityFullNegationMixin.
     @Inject(method = "m_109117_", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$cancelFullyNegatedDamageTilt(PoseStack poseStack, float partialTick, CallbackInfo ci) {
-        if (FullNegationClientState.suppressesDamageTilt()) {
-            ci.cancel();
-        }
+        if (FullNegationClientState.suppressesDamageTilt()) ci.cancel();
     }
 }

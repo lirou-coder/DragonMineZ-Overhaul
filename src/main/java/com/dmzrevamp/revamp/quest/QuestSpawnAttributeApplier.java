@@ -104,6 +104,7 @@ public final class QuestSpawnAttributeApplier {
         CompoundTag tag = entity.getPersistentData();
         double difficultyDamage = questDamageMultiplier(tag);
         putNullableScaled(tag, DEFENSE_TAG, defenseData.dmzrevamp$getDefense(), difficultyDamage);
+        applyQuestKiDamageForBattlePower(living, tag, difficultyDamage);
         if (!(objective instanceof RevampKillObjectiveData data)) {
             applyConfiguredSpawnAttributes(living);
             return;
@@ -167,6 +168,13 @@ public final class QuestSpawnAttributeApplier {
         if (tag.contains(MOVEMENT_SPEED_TAG)) {
             setAttributeBase(entity, Attributes.MOVEMENT_SPEED, tag.getDouble(MOVEMENT_SPEED_TAG));
         }
+    }
+
+    private static void applyQuestKiDamageForBattlePower(LivingEntity entity, CompoundTag tag, double damageScale) {
+        if (!tag.contains("dmz_quest_ki")) return;
+        double configuredKi = tag.getDouble("dmz_quest_ki");
+        if (!Double.isFinite(configuredKi)) return;
+        setAttributeBase(entity, DmzRevampAttributes.QUEST_KI_DAMAGE.get(), Math.max(0D, configuredKi * damageScale));
     }
 
     /** Applies Overhaul fields on Raid/Tournament spawns without requiring a Quest object. */
@@ -276,6 +284,8 @@ public final class QuestSpawnAttributeApplier {
         CompoundTag sourceTag = source.getPersistentData();
         CompoundTag targetTag = target.getPersistentData();
         for (String key : new String[]{
+                QUEST_KEY_TAG, QUEST_OWNER_TAG, QUEST_OBJECTIVE_INDEX_TAG,
+                com.dragonminez.common.quest.QuestService.QUEST_TEAM_TAG, "dmz_difficulty",
                 DEFENSE_TAG, ARMOR_TAG, ARMOR_TOUGHNESS_TAG, PROTECTION_TAG, ARMOR_CONFIGURED_TAG,
                 MOVEMENT_SPEED_TAG,
                 TF_DEFENSE_TAG, TF_ARMOR_TAG, TF_ARMOR_TOUGHNESS_TAG, TF_PROTECTION_TAG, TF_MOVEMENT_SPEED_TAG,

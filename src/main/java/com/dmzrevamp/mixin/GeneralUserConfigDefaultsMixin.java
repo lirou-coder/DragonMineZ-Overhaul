@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GeneralUserConfig.class)
 public abstract class GeneralUserConfigDefaultsMixin {
     @Inject(method = "<init>", at = @At("RETURN"), remap = false)
-    private void dmzrevamp$defaultCameraMovementDuringFlightOff(CallbackInfo ci) {
-        ((GeneralUserConfig) (Object) this).setCameraMovementDuringFlight(false);
+    private void dmzrevamp$defaultReserveFirstHotbarSlot(CallbackInfo ci) {
+        ((GeneralUserConfig) (Object) this).setReserveFirstHotbarSlot(true);
     }
 }

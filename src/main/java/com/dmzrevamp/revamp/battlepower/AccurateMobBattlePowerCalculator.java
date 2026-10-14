@@ -124,37 +124,35 @@ public final class AccurateMobBattlePowerCalculator {
     }
 
     private static double kiDamage(LivingEntity entity) {
-        double questKiDamage = sanitize(QuestSpawnAttributeApplier.questKiDamageValue(entity));
-        if (questKiDamage > 0D) {
-            return questKiDamage;
+        // DMZ does not give every quest mob KI_BLAST_DAMAGE, and quest NBT is
+        // not available to client-side Ki Sense. The auxiliary syncable value
+        // is copied from DMZ's party-scaled quest KI and difficulty-scaled
+        // before spawn, so it represents the live story KI input on both sides.
+        double questKiDamage = positivePower(entity, DmzRevampAttributes.QUEST_KI_DAMAGE.get());
+        if (questKiDamage > 0D) return questKiDamage;
+
+        double kiBlastDamage = positivePower(entity, EntityAttributes.KI_BLAST_DAMAGE.get());
+        if (kiBlastDamage > 0D) return kiBlastDamage;
+
+        double mainKiDamage = positivePower(entity, MainAttributes.KI_DAMAGE.get());
+        if (mainKiDamage > 0D) return mainKiDamage;
+
+        if (entity instanceof DBSagasEntity saga) {
+            double sagaKiDamage = sanitize(saga.getKiBlastDamage());
+            if (sagaKiDamage > 0D) return sagaKiDamage;
         }
 
         CompoundTag tag = entity.getPersistentData();
         if (tag.contains("KiBlastDamage")) {
             double savedKiDamage = sanitize(tag.getDouble("KiBlastDamage"));
-            if (savedKiDamage > 0D) {
-                return savedKiDamage;
-            }
+            if (savedKiDamage > 0D) return savedKiDamage;
         }
         if (tag.contains("kiDamage")) {
             double savedKiDamage = sanitize(tag.getDouble("kiDamage"));
-            if (savedKiDamage > 0D) {
-                return savedKiDamage;
-            }
+            if (savedKiDamage > 0D) return savedKiDamage;
         }
 
-        if (entity instanceof DBSagasEntity saga) {
-            double sagaKiDamage = sanitize(saga.getKiBlastDamage());
-            if (sagaKiDamage > 0D) {
-                return sagaKiDamage;
-            }
-        }
-
-        double mainKiDamage = positivePower(entity, MainAttributes.KI_DAMAGE.get());
-        if (mainKiDamage > 0D) {
-            return mainKiDamage;
-        }
-        return positivePower(entity, EntityAttributes.KI_BLAST_DAMAGE.get());
+        return Math.max(0D, sanitize(QuestSpawnAttributeApplier.questKiDamageValue(entity)));
     }
 
     private static double autoLevelingBonus(LivingEntity entity, ResourceLocation id) {

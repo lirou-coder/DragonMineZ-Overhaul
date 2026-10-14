@@ -65,6 +65,13 @@ public record TransformStageOverrides(
                 return object.get(key);
             }
         }
+        for (var entry : object.entrySet()) {
+            for (String key : keys) {
+                if (entry.getKey().equalsIgnoreCase(key) && !entry.getValue().isJsonNull()) {
+                    return entry.getValue();
+                }
+            }
+        }
         return null;
     }
 }

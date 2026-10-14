@@ -5,22 +5,27 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
+import java.util.Locale;
 import java.util.Set;
 
 @Mixin(targets = "com.dragonminez.common.diagnostics.JsonSchema", remap = false)
 public abstract class JsonSchemaRevampRaidTournamentMixin {
     private static final Set<String> BASE_FIELDS = Set.of(
-            "Defense", "defense", "Armor", "armor", "ArmorToughness", "armorToughness", "Protection", "protection",
-            "movementSpeed", "MovementSpeed", "canTransform", "TransformEntity", "TransformOverride", "TransformOveride",
-            "TransformHealth", "TransformHealthMulti", "TransformHealthMultiplier",
-            "TransformMeleeDamage", "TransformMeleeDamageMulti", "TransformMeleeMulti", "TransformMeleeDamageMultiplier",
-            "TransformKiDamage", "TransformKiDamageMulti", "TransformKiMulti", "TransformKiDamageMultiplier",
-            "TransformTriggerPercent", "TransformTriggerHealthPercent", "TransformDefense", "transformDefense",
-            "TransformDefenseMulti", "TransformDefenseMultiplier", "TransformArmor", "TransformArmorMulti", "TransformArmorMultiplier",
-            "TransformArmorToughness", "TransformArmorToughnessMulti", "TransformArmorToughnessMultiplier",
-            "TransformProtection", "TransformProtectionMulti", "TransformProtectionMultiplier",
-            "TransformMovementSpeed", "TransformMovementSpeedMulti", "TransformMovementSpeedMultiplier",
-            "mobEffects", "mobEffect", "TransformMobEffects", "TransformMobEffect"
+            "defense", "armor", "armortoughness", "protection", "movementspeed", "cantransform",
+            "transformentity", "transformoverride", "transformoveride",
+            "mobeffects", "mobeffect", "transformmobeffects", "transformmobeffect"
+    );
+
+    private static final Set<String> TRANSFORM_SUFFIXES = Set.of(
+            "health", "healthmulti", "healthmultiplier",
+            "meleedamage", "meleedamagemulti", "meleedamagemultiplier", "meleemulti",
+            "kidamage", "kidamagemulti", "kidamagemultiplier", "kimulti",
+            "defense", "defensemulti", "defensemultiplier",
+            "armor", "armormulti", "armormultiplier",
+            "armortoughness", "armortoughnessmulti", "armortoughnessmultiplier",
+            "protection", "protectionmulti", "protectionmultiplier",
+            "movementspeed", "movementspeedmulti", "movementspeedmultiplier",
+            "triggerpercent", "triggerhealthpercent", "mobeffects", "mobeffect"
     );
 
     @Redirect(method = "check",
@@ -39,20 +44,21 @@ public abstract class JsonSchemaRevampRaidTournamentMixin {
     }
 
     private static boolean isOverhaulField(String key) {
-        if (BASE_FIELDS.contains(key) || key.matches("canTransform[234]")) return true;
+        if (key == null) return false;
+        String normalized = key.toLowerCase(Locale.ROOT);
+        if (BASE_FIELDS.contains(normalized) || normalized.matches("cantransform[234]")) return true;
+        if (isTransformEntityField(normalized, "transform")) return true;
         for (int stage = 2; stage <= 4; stage++) {
-            String prefix = "Transform" + stage;
-            if (key.equals(prefix + "Entity") || key.equals(prefix + "Override") || key.equals(prefix + "Overide")
-                    || key.equals(prefix + "MobEffects") || key.equals(prefix + "MobEffect")) return true;
-            for (String suffix : new String[]{
-                    "Health", "HealthMulti", "HealthMultiplier", "MeleeDamage", "MeleeDamageMulti", "MeleeDamageMultiplier", "MeleeMulti",
-                    "KiDamage", "KiDamageMulti", "KiDamageMultiplier", "KiMulti", "Defense", "DefenseMulti", "DefenseMultiplier",
-                    "Armor", "ArmorMulti", "ArmorMultiplier", "ArmorToughness", "ArmorToughnessMulti", "ArmorToughnessMultiplier",
-                    "Protection", "ProtectionMulti", "ProtectionMultiplier", "MovementSpeed", "movementSpeed", "MovementSpeedMulti",
-                    "MovementSpeedMultiplier", "TriggerPercent", "TriggerHealthPercent"}) {
-                if (key.equals(prefix + suffix)) return true;
-            }
+            String prefix = "transform" + stage;
+            if (isTransformEntityField(normalized, prefix)) return true;
+            for (String suffix : TRANSFORM_SUFFIXES) if (normalized.equals(prefix + suffix)) return true;
         }
+        for (String suffix : TRANSFORM_SUFFIXES) if (normalized.equals("transform" + suffix)) return true;
         return false;
+    }
+
+    private static boolean isTransformEntityField(String key, String prefix) {
+        return key.equals(prefix + "entity") || key.equals(prefix + "override") || key.equals(prefix + "overide")
+                || key.equals(prefix + "mobeffects") || key.equals(prefix + "mobeffect");
     }
 }

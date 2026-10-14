@@ -155,14 +155,18 @@ public abstract class StrikeAttackDataRevampExtensionMixin implements RevampStri
         }
         StrikeAttackData self = (StrikeAttackData) (Object) this;
         CustomStrikeAttacksConfig.StrikeSettings settings = CustomStrikeAttacksConfig.resolve(self);
+        // Damage XP upgrades must increase strike damage without changing its Ki price.
+        // getActualDamageMultiplier() includes damageLevel, so use the configured/base
+        // multiplier here and leave the XP-derived level multiplier out of the cost.
+        double costDamageMultiplier = self.getDamageMultiplier() * settings.damageMultiplier;
         if (StrikeAttackTemplates.NAMEKIAN_REGENERATION.equals(self.getId())) {
             double kiCostMultiplier = settings.kiCostMultiplier;
-            double defenseBasedPower = Math.max(0.0D, data.getDefense()) * self.getActualDamageMultiplier();
+            double defenseBasedPower = Math.max(0.0D, data.getDefense()) * costDamageMultiplier;
             cir.setReturnValue(Math.max(5.0D, defenseBasedPower * 0.35D * kiCostMultiplier / 2.0D)
                     * com.dmzrevamp.revamp.classes.skills.CustomClassPassiveEvents.strikeCostMultiplier(data));
             return;
         }
-        double damage = data.getMeleeDamageNoMultipliers() * self.getActualDamageMultiplier();
+        double damage = data.getMeleeDamageNoMultipliers() * costDamageMultiplier;
         double kiCostMultiplier = settings.kiCostMultiplier;
         cir.setReturnValue(Math.max(5.0D, damage * 0.35D * kiCostMultiplier / 2.0D)
                 * dmzrevamp$getExtraCostMultiplier()

@@ -434,7 +434,8 @@ public final class DynamicGrowthRevampEvents {
     private static void award(ServerPlayer player, StatsData data, DynamicGrowthStat stat, double xp, LivingEntity target) {
         if (xp > 0D && Double.isFinite(xp)) {
             // All custom growth rewards go through DMZ's service so TP multipliers and notifications stay centralized.
-            DynamicGrowthService.award(player, data, stat, xp, target);
+            DynamicGrowthAwardContext.runWithCustomGrowthAward(
+                    () -> DynamicGrowthService.award(player, data, stat, xp, target));
         }
     }
 

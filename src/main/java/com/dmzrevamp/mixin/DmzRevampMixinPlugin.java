@@ -71,9 +71,6 @@ public final class DmzRevampMixinPlugin implements IMixinConfigPlugin {
         if ("com.dmzrevamp.mixin.CombatConfigAdaptiveDefenseDefaultsMixin".equals(mixinClassName)) {
             return hasField(targetClassName, "adaptativeMitigationParityValue");
         }
-        if ("com.dmzrevamp.mixin.StatsDataAdaptiveDefenseCurveMixin".equals(mixinClassName)) {
-            return hasMethod(targetClassName, "computeAdaptativeDefenseMitigation", "(D)D");
-        }
         if ("com.dmzrevamp.mixin.MobBattlePowerHelperSpellPowerMixin".equals(mixinClassName)) {
             return hasClass(targetClassName);
         }

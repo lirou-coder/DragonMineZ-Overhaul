@@ -35,8 +35,7 @@ public final class QuestPreviewBattlePowerCalculator {
         double health = quest.getScaledKillHealth(objective, scaledPartySize) * healthDifficulty;
         double meleeDamage = quest.getScaledKillMeleeDamage(objective, scaledPartySize) * damageDifficulty;
         double kiDamage = quest.getScaledKillKiDamage(objective, scaledPartySize) * damageDifficulty;
-        int killIndex = killIndex(quest, objective);
-        QuestPreviewExtraStatsResolver.ExtraStats extraStats = QuestPreviewExtraStatsResolver.resolve(quest, objective, killIndex);
+        QuestPreviewExtraStatsResolver.ExtraStats extraStats = QuestPreviewExtraStatsResolver.resolve(objective);
 
         CustomBattlePowerConfig.Config config = CustomBattlePowerConfig.get();
         double total = 0D;
@@ -65,7 +64,7 @@ public final class QuestPreviewBattlePowerCalculator {
     }
 
     public static QuestPreviewExtraStatsResolver.ExtraStats extraStats(Quest quest, KillObjective objective) {
-        return QuestPreviewExtraStatsResolver.resolve(quest, objective, killIndex(quest, objective));
+        return QuestPreviewExtraStatsResolver.resolve(objective);
     }
 
     private static double questArmor(QuestPreviewExtraStatsResolver.ExtraStats extraStats, LivingEntity previewEntity) {

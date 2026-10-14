@@ -5,14 +5,14 @@ import com.dragonminez.common.stats.StatsData;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 public final class LongTpCostHelper {
     private static final DecimalFormat SCIENTIFIC_FORMATTER = new DecimalFormat("0.###E0", DecimalFormatSymbols.getInstance(Locale.US));
     private static final DecimalFormat FULL_FORMATTER = new DecimalFormat("#,##0.######", DecimalFormatSymbols.getInstance(Locale.US));
-    private static final Map<StatsData, CachedCost> COST_CACHE = new WeakHashMap<>();
+    private static final Map<StatsData, CachedCosts> COST_CACHE = new WeakHashMap<>();
 
     private LongTpCostHelper() {
     }
@@ -27,29 +27,9 @@ public final class LongTpCostHelper {
         }
 
         int increase = Math.min(amount, Math.max(0, context.maxTotalStats - context.totalStats));
-        CostKey key = new CostKey(increase, context);
-        long cost = 0L;
-        int start = 0;
         synchronized (COST_CACHE) {
-            CachedCost cached = COST_CACHE.get(data);
-            if (cached != null && cached.key.equals(key)) {
-                return cached.cost;
-            }
-            if (cached != null
-                    && cached.key.context.equals(context)
-                    && cached.key.increase < increase) {
-                cost = cached.cost;
-                start = cached.key.increase;
-            }
+            return cumulativeCost(cacheFor(data, context, increase), increase);
         }
-
-        for (int i = start; i < increase; i++) {
-            cost = saturatedAdd(cost, singleStatCost(context, context.totalStats + i));
-        }
-        synchronized (COST_CACHE) {
-            COST_CACHE.put(data, new CachedCost(key, cost));
-        }
-        return cost;
     }
 
     public static int calculateAffordableIncrease(StatsData data, int maxIncrease, double availableTp) {
@@ -61,22 +41,33 @@ public final class LongTpCostHelper {
             return 0;
         }
 
-        long cost = 0L;
-        int increase = 0;
         int allowedIncrease = Math.min(maxIncrease, Math.max(0, context.maxTotalStats - context.totalStats));
-        while (increase < allowedIncrease) {
-            int singleCost = singleStatCost(context, context.totalStats + increase);
-            long nextCost = saturatedAdd(cost, singleCost);
-            if (nextCost > availableTp) {
-                break;
-            }
-            cost = nextCost;
-            increase++;
-        }
+        if (allowedIncrease <= 0) return 0;
         synchronized (COST_CACHE) {
-            COST_CACHE.put(data, new CachedCost(new CostKey(increase, context), cost));
+            long[] costs = cacheFor(data, context, 1);
+            if (cumulativeCost(costs, 1) > availableTp) return 0;
+
+            int low = 1;
+            int high = 1;
+            while (high < allowedIncrease) {
+                int next = (int) Math.min(allowedIncrease, (long) high * 2L);
+                costs = cacheFor(data, context, next);
+                if (cumulativeCost(costs, next) > availableTp) {
+                    high = next;
+                    break;
+                }
+                low = high = next;
+            }
+            if (low == allowedIncrease) return low;
+
+            while (low < high) {
+                int mid = low + (high - low + 1) / 2;
+                costs = cacheFor(data, context, mid);
+                if (cumulativeCost(costs, mid) <= availableTp) low = mid;
+                else high = mid - 1;
+            }
+            return low;
         }
-        return increase;
     }
 
     public static int toSaturatedInt(long value) {
@@ -109,11 +100,33 @@ public final class LongTpCostHelper {
                 dynamicGrowth.isManualTpPurchasesEnabled(),
                 data.getStats().getTotalStats(),
                 data.getConfiguredMaxTotalStats(),
+                data.getTpCostTotalStats(),
                 gameplay.getGlobalTpCostMultiplier() * data.getRaceTpCostMultiplier(),
                 gameplay.getMinTPCost(),
                 gameplay.getMaxTPDiscount(),
                 dynamicGrowth.getAttributeTpCostMultiplier()
         );
+    }
+
+    private static long[] cacheFor(StatsData data, CostContext context, int requestedIncrease) {
+        CachedCosts cached = COST_CACHE.get(data);
+        if (cached == null || !cached.context.equals(context)) {
+            cached = new CachedCosts(context, new long[]{0L});
+            COST_CACHE.put(data, cached);
+        }
+        int requiredLength = requestedIncrease + 1;
+        if (cached.prefix.length < requiredLength) {
+            long[] expanded = java.util.Arrays.copyOf(cached.prefix, requiredLength);
+            for (int i = cached.prefix.length - 1; i < requestedIncrease; i++) {
+                expanded[i + 1] = saturatedAdd(expanded[i], singleStatCost(context, context.costTotalStats + i));
+            }
+            cached.prefix = expanded;
+        }
+        return cached.prefix;
+    }
+
+    private static long cumulativeCost(long[] prefix, int increase) {
+        return prefix[Math.min(Math.max(0, increase), prefix.length - 1)];
     }
 
     // Equivalent to StatsData#getSingleStatCost, with immutable config values captured once
@@ -147,6 +160,7 @@ public final class LongTpCostHelper {
             boolean manualPurchasesEnabled,
             int totalStats,
             int maxTotalStats,
+            int costTotalStats,
             double combinedTpMultiplier,
             int minTpCost,
             int maxTpDiscount,
@@ -154,9 +168,13 @@ public final class LongTpCostHelper {
     ) {
     }
 
-    private record CostKey(int increase, CostContext context) {
-    }
+    private static final class CachedCosts {
+        private final CostContext context;
+        private long[] prefix;
 
-    private record CachedCost(CostKey key, long cost) {
+        private CachedCosts(CostContext context, long[] prefix) {
+            this.context = context;
+            this.prefix = prefix;
+        }
     }
 }

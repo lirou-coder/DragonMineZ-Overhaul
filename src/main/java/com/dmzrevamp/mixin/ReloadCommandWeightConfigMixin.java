@@ -1,7 +1,6 @@
 package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.config.ExtraDifficultiesConfig;
-import com.dmzrevamp.config.WeightMovementPenaltyConfig;
 import com.dmzrevamp.config.WorldBossesConfig;
 import com.dmzrevamp.revamp.battlepower.BattlePowerReloadService;
 import com.dragonminez.server.commands.ReloadCommand;
@@ -30,7 +29,6 @@ public abstract class ReloadCommandWeightConfigMixin {
         if (cir.getReturnValueI() == 1
                 && ("all".equalsIgnoreCase(rawScope) || "config".equalsIgnoreCase(rawScope)
                 || "configs".equalsIgnoreCase(rawScope))) {
-            WeightMovementPenaltyConfig.reload();
             ExtraDifficultiesConfig.reload();
             WorldBossesConfig.reload();
             WorldBossesConfig.markBossesForReconfiguration(source.getServer());
