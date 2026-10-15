@@ -8,7 +8,6 @@ import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainAttributes;
 import com.dragonminez.mixin.common.RangedAttributeMixin;
 import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -58,7 +57,10 @@ public final class AttributeFixCompatEvents {
 
     /** Ensure values used by client-side Ki Sense are sent with entity attributes. */
     public static void makeCombatAttributesSyncable() {
-        Attributes.ATTACK_DAMAGE.setSyncable(true);
+        // Vanilla attack damage is already syncable in 1.20.1. Referencing
+        // Attributes.ATTACK_DAMAGE here is also unsafe across the DMZ alpha's
+        // transformed registry bootstrap, so only enable sync on DMZ's custom
+        // Ki Blast attribute, which is the one that may not be syncable.
         if (EntityAttributes.KI_BLAST_DAMAGE.isPresent()) {
             EntityAttributes.KI_BLAST_DAMAGE.get().setSyncable(true);
         }

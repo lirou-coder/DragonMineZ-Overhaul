@@ -47,7 +47,6 @@ public class DmzRevampMod {
         DmzRevampEffects.register(modEventBus);
         DmzRevampEntities.register(modEventBus);
         DmzRevampAttributes.register(modEventBus);
-        AttributeFixCompatEvents.makeCombatAttributesSyncable();
         DmzRevampItems.register(modEventBus);
         DmzRevampSounds.register(modEventBus);
         LOGGER.warn("Dragon Mine Z: Overhaul does not migrate old generated configs. Delete config/dragonminez/classes and the affected config/dragonminez/races files when class, passive, or stat defaults change.");

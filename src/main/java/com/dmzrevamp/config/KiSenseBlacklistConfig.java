@@ -37,14 +37,29 @@ public final class KiSenseBlacklistConfig {
 
             LinkedHashSet<ResourceLocation> parsed = new LinkedHashSet<>();
             for (String raw : values.entities) {
-                ResourceLocation id = raw == null ? null : ResourceLocation.tryParse(raw.trim());
+                ResourceLocation id = parseId(raw);
                 if (id != null) parsed.add(id);
             }
             entityTypes = Set.copyOf(parsed);
             Files.writeString(PATH, GSON.toJson(values));
         } catch (Exception ignored) {
-            entityTypes = DEFAULTS.stream().map(ResourceLocation::tryParse)
-                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+            LinkedHashSet<ResourceLocation> fallback = new LinkedHashSet<>();
+            for (String raw : DEFAULTS) {
+                ResourceLocation id = parseId(raw);
+                if (id != null) fallback.add(id);
+            }
+            entityTypes = Set.copyOf(fallback);
+        }
+    }
+
+    /** Use the stable constructor instead of tryParse, whose mapped name is not
+     * available in every supported 1.20.1 runtime remapping path. */
+    private static ResourceLocation parseId(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return new ResourceLocation(raw.trim());
+        } catch (RuntimeException ignored) {
+            return null;
         }
     }
 

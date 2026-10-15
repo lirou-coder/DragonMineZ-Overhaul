@@ -145,11 +145,11 @@ public final class CustomBattlePowerConfig {
         Map<String, StatRule> rules = new LinkedHashMap<>();
         rules.put("meleeDamage", enabled(1D));
         rules.put("strikeDamage", enabled(1D));
-        rules.put("maxStamina", new StatRule(!DmzSparkingCompat.isLoadedEarly(), 0.5D));
+        rules.put("maxStamina", new StatRule(false, 0.5D));
         rules.put("defense", enabled(1D));
-        rules.put("maxHealth", enabled(0.5D));
+        rules.put("maxHealth", enabled(0.25D));
         rules.put("kiDamage", enabled(1D));
-        rules.put("maxKi", enabled(0.5D));
+        rules.put("maxKi", enabled(0.25D));
         return rules;
     }
 
