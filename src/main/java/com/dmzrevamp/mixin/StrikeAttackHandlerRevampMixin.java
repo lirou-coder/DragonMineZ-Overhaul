@@ -25,6 +25,7 @@ import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.common.stats.techniques.StrikeAttackData;
 import com.dragonminez.common.stats.techniques.TechniqueData;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
+import com.dragonminez.server.events.players.combat.StrikeCinematics;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -316,6 +317,26 @@ public abstract class StrikeAttackHandlerRevampMixin {
             CallbackInfo ci
     ) {
         FlyingStrikeYLock.begin(player);
+    }
+
+    @Inject(method = "startStrikeCinematic", at = @At("HEAD"), cancellable = true, remap = false)
+    private static void dmzrevamp$keepCustomStrikeCinematic(ServerPlayer player, LivingEntity target, String techniqueId, CallbackInfo ci) {
+        if (player == null || techniqueId == null) {
+            return;
+        }
+        StatsProvider.get(StatsCapability.INSTANCE, player).ifPresent(data -> {
+            TechniqueData technique = data.getTechniques().getUnlockedTechniques().get(techniqueId);
+            if (technique instanceof StrikeAttackData strike
+                    && strike instanceof RevampStrikeAttackData revamp
+                    && revamp.dmzrevamp$isCustomStrike()) {
+                if (target == null) {
+                    StrikeCinematics.stop(player);
+                } else {
+                    StrikeCinematics.startStrike(player, target);
+                }
+                ci.cancel();
+            }
+        });
     }
 
     @Inject(method = "endStrike", at = @At("HEAD"), remap = false)
@@ -685,6 +706,7 @@ public abstract class StrikeAttackHandlerRevampMixin {
         Object active = ACTIVE.get(player.getUUID());
         String techniqueId = active instanceof StrikeAttackActiveAccessor accessor ? accessor.dmzrevamp$getTechniqueId() : "";
         ACTIVE.remove(player.getUUID());
+        StrikeCinematics.stop(player);
         FlyingStrikeYLock.finish(player);
         if (!player.getAbilities().instabuild) {
             if (!techniqueId.isEmpty()) {

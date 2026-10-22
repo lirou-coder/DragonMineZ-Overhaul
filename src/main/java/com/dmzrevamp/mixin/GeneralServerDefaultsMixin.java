@@ -28,6 +28,7 @@ public abstract class GeneralServerDefaultsMixin {
         dmzrevamp$set(gameplay, "maxValue", 1_000_000);
         dmzrevamp$set(gameplay, "vitCurveKnee", 100_000.0D);
         dmzrevamp$set(gameplay, "defCurveKnee", 100_000.0D);
+        dmzrevamp$set(gameplay, "HTCTpMultiplier", 2.5D);
         dmzrevamp$set(gameplay, "fusionBoosts", DMZREVAMP_ALL_STATS.clone());
         dmzrevamp$set(gameplay, "multiplicationInsteadOfAdditionForMultipliers", true);
 
