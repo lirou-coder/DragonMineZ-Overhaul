@@ -59,19 +59,6 @@ public abstract class StatsDataLevelingRevampMixin {
         cir.setReturnValue(LevelingRevampConfig.get().levelsAndAttributes.maxAttribute == -1);
     }
 
-    @Inject(
-            method = {"getVitalityCurveKnee", "getDefenseCurveKnee"},
-            at = @At("HEAD"),
-            cancellable = true,
-            remap = false
-    )
-    private void dmzrevamp$useOverhaulMaximumForScalingCurves(CallbackInfoReturnable<Double> cir) {
-        if (!LevelingRevampConfig.levelsEnabled()) return;
-        var levels = LevelingRevampConfig.get().levelsAndAttributes;
-        double curveMaximum = levels.maxAttribute == -1 ? levels.maxLevel : levels.maxAttribute;
-        cir.setReturnValue(Math.max(1D, curveMaximum));
-    }
-
     @Inject(method = "getConfiguredMaxValue", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$replaceDmzMaxValue(CallbackInfoReturnable<Integer> cir) {
         if (!LevelingRevampConfig.levelsEnabled()) return;

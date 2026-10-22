@@ -26,6 +26,8 @@ public abstract class GeneralServerDefaultsMixin {
 
         GeneralServerConfig.GameplayConfig gameplay = config.getGameplay();
         dmzrevamp$set(gameplay, "maxValue", 1_000_000);
+        dmzrevamp$set(gameplay, "vitCurveKnee", 100_000.0D);
+        dmzrevamp$set(gameplay, "defCurveKnee", 100_000.0D);
         dmzrevamp$set(gameplay, "fusionBoosts", DMZREVAMP_ALL_STATS.clone());
         dmzrevamp$set(gameplay, "multiplicationInsteadOfAdditionForMultipliers", true);
 
@@ -37,7 +39,7 @@ public abstract class GeneralServerDefaultsMixin {
         dmzrevamp$set(racial.getFrostdemon(), "reserveFormBonus", 0.4D);
 
         GeneralServerConfig.GravityConfig gravity = config.getGravity();
-        dmzrevamp$set(gravity, "resistanceStatDivisorRatio", 0.5D);
+        dmzrevamp$set(gravity, "resistanceStatDivisorRatio", 0.75D);
         dmzrevamp$set(gravity, "resistanceScale", 1000.0D);
         dmzrevamp$set(gravity, "tpIdealBaseDivisor", 1.0D);
         dmzrevamp$set(gravity, "tpPeakMultiplier", 3.0D);

@@ -2,6 +2,8 @@ package com.dmzrevamp.revamp;
 
 import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.DmzRevampMod;
+import com.dmzrevamp.network.DmzRevampNetwork;
+import com.dmzrevamp.network.SyncOverhaulSpeedLimitS2CPacket;
 import com.dragonminez.common.init.EntityAttributes;
 import com.dragonminez.common.init.MainEffects;
 import com.dragonminez.common.stats.StatsCapability;
@@ -31,6 +33,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.Map;
 import java.util.UUID;
@@ -91,6 +94,11 @@ public final class DmzSpeedRevampEvents {
         });
     }
 
+    @SubscribeEvent
+    public static void syncOverhaulSpeedLimitOnJoin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) syncOverhaulSpeedLimit(player);
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     // Removes temporary speed modifiers and cached ramp state when the player leaves.
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
@@ -112,7 +120,18 @@ public final class DmzSpeedRevampEvents {
             LAST_FLY_SPEED.remove(player.getUUID());
             FLIGHT_MOVEMENT_TICKS.remove(player.getUUID());
             FLUID_RUN_VISUAL_STATE.remove(player.getUUID());
+            syncOverhaulSpeedLimit(player);
         }
+    }
+
+    @SubscribeEvent
+    public static void copyOverhaulSpeedLimitOnPlayerClone(PlayerEvent.Clone event) {
+        OverhaulSpeedLimitState.copy(event.getOriginal(), event.getEntity());
+    }
+
+    private static void syncOverhaulSpeedLimit(ServerPlayer player) {
+        DmzRevampNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                new SyncOverhaulSpeedLimitS2CPacket(OverhaulSpeedLimitState.get(player)));
     }
 
     // Kept for compatibility with older calls; Overhaul now treats flight boost as automatic while flying.
@@ -131,8 +150,8 @@ public final class DmzSpeedRevampEvents {
         double rawSpeedBonusPercent = getRawMovementSpeedBonusPercent(player, data);
         double movementSoftCappedBonusPercent = DmzRevampHelper.getMovementSoftCappedBonusPercent(player, rawSpeedBonusPercent);
         return sanitizePercent(DmzRevampHelper.getRampedBonusPercent(player,
-                applyPlayerSpeedLimit(data, movementSoftCappedBonusPercent),
-                DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get(), true));
+                applyOverhaulSpeedLimit(player, movementSoftCappedBonusPercent),
+                rampTicksForCurve(player, data, effectiveRampTicks(player, data)), true));
     }
 
     // Calculates raw movement from the effective Speed value before soft caps and ramping.
@@ -172,9 +191,9 @@ public final class DmzSpeedRevampEvents {
             return 1D;
         }
         double rawFlightBonus = getOverhaulFlightBonusPercent(data, combatFlight);
-        double allowedBonusPercent = applyPlayerSpeedLimit(data,
+        double allowedBonusPercent = applyOverhaulSpeedLimit(player,
                 getFlightSoftCappedBonusPercent(player, rawFlightBonus, combatFlight));
-        double effectiveBonusPercent = getRampedFlightBonusPercent(player, allowedBonusPercent, movementTicks, true, combatFlight);
+        double effectiveBonusPercent = getRampedFlightBonusPercent(player, data, allowedBonusPercent, movementTicks, true, combatFlight);
         return Math.max(0D, (1D + (effectiveBonusPercent / 100D)) * DmzRevampHelper.getGravityMovementSpeedFactor(player));
     }
 
@@ -197,7 +216,7 @@ public final class DmzSpeedRevampEvents {
             return 100D;
         }
         double rawFlightBonus = getOverhaulFlightBonusPercent(data, combatFlight);
-        double allowedBonusPercent = applyPlayerSpeedLimit(data,
+        double allowedBonusPercent = applyOverhaulSpeedLimit(player,
                 getFlightSoftCappedBonusPercent(player, rawFlightBonus, combatFlight));
         return 100D + Math.max(0D, allowedBonusPercent);
     }
@@ -212,7 +231,24 @@ public final class DmzSpeedRevampEvents {
                 * DmzRevampConfig.REVAMP_MOVEMENT_SPEED_BONUS_MULTIPLIER.get();
         double movementSoftCappedBonusPercent = DmzRevampHelper.getMovementSoftCappedBonusPercent(player, rawSpeedBonusPercent);
         return sanitizePercent(DmzRevampHelper.getRampedBonusPercent(
-                player, applyPlayerSpeedLimit(data, movementSoftCappedBonusPercent), rampTicks, true));
+                player, applyOverhaulSpeedLimit(player, movementSoftCappedBonusPercent), rampTicksForCurve(player, data, rampTicks), true));
+    }
+
+    /** Active Sprint shortens the Overhaul speed ramp by five percent per skill level. */
+    public static int effectiveRampTicks(Player player, StatsData data) {
+        int baseTicks = Math.max(1, DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get());
+        if (data == null || data.getSkills().getSkillLevel("sprint") <= 0
+                || !data.getSkills().isSkillActive("sprint")
+                || data.getResources().getPowerRelease() < 5
+                || data.getStatus().isStunned()) return baseTicks;
+        int level = Math.max(0, Math.min(10, data.getSkills().getSkillLevel("sprint")));
+        return Math.max(1, (int) Math.ceil(baseTicks * (1D - level * 0.05D)));
+    }
+
+    private static int rampTicksForCurve(Player player, StatsData data, int elapsedTicks) {
+        int baseTicks = Math.max(1, DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get());
+        int effectiveTicks = effectiveRampTicks(player, data);
+        return (int) Math.min(baseTicks, Math.ceil(Math.max(0, elapsedTicks) * (baseTicks / (double) effectiveTicks)));
     }
 
     // Lets very fast sprinting players skim across water or lava instead of sinking immediately.
@@ -284,19 +320,19 @@ public final class DmzSpeedRevampEvents {
         if (rawAttackSpeedBonusPercent > attackSpeedCapPercent) {
             rawAttackSpeedBonusPercent = attackSpeedCapPercent;
         }
-        double softCappedSwimBonusPercent = applyPlayerSpeedLimit(data,
+        double softCappedSwimBonusPercent = applyOverhaulSpeedLimit(player,
                 DmzRevampHelper.getSwimSoftCappedBonusPercent(player, rawSwimSpeedBonusPercent));
 
         if (shouldCountAsSprintingForRamp(player)) {
-            state.speedRampTicks = Math.min(DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get(), state.speedRampTicks + 1);
+            state.speedRampTicks = Math.min(effectiveRampTicks(player, data), state.speedRampTicks + 1);
         } else if (state.speedRampTicks > 0) {
             state.speedRampTicks = Math.max(0, state.speedRampTicks - DmzRevampHelper.getRampDecayStep());
         }
 
-        double movementSoftCappedBonusPercent = applyPlayerSpeedLimit(data,
+        double movementSoftCappedBonusPercent = applyOverhaulSpeedLimit(player,
                 DmzRevampHelper.getMovementSoftCappedBonusPercent(player, rawMovementSpeedBonusPercent));
         double movementSpeedBonusPercent = sanitizePercent(DmzRevampHelper.getRampedBonusPercent(
-                player, movementSoftCappedBonusPercent, state.speedRampTicks, true));
+                player, movementSoftCappedBonusPercent, rampTicksForCurve(player, data, state.speedRampTicks), true));
         state.effectiveMoveSpeedBonusPercent = movementSpeedBonusPercent;
         double movementModifierAmount = movementSpeedBonusPercent / 100D;
         state.moveSpeedBonus = syncModifierAllowNegative(
@@ -318,7 +354,7 @@ public final class DmzSpeedRevampEvents {
         double rampedSwimBonusPercent = sanitizePercent(DmzRevampHelper.getRampedBonusPercent(
                 player,
                 softCappedSwimBonusPercent,
-                state.speedRampTicks,
+                rampTicksForCurve(player, data, state.speedRampTicks),
                 true,
                 DmzRevampConfig.REVAMP_SWIM_SPEED_BASE_CAP_PERCENT.get()
         ));
@@ -553,7 +589,8 @@ public final class DmzSpeedRevampEvents {
     private static void trackFlightMovement(ServerPlayer player) {
         UUID playerId = player.getUUID();
         if (isFastFlightAuraActive(player)) {
-            int nextTicks = Math.min(DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get(), FLIGHT_MOVEMENT_TICKS.getOrDefault(playerId, 0) + 1);
+            StatsData data = StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null);
+            int nextTicks = Math.min(effectiveRampTicks(player, data), FLIGHT_MOVEMENT_TICKS.getOrDefault(playerId, 0) + 1);
             FLIGHT_MOVEMENT_TICKS.put(playerId, nextTicks);
             return;
         }
@@ -602,13 +639,13 @@ public final class DmzSpeedRevampEvents {
         return Math.max(0D, pairedSpeedBonus * getFlightBonusMultiplier(combatFlight));
     }
 
-    private static double getRampedFlightBonusPercent(Player player, double allowedBonusPercent, int activeTicks, boolean canKeepRamp, boolean combatFlight) {
+    private static double getRampedFlightBonusPercent(Player player, StatsData data, double allowedBonusPercent, int activeTicks, boolean canKeepRamp, boolean combatFlight) {
         double sanitizedAllowedBonus = Math.max(0D, allowedBonusPercent);
         if (!canKeepRamp || sanitizedAllowedBonus <= 0D) {
             return 0D;
         }
 
-        double progress = Math.min(1D, Math.max(0, activeTicks) / (double) DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get());
+        double progress = Math.min(1D, Math.max(0, activeTicks) / (double) effectiveRampTicks(player, data));
         double curvedProgress = progress * progress;
         double baseCap = Math.max(0D, getFlightBaseCapPercent(combatFlight) * DmzRevampHelper.getGravityMovementSpeedFactor(player));
         if (sanitizedAllowedBonus <= baseCap) {
@@ -629,9 +666,8 @@ public final class DmzSpeedRevampEvents {
                 : DmzRevampConfig.REVAMP_SEARCH_FLIGHT_SPEED_BONUS_MULTIPLIER.get();
     }
 
-    private static double applyPlayerSpeedLimit(StatsData data, double bonusPercent) {
-        if (data == null) return Math.max(0D, bonusPercent);
-        int limitPercent = data.getResources().getFlightSpeedLimit();
+    private static double applyOverhaulSpeedLimit(Player player, double bonusPercent) {
+        int limitPercent = OverhaulSpeedLimitState.get(player);
         double factor = Math.max(5D, Math.min(100D, limitPercent <= 0 ? 100D : limitPercent)) / 100D;
         return Math.max(0D, bonusPercent) * factor;
     }

@@ -49,7 +49,8 @@ public final class DmzFlightBoostClientEvents {
         boolean hasFly = player.hasEffect(MainEffects.FLY.get());
         DmzRevampClientHooks.tickLocalFlightMovement(
                 hasFly && isProvidingFlightInput(minecraft),
-                DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get(),
+                DmzSpeedRevampEvents.effectiveRampTicks(player,
+                        StatsProvider.get(StatsCapability.INSTANCE, player).resolve().orElse(null)),
                 DmzRevampConfig.REVAMP_SPEED_RESET_DELAY_TICKS.get(),
                 minecraft.level.getGameTime()
         );

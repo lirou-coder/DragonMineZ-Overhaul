@@ -47,5 +47,7 @@ public final class DmzRevampNetwork {
         CHANNEL.registerMessage(packetId++, SaveSduClassC2SPacket.class, SaveSduClassC2SPacket::encode, SaveSduClassC2SPacket::decode, SaveSduClassC2SPacket::handle);
         CHANNEL.registerMessage(packetId++, SyncLockOnTargetC2SPacket.class, SyncLockOnTargetC2SPacket::encode, SyncLockOnTargetC2SPacket::decode, SyncLockOnTargetC2SPacket::handle);
         CHANNEL.registerMessage(packetId++, LegacyComboAttackC2SPacket.class, LegacyComboAttackC2SPacket::encode, LegacyComboAttackC2SPacket::decode, LegacyComboAttackC2SPacket::handle);
+        CHANNEL.registerMessage(packetId++, SetOverhaulSpeedLimitC2SPacket.class, SetOverhaulSpeedLimitC2SPacket::encode, SetOverhaulSpeedLimitC2SPacket::decode, SetOverhaulSpeedLimitC2SPacket::handle);
+        CHANNEL.registerMessage(packetId++, SyncOverhaulSpeedLimitS2CPacket.class, SyncOverhaulSpeedLimitS2CPacket::encode, SyncOverhaulSpeedLimitS2CPacket::decode, SyncOverhaulSpeedLimitS2CPacket::handle);
     }
 }

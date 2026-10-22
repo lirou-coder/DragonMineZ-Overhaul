@@ -63,7 +63,7 @@ public final class DmzSpeedRevampClientEvents {
         }
 
         if (sprintingForRamp) {
-            speedRampTicks = Math.min(DmzRevampConfig.REVAMP_SPEED_RAMP_TICKS.get(), speedRampTicks + 1);
+            speedRampTicks = Math.min(DmzSpeedRevampEvents.effectiveRampTicks(player, data), speedRampTicks + 1);
         } else if (speedRampTicks > 0) {
             speedRampTicks = Math.max(0, speedRampTicks - DmzRevampHelper.getRampDecayStep());
         }

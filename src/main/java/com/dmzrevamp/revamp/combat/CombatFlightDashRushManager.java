@@ -153,8 +153,7 @@ public final class CombatFlightDashRushManager {
                     ? 0.0D : player.getAttributeValue(EntityAttributes.FLY_SPEED.get());
             double scale = flyAttribute <= 0.0D ? 1.0D : Mth.clamp(flyAttribute / 0.35D, 0.25D, 4.0D);
             scale *= stats.getFlightStateSpeedMultiplier();
-            double flightLimit = stats.getResources().getFlightSpeedLimit() / 100.0D;
-            return Mth.clamp(1.05D * (1.0D + 0.20D * flyLevel) * scale * flightLimit * 0.6D, 0.9D, 1.5D);
+            return Mth.clamp(1.05D * (1.0D + 0.20D * flyLevel) * scale * 0.6D, 0.9D, 1.5D);
         }).orElse(0.9D);
     }
 
