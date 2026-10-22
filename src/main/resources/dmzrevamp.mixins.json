@@ -21,6 +21,8 @@
     "KiLaserEntityAccessor",
     "KiWaveEntityAccessor",
     "LivingEntityFullNegationMixin",
+    "ResourceRegenPrecisionMixin",
+    "TrainingGravityDimensionMixin",
     "AttributeFixDefaultsMixin",
     "compat.AlternatePassivesRacialRouterMixin",
     "compat.NoeaArmBandRaceCaptureMixin",

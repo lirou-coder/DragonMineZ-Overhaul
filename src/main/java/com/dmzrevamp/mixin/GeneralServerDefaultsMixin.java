@@ -41,7 +41,7 @@ public abstract class GeneralServerDefaultsMixin {
         GeneralServerConfig.GravityConfig gravity = config.getGravity();
         dmzrevamp$set(gravity, "resistanceStatDivisorRatio", 0.75D);
         dmzrevamp$set(gravity, "resistanceScale", 1000.0D);
-        dmzrevamp$set(gravity, "tpIdealBaseDivisor", 1.0D);
+        dmzrevamp$set(gravity, "tpIdealBaseDivisor", 1.25D);
         dmzrevamp$set(gravity, "tpPeakMultiplier", 3.0D);
 
         GeneralServerConfig.GodRitualConfig godRitual = config.getSuperSaiyanGodRitual();

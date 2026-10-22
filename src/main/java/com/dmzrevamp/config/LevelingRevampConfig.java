@@ -75,7 +75,7 @@ public final class LevelingRevampConfig {
 
     public static final class LevelsAndAttributes {
         public boolean enabled = true;
-        public int maxLevel = 500_000;
+        public int maxLevel = 1_000_000;
         public int maxAttribute = -1;
         public int levelUpPerPoints = 6;
         public boolean customHexStatCurve = true;
@@ -100,16 +100,16 @@ public final class LevelingRevampConfig {
         public int maxPrestigeCount = 10;
         public boolean prestigeHexStatChange = true;
         public boolean usePrestigeMaxAttribute = true;
-        public double scaleBonusPerPrestige = 0.5D;
+        public double scaleBonusPerPrestige = 0.1D;
         public double TPBonusPerPrestige = 1.0D;
         public double masteryBonusPerPrestige = 1.0D;
         public double storyRewardBonusPerPrestige = 0.5D;
-        public double storyDifficultyIncreasePerPrestige = 0.75D;
-        public boolean keepSkillsOnPrestige = false;
+        public double storyDifficultyIncreasePerPrestige = 0.25D;
+        public boolean keepSkillsOnPrestige = true;
         public boolean keepFormsOnPrestige = false;
         public boolean bonusesLostOnPrestige = true;
-        public boolean statRevertToInitialOnPrestige = true;
-        public double statPercentageLossOnPrestige = 0.95D;
+        public boolean statRevertToInitialOnPrestige = false;
+        public double statPercentageLossOnPrestige = 0.7D;
         public boolean resetQuestsOnPrestige = true;
 
         private void sanitize(int maxLevel) {
