@@ -41,7 +41,8 @@ public abstract class ScouterHUDRevampMixin {
 
     @Inject(method = "renderInfo", at = @At("HEAD"), cancellable = true, require = 0)
     private static void dmzrevamp$renderMasterSearchInsteadOfEntitySearch(GuiGraphics graphics, Minecraft minecraft,
-                                                                          ResourceLocation scouterTexture, CallbackInfo ci) {
+                                                                          ResourceLocation scouterTexture, float partialTicks,
+                                                                          CallbackInfo ci) {
         if (!ScouterClientState.isMasterSearch()) {
             return;
         }
