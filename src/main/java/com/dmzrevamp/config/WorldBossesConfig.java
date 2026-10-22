@@ -94,15 +94,15 @@ public final class WorldBossesConfig {
         Boss b = new Boss();
         switch (key) {
             case "janemba" -> {
-                b.bossStats.put("base", new Stats(513000,51300,128000,76900,0.599));
-                b.bossStats.put("transformed", new Stats(500000,161000,250000,145000,0.6));
+                b.bossStats.put("base", new Stats(1350000,135000,337000,202000,0.599));
+                b.bossStats.put("transformed", new Stats(1320000,424000,658000,382000,0.6));
             }
-            case "turles" -> b.bossStats.put("base", new Stats(2870,1050,1440,861,0.276));
-            case "metal_cooler_core" -> b.bossStats.put("base", new Stats(97900,8710,30500,20700,0.482));
-            case "gomah" -> b.bossStats.put("base", new Stats(557000,111000,188000,118000,0.46));
-            case "tamagami_1" -> { b.bossStats.put("base", new Stats(197000,75900,50600,56200,0.5)); b.bossStats.put("powered", new Stats(207000,79200,54800,67000,0.52)); }
-            case "tamagami_2" -> { b.bossStats.put("base", new Stats(161000,56800,47300,52000,0.5)); b.bossStats.put("powered", new Stats(171000,64200,56200,61500,0.52)); }
-            case "tamagami_3" -> { b.bossStats.put("base", new Stats(122000,45600,41800,41800,0.48)); b.bossStats.put("powered", new Stats(138000,50600,62100,48300,0.5)); }
+            case "turles" -> b.bossStats.put("base", new Stats(7560,2760,3790,2270,0.276));
+            case "metal_cooler_core" -> b.bossStats.put("base", new Stats(258000,22900,80300,54500,0.482));
+            case "gomah" -> b.bossStats.put("base", new Stats(1470000,292000,495000,310000,0.46));
+            case "tamagami_1" -> { b.bossStats.put("base", new Stats(518000,200000,133000,148000,0.5)); b.bossStats.put("powered", new Stats(545000,220000,146000,163000,0.52)); }
+            case "tamagami_2" -> { b.bossStats.put("base", new Stats(424000,149000,124000,137000,0.5)); b.bossStats.put("powered", new Stats(440000,176000,146000,162000,0.52)); }
+            case "tamagami_3" -> { b.bossStats.put("base", new Stats(321000,120000,110000,110000,0.48)); b.bossStats.put("powered", new Stats(355000,151000,138000,138000,0.5)); }
         }
         return b;
     }
