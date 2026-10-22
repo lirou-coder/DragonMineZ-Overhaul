@@ -32,7 +32,7 @@
   "gui.dmzrevamp.character_stats.max_energy.combat_flight_speed": "Velocidad de vuelo de combate: %1$s%%",
   "gui.dmzrevamp.character_stats.max_energy.search_flight_speed": "Velocidad de vuelo de búsqueda: %1$s%%",
   "gui.dmzrevamp.character_stats.melee_damage.swim_speed": "Velocidad máxima de nado: %1$s%%",
-  "gui.dmzrevamp.character_stats.melee_damage.strike_dash_distance": "Distancia de desplazamiento de Strike: +%1$s%%",
+  "gui.dmzrevamp.character_stats.melee_damage.strike_dash_distance": "Velocidad de Strike Rush: +%1$s%%",
   "gui.dmzrevamp.quest_tree.preview.armor": "Armadura",
   "gui.dmzrevamp.quest_tree.preview.armor_toughness": "Dureza de armadura",
   "gui.dmzrevamp.quest_tree.preview.defense": "Defensa",

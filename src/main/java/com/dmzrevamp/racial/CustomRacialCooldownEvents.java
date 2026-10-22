@@ -2,7 +2,6 @@ package com.dmzrevamp.racial;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.effect.DmzRevampEffectHelper;
-import com.dmzrevamp.effect.DmzRevampEffects;
 import com.dmzrevamp.racial.impl.SaiyanRpgZenkaiRacialSkill;
 import com.dmzrevamp.racial.impl.SaiyanRpgZenkaiEvents;
 import com.dmzrevamp.racial.impl.NamekianRevampRacialSkill;
@@ -54,9 +53,6 @@ public final class CustomRacialCooldownEvents {
             // Remove the legacy Overhaul key so old saves cannot silently restore it.
             data.getCooldowns().removeCooldown("DmzRevampSaiyanZenkai");
         });
-        player.removeEffect(DmzRevampEffects.RACIAL_COOLDOWN.get());
-        player.removeEffect(DmzRevampEffects.ADRENALINE_COOLDOWN.get());
-        player.removeEffect(DmzRevampEffects.REGENERATION_COOLDOWN.get());
         player.removeEffect(MainEffects.ADRENALINE.get());
         player.removeEffect(MainEffects.BIOANDROID_PASSIVE.get());
         for (var effect : COOLDOWN_EFFECTS.values()) {

@@ -202,53 +202,28 @@ public final class DmzRevampHelper {
             return 0D;
         }
         String normalizedStat = statName == null ? "" : statName.toUpperCase();
-        double maxStatValue = LevelingRevampConfig.levelsEnabled()
-                ? com.dmzrevamp.revamp.prestige.PrestigeSystem.attributeFormulaMaximum()
-                : getDmzUtilityStatReference(data);
-        double expectedMaxStat = Math.max(1D, maxStatValue * data.getStatScaling(normalizedStat));
-        // Like DMZ's no-form Defense reference, utility scaling accepts base-stat
-        // bonuses but never transformation/stack-form multipliers.
+        // Read the stat before form/stack multipliers. The configured reference is
+        // an actual stat value, not the player's level/attribute allocation cap.
         double stat = getBaseStatFormulaNoMultipliers(data, normalizedStat)
                 * (data.getResources().getPowerRelease() / 100D);
-        return getConfiguredDefenseStyleEffect(stat, expectedMaxStat, cap);
+        return getConfiguredDefenseStyleEffect(stat, getDefenseCurveReference(data), cap);
     }
 
-    public static double getConfiguredDefenseStyleEffect(double stat, double expectedMaxStat, double cap) {
-        if (cap <= 0D || expectedMaxStat <= 0D || !Double.isFinite(stat)) return 0D;
-        if (DmzRevampConfig.CUSTOM_DEFENSE_AND_SPEED_EFFECTS_CURVE.get()) {
-            return clamp(customDefenseAndSpeedCurveProgress(stat / expectedMaxStat) * cap, 0D, cap);
-        }
+    public static double getConfiguredDefenseStyleEffect(double stat, double statReference, double cap) {
+        if (cap <= 0D || statReference <= 0D || !Double.isFinite(stat) || stat <= 0D) return 0D;
+        double progress = Math.log1p(stat) / (2D * Math.log1p(statReference));
+        return clamp(progress * cap, 0D, cap);
+    }
+
+    public static double getDmzDefenseStyleEffect(double stat, double statReference, double cap) {
+        if (cap <= 0D || statReference <= 0D || !Double.isFinite(stat) || stat <= 0D) return 0D;
         double kFactor = Math.max(12D,
-                expectedMaxStat * ConfigManager.getCombatConfig().getDefenseReductionScale());
-        double reduction = stat >= 0D ? stat / (kFactor + stat) : stat / (kFactor - stat);
-        return clamp(reduction, 0D, cap);
+                statReference * ConfigManager.getCombatConfig().getDefenseReductionScale());
+        return clamp(stat / (kFactor + stat), 0D, cap);
     }
 
     public static double getDefenseCurveReference(StatsData data) {
-        if (LevelingRevampConfig.levelsEnabled()) {
-            return com.dmzrevamp.revamp.prestige.PrestigeSystem.attributeFormulaMaximum();
-        }
-        double configuredMax = Math.max(1D, data.getConfiguredMaxValue());
-        return data.isMaxLevelValueInsteadOfStats() ? configuredMax * 6D / 2D : configuredMax;
-    }
-
-    private static double customDefenseAndSpeedCurveProgress(double ratio) {
-        if (!Double.isFinite(ratio) || ratio <= 0D) return 0D;
-        if (ratio <= 0.01D) return interpolate(ratio, 0D, 0.01D, 0D, 0.20D);
-        if (ratio <= 0.10D) return interpolate(ratio, 0.01D, 0.10D, 0.20D, 0.40D);
-        if (ratio <= 0.50D) return interpolate(ratio, 0.10D, 0.50D, 0.40D, 0.60D);
-        if (ratio <= 1D) return interpolate(ratio, 0.50D, 1D, 0.60D, 1D);
-        return 1D;
-    }
-
-    private static double interpolate(double value, double low, double high, double lowResult, double highResult) {
-        double progress = (value - low) / Math.max(0.0000001D, high - low);
-        return lowResult + (highResult - lowResult) * progress;
-    }
-
-    private static double getDmzUtilityStatReference(StatsData data) {
-        double configuredMax = Math.max(1D, data.getConfiguredMaxValue());
-        return data.isMaxLevelValueInsteadOfStats() ? configuredMax * 6D : configuredMax;
+        return Math.max(1D, DmzRevampConfig.STAT_REF_FOR_DEFENSE_AND_COOLDOWN_CURVES.get());
     }
 
     public static double getSpdCooldownReduction(StatsData data) {

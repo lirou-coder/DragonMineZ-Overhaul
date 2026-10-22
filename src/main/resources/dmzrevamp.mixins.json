@@ -117,6 +117,7 @@
     "SideQuestDefaultsRevampDefaultsMixin",
     "QuestServiceRevampSpawnFieldsMixin",
     "RacialModeHandlerCustomSkillMixin",
+    "HumanAdaptationAdrenalineEffectMixin",
     "RacialSkillCommandRevampResetMixin",
     "ReloadCommandWeightConfigMixin",
     "ResourcesMaxEnergyCapMixin",

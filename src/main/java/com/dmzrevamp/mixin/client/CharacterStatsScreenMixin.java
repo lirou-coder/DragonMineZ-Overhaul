@@ -203,10 +203,8 @@ public abstract class CharacterStatsScreenMixin extends BaseMenuScreen {
         if (original == null || original.length < 2) return;
         double baseCap = com.dragonminez.common.config.ConfigManager.getCombatConfig()
                 .getBaseDamageReductionCap();
-        double expectedMaxDefense = DmzRevampHelper.getDefenseCurveReference(statsData)
-                * statsData.getStatScaling("DEF");
         double baseReduction = DmzRevampHelper.getConfiguredDefenseStyleEffect(
-                statsData.getDefense(), expectedMaxDefense, baseCap);
+                statsData.getFlatDefense(), DmzRevampHelper.getDefenseCurveReference(statsData), baseCap);
         double enchantmentReduction = Math.max(0D, Math.min(1D, original[1] / 100D));
         double combinedReduction = 1D - (1D - baseReduction) * (1D - enchantmentReduction);
         cir.setReturnValue(new double[]{

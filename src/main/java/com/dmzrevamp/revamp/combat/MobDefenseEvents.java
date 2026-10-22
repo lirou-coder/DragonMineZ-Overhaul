@@ -2,9 +2,8 @@ package com.dmzrevamp.revamp.combat;
 
 import com.dmzrevamp.DmzRevampMod;
 import com.dmzrevamp.entity.DmzRevampAttributes;
-import com.dmzrevamp.config.LevelingRevampConfig;
+import com.dmzrevamp.config.DmzRevampConfig;
 import com.dmzrevamp.revamp.DmzRevampHelper;
-import com.dmzrevamp.revamp.prestige.PrestigeSystem;
 import com.dragonminez.common.config.CombatConfig;
 import com.dragonminez.common.config.ConfigManager;
 import net.minecraft.world.entity.LivingEntity;
@@ -68,12 +67,12 @@ public final class MobDefenseEvents {
 
         // Mirrors the player's max-Defense damage-reduction stage, but deliberately uses only
         // mob_defense. Vanilla armor and Protection remain independent mitigation systems.
-        double defenseReference = playerDefenseReference();
-        double defenseReduction = DmzRevampHelper.getConfiguredDefenseStyleEffect(
-                defense,
-                defenseReference,
-                config.getBaseDamageReductionCap()
-        );
+        double defenseReference = DmzRevampConfig.STAT_REF_FOR_DEFENSE_AND_COOLDOWN_CURVES.get();
+        double defenseReduction = DmzRevampConfig.CUSTOM_DEFENSE_AND_SPEED_EFFECTS_CURVE.get()
+                ? DmzRevampHelper.getConfiguredDefenseStyleEffect(
+                        defense, defenseReference, config.getBaseDamageReductionCap())
+                : DmzRevampHelper.getDmzDefenseStyleEffect(
+                        defense, defenseReference, config.getBaseDamageReductionCap());
         double afterDefenseCurve = afterFlat * (1D - defenseReduction);
 
         if (config.getEnableAdaptativeDefenseMitigation()) {
@@ -86,17 +85,6 @@ public final class MobDefenseEvents {
         }
 
         return (float) Math.max(0.0001D, afterDefenseCurve);
-    }
-
-    private static double playerDefenseReference() {
-        if (LevelingRevampConfig.levelsEnabled()) {
-            return Math.max(1D, PrestigeSystem.attributeFormulaMaximum());
-        }
-        var gameplay = ConfigManager.getServerConfig().getGameplay();
-        double configuredMaximum = Math.max(1D, gameplay.getMaxValue());
-        return gameplay.getMaxLevelValueInsteadOfStats()
-                ? configuredMaximum * 6D / 2D
-                : configuredMaximum;
     }
 
     /** Uses DMZ 2.2's configured curve for the mob_defense extension. */

@@ -14,7 +14,6 @@ import com.dmzrevamp.config.LevelingRevampConfig;
 import com.dmzrevamp.config.WorldBossesConfig;
 import com.dmzrevamp.config.FormMitigationConfig;
 import com.dmzrevamp.config.racial.DmzRevampRacialConfigs;
-import com.dmzrevamp.effect.DmzRevampEffects;
 import com.dmzrevamp.entity.DmzRevampEntities;
 import com.dmzrevamp.entity.DmzRevampAttributes;
 import com.dmzrevamp.item.DmzRevampItems;
@@ -44,7 +43,6 @@ public class DmzRevampMod {
     // Forge calls this once while loading the mod; this is where Overhaul registers its items, effects, configs, packets, and custom skill systems.
     public DmzRevampMod(FMLJavaModLoadingContext loadingContext) {
         var modEventBus = loadingContext.getModEventBus();
-        DmzRevampEffects.register(modEventBus);
         DmzRevampEntities.register(modEventBus);
         DmzRevampAttributes.register(modEventBus);
         DmzRevampItems.register(modEventBus);

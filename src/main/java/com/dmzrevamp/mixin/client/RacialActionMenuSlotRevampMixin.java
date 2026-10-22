@@ -7,7 +7,6 @@ import com.dragonminez.client.gui.radial.RadialNode;
 import com.dragonminez.client.gui.radial.nodes.AbsorptionEjectNode;
 import com.dragonminez.client.gui.radial.nodes.BioSkillChoiceNode;
 import com.dragonminez.client.gui.radial.nodes.RacialSkillNode;
-import com.dragonminez.client.gui.utilitymenu.ButtonInfo;
 import com.dragonminez.common.network.C2S.SwitchActionC2S;
 import com.dragonminez.common.network.NetworkHandler;
 import com.dragonminez.common.stats.StatsData;
@@ -15,6 +14,7 @@ import com.dragonminez.common.stats.extras.ActionMode;
 import com.dragonminez.common.racial.RacialData;
 import com.dragonminez.common.racial.impl.BioAndroidEvolution;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,6 +25,21 @@ import java.util.List;
 
 @Mixin(RacialSkillNode.class)
 public abstract class RacialActionMenuSlotRevampMixin extends AbstractRadialNode {
+    @Inject(method = "icon", at = @At("HEAD"), cancellable = true, remap = false)
+    private void dmzrevamp$useNativeRacialIcon(StatsData data, CallbackInfoReturnable<ResourceLocation> cir) {
+        if (!dmzrevamp$isVanillaRacialNode() || actionSkill(data) == null) return;
+
+        String racialSkillId = CustomRacialActionHelper.getConfiguredRacialSkillId(data);
+        ResourceLocation icon = switch (racialSkillId.toLowerCase(java.util.Locale.ROOT)) {
+            case "namekianrevamp" -> icon("assimilation");
+            case "majinrevamp" -> icon("absorption");
+            case "humanrevamp" -> icon("absorptionbarrier");
+            case "bioandroidrevamp" -> dmzrevamp$bioAndroidIcon(data);
+            default -> icon("racial");
+        };
+        cir.setReturnValue(icon);
+    }
+
     @Inject(method = "buildChildren", at = @At("HEAD"), cancellable = true, remap = false)
     private void dmzrevamp$buildMajinRevampEjectSlots(StatsData data, CallbackInfoReturnable<List<RadialNode>> cir) {
         if ("bioandroidrevamp".equalsIgnoreCase(CustomRacialActionHelper.getConfiguredRacialSkillId(data))) {
@@ -59,9 +74,8 @@ public abstract class RacialActionMenuSlotRevampMixin extends AbstractRadialNode
             return;
         }
 
-        ButtonInfo info = skill.buildButtonInfo(data);
-        cir.setReturnValue(info != null && info.getLine1() != null
-                ? info.getLine1() : Component.translatable("gui.action.dragonminez.racial." + skill.id()));
+        cir.setReturnValue(Component.translatable(
+                "gui.action.dragonminez.racial." + dmzrevamp$baseRacialId(skill.id())));
     }
 
     @Inject(method = "visible", at = @At("HEAD"), cancellable = true, remap = false)
@@ -98,15 +112,6 @@ public abstract class RacialActionMenuSlotRevampMixin extends AbstractRadialNode
     }
 
     @Override
-    public String faceText(StatsData data) {
-        if (!dmzrevamp$isVanillaRacialNode()) return "";
-        CustomRacialSkill skill = actionSkill(data);
-        if (skill == null) return "";
-        ButtonInfo info = skill.buildButtonInfo(data);
-        return info == null || info.getLine2() == null ? "" : info.getLine2().getString();
-    }
-
-    @Override
     public void onDoubleSelect(StatsData data) {
         if (dmzrevamp$isVanillaRacialNode()) handleClick(data, true);
     }
@@ -139,5 +144,27 @@ public abstract class RacialActionMenuSlotRevampMixin extends AbstractRadialNode
         // Mixin methods are inherited by subclasses. External mods commonly extend
         // RacialSkillNode for their own buttons, so never replace their behavior.
         return ((Object) this).getClass() == RacialSkillNode.class;
+    }
+
+    private ResourceLocation dmzrevamp$bioAndroidIcon(StatsData data) {
+        String tier = BioAndroidEvolution.resolveTier(data);
+        if ("perfect".equals(tier)) return icon("celljr");
+        if ("semi".equals(tier)
+                && RacialData.BIO_SKILL_EXPLODE.equals(data.getRacialData().getBioSelectedSkill())) {
+            return icon("selfdestruct");
+        }
+        return icon("vitaldrain");
+    }
+
+    private static String dmzrevamp$baseRacialId(String id) {
+        return switch (id) {
+            case "humanrevamp" -> "human";
+            case "saiyanrevamp" -> "saiyan";
+            case "namekianrevamp" -> "namekian";
+            case "frostdemonrevamp" -> "frostdemon";
+            case "majinrevamp" -> "majin";
+            case "bioandroidrevamp" -> "bioandroid";
+            default -> id;
+        };
     }
 }

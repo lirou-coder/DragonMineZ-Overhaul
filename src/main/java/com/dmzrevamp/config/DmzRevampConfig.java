@@ -115,11 +115,15 @@ public final class DmzRevampConfig {
             .defineInRange("combat.spdCooldownReductionCap", 0.75D, 0D, 1D);
 
     public static final ForgeConfigSpec.DoubleValue SPD_ATTACK_SPEED_INCREASE_CAP = BUILDER
-            .comment("Maximum Ki attack speed and Strike dash distance increase from SPD. 0.7 = 70 percent.")
+            .comment("Maximum Ki attack speed and Strike Rush speed increase from SPD. 0.75 = 75 percent.")
             .defineInRange("combat.spdAttackSpeedIncreaseCap", 0.75D, 0D, 100D);
 
+    public static final ForgeConfigSpec.DoubleValue STAT_REF_FOR_DEFENSE_AND_COOLDOWN_CURVES = BUILDER
+            .comment("Stat value where Defense damage reduction and Speed-based cooldown, cast time, Ki attack speed, and Strike Rush speed reach 50% of their configured cap. Form multipliers are excluded. The logarithmic curve always applies to Speed effects; the toggle below controls only Defense.")
+            .defineInRange("combat.statRefForDefenseAndCooldowCurves", 500000D, 1D, 1_000_000_000D);
+
     public static final ForgeConfigSpec.BooleanValue CUSTOM_DEFENSE_AND_SPEED_EFFECTS_CURVE = BUILDER
-            .comment("When true, Defense damage reduction and Speed-based cooldown, cast time, Ki attack speed, and Strike dash distance effects use the custom progression curve: 1% of the reference stat grants 20% of the configured cap, 10% grants 40%, 50% grants 60%, and 100% grants 100%. When false, the original DMZ-style hyperbolic curve is used.")
+            .comment("When true, the logarithmic curve is used for Defense damage reduction. When false, player Defense uses Dragon Mine Z's native reduction curve. Speed-based cooldown, cast-time, Ki-attack-speed, and Strike Rush speed effects always use the logarithmic curve.")
             .define("combat.customDefenseAndSpeedEffectsCurve", true);
 
     public static final ForgeConfigSpec.BooleanValue ENABLE_DYNAMIC_GROWTH_NOTIFICATION_SUPPRESSION = BUILDER

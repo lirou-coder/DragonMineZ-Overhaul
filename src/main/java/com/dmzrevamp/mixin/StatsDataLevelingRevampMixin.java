@@ -30,14 +30,15 @@ public abstract class StatsDataLevelingRevampMixin {
             return Math.min(originalReduction, baseCap);
         }
         StatsData data = (StatsData) (Object) this;
-        double defense = data.getDefense() * Math.max(1D, data.getTotalMultiplier("DEF"));
+        // getFlatDefense is the effective pre-form defense value. Form/stack DEF
+        // multipliers affect flat mitigation separately, not this curve's stat input.
+        double defense = data.getFlatDefense();
         if (isGuardBroken) {
             defense *= 1D - ConfigManager.getCombatConfig().getDefenseDecayOnGuardBreak();
         }
         if (defense > 0D) defense *= 1D - armorPenetration;
-        double expectedMaxDefense = DmzRevampHelper.getDefenseCurveReference(data)
-                * data.getStatScaling("DEF");
-        return DmzRevampHelper.getConfiguredDefenseStyleEffect(defense, expectedMaxDefense, baseCap);
+        return DmzRevampHelper.getConfiguredDefenseStyleEffect(
+                defense, DmzRevampHelper.getDefenseCurveReference(data), baseCap);
     }
 
     @Redirect(method = "calculatePostMitigationDamage", at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/StatsData;getConfiguredMaxValue()I"), remap = false)
