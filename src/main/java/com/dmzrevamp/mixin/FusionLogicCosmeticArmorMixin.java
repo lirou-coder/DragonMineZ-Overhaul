@@ -8,7 +8,6 @@ import com.dmzrevamp.compat.NoeaCompat;
 import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.common.stats.StatsCapability;
 import com.dragonminez.common.stats.StatsProvider;
-import com.dragonminez.common.stats.character.Status;
 import com.dragonminez.server.util.FusionLogic;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,8 +19,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(FusionLogic.class)
 public abstract class FusionLogicCosmeticArmorMixin {
-    private static final ThreadLocal<Boolean> DMZREVAMP_METAMORU_BOTH_ANDROIDS = ThreadLocal.withInitial(() -> false);
-
     @Redirect(
             method = "applyFusion",
             at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/quest/PartyManager;beginFusionParty(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/server/level/ServerPlayer;)V"),
@@ -53,38 +50,13 @@ public abstract class FusionLogicCosmeticArmorMixin {
         }
     }
 
-    @Inject(method = "executeMetamoru", at = @At("HEAD"), remap = false)
-    private static void dmzrevamp$rememberAndroidFusionPair(ServerPlayer player, ServerPlayer otherPlayer, StatsData data, StatsData otherData, CallbackInfoReturnable<Boolean> cir) {
-        boolean bothAndroids = data != null && otherData != null
-                && data.getStatus().isAndroidUpgraded()
-                && otherData.getStatus().isAndroidUpgraded();
-        DMZREVAMP_METAMORU_BOTH_ANDROIDS.set(bothAndroids);
-    }
-
-    @Inject(method = "executeMetamoru", at = @At("RETURN"), remap = false)
-    private static void dmzrevamp$clearAndroidFusionPair(ServerPlayer player, ServerPlayer otherPlayer, StatsData data, StatsData otherData, CallbackInfoReturnable<Boolean> cir) {
-        DMZREVAMP_METAMORU_BOTH_ANDROIDS.remove();
-    }
-
     @Redirect(
             method = "executeMetamoru",
-            at = @At(value = "INVOKE", target = "Lcom/dragonminez/common/stats/character/Status;isAndroidUpgraded()Z"),
+            at = @At(value = "INVOKE", target = "Lcom/dragonminez/server/util/FusionLogic;metamoruBlocker(Lcom/dragonminez/common/stats/StatsData;Lcom/dragonminez/common/stats/StatsData;)Ljava/lang/String;"),
             remap = false
     )
-    private static boolean dmzrevamp$allowConfiguredAndroidFusion(Status status) {
-        if (FusionsRevampedConfig.shouldBypassAndroidMetamoruCheck(DMZREVAMP_METAMORU_BOTH_ANDROIDS.get())) {
-            return false;
-        }
-        return status.isAndroidUpgraded();
-    }
-
-    @Redirect(
-            method = "executeMetamoru",
-            at = @At(value = "INVOKE", target = "Ljava/lang/String;equals(Ljava/lang/Object;)Z"),
-            remap = false
-    )
-    private static boolean dmzrevamp$allowDifferentRaceFusionDance(String raceName, Object otherRaceName) {
-        return FusionsRevampedConfig.canUseDifferentRaceMetamoru() || raceName.equals(otherRaceName);
+    private static String dmzrevamp$allowConfiguredMetamoruRules(StatsData leaderData, StatsData partnerData) {
+        return FusionRevampLogic.configuredMetamoruBlocker(leaderData, partnerData);
     }
 
     @Inject(method = "calculateAndApplyStats", at = @At("HEAD"), cancellable = true, remap = false)

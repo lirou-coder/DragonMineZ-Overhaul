@@ -310,6 +310,12 @@ public final class DmzSpeedRevampEvents {
                 currentSpeed,
                 meleeDamage
         ));
+        double minimumAttackSpeedMultiplier = Math.max(0D,
+                Math.min(1D, DmzRevampConfig.MAX_ATTACK_SPEED_DECREASE_PERCENTAGE.get()));
+        // Clamp the combined Overhaul contribution (SPD gain minus STR penalty),
+        // rather than limiting either stat independently.
+        rawAttackSpeedBonusPercent = Math.max(rawAttackSpeedBonusPercent,
+                (minimumAttackSpeedMultiplier - 1D) * 100D);
         double overhaulSwimSpeedBonusPercent = sanitizePercent(DmzRevampHelper.getScaledSwimSpeedBonusPercent(data,
                 currentSpeed,
                 meleeDamage

@@ -6,7 +6,7 @@ These techniques are protected character abilities. They cannot be deleted like 
 
 ## Android Absorption
 
-Android Absorption is granted to Bio Androids and to Humans who completed the Android upgrade.
+Android Absorption is granted only to Humans who completed the Android upgrade.
 
 The attack restrains its target and deals damage in three absorption hits. Half of the health actually removed by each absorption hit is restored to the user as both HP and Ki. The final part releases the target.
 

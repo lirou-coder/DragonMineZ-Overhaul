@@ -340,7 +340,7 @@ public abstract class SkillsMenuScreenMixin {
     )
     private double dmzrevamp$displayCustomStrikeDamageFromMelee(StatsData data) {
         TechniqueData technique = dmzrevamp$selectedTechnique();
-        if (technique instanceof StrikeAttackData strike && strike instanceof RevampStrikeAttackData revamp && revamp.dmzrevamp$isCustomStrike()) {
+        if (technique instanceof StrikeAttackData) {
             return data.getMeleeDamage();
         }
         return data.getStrikeDamage();

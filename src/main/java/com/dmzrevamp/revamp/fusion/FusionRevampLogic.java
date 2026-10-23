@@ -37,6 +37,48 @@ public final class FusionRevampLogic {
     private FusionRevampLogic() {
     }
 
+    /** Applies the configured Metamoru exceptions consistently to the attempt and dance-preview paths. */
+    public static String configuredMetamoruBlocker(StatsData leaderData, StatsData partnerData) {
+        if (leaderData == null || partnerData == null) {
+            return null;
+        }
+        if (leaderData.getStatus().isAndroidUpgraded() || partnerData.getStatus().isAndroidUpgraded()) {
+            boolean bothAndroids = leaderData.getStatus().isAndroidUpgraded()
+                    && partnerData.getStatus().isAndroidUpgraded();
+            if (!FusionsRevampedConfig.shouldBypassAndroidMetamoruCheck(bothAndroids)) {
+                return "message.dragonminez.fusion.android_cannot_fuse";
+            }
+        }
+        if (!FusionsRevampedConfig.canUseDifferentRaceMetamoru()
+                && !leaderData.getCharacter().getRaceName().equals(partnerData.getCharacter().getRaceName())) {
+            return "message.dragonminez.fusion.different_race";
+        }
+        if (!sameFormSlot(leaderData, partnerData, false) || !sameFormSlot(leaderData, partnerData, true)) {
+            return "message.dragonminez.fusion.different_form";
+        }
+        int leaderLevel = leaderData.getStats().getTotalStats();
+        int partnerLevel = partnerData.getStats().getTotalStats();
+        double threshold = ConfigManager.getServerConfig().getGameplay().getMetamoruFusionThreshold();
+        if (threshold > 0 && (double) Math.abs(leaderLevel - partnerLevel) / Math.max(leaderLevel, partnerLevel) > threshold) {
+            return "message.dragonminez.fusion.level_gap";
+        }
+        return null;
+    }
+
+    private static boolean sameFormSlot(StatsData first, StatsData second, boolean stack) {
+        var firstCharacter = first.getCharacter();
+        var secondCharacter = second.getCharacter();
+        boolean firstActive = stack ? firstCharacter.hasActiveStackForm() : firstCharacter.hasActiveForm();
+        boolean secondActive = stack ? secondCharacter.hasActiveStackForm() : secondCharacter.hasActiveForm();
+        if (firstActive != secondActive) return false;
+        if (!firstActive) return true;
+        String firstGroup = stack ? firstCharacter.getActiveStackFormGroup() : firstCharacter.getActiveFormGroup();
+        String secondGroup = stack ? secondCharacter.getActiveStackFormGroup() : secondCharacter.getActiveFormGroup();
+        String firstForm = stack ? firstCharacter.getActiveStackForm() : firstCharacter.getActiveForm();
+        String secondForm = stack ? secondCharacter.getActiveStackForm() : secondCharacter.getActiveForm();
+        return firstGroup.equalsIgnoreCase(secondGroup) && firstForm.equalsIgnoreCase(secondForm);
+    }
+
     public static void applyFusionBonuses(StatsData leaderData, StatsData partnerData, String fusionType, int leaderTotalStats, int partnerTotalStats) {
         clearFusionBonuses(leaderData);
         clearFusionBonuses(partnerData);

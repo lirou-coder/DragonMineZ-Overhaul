@@ -69,6 +69,12 @@ public final class RaceExclusiveStrikeEvents {
             }
             if (eligibility.androidAbsorption) {
                 changed |= grant(data, StrikeAttackTemplates.ANDROID_ABSORPTION);
+            } else if (data.getTechniques().getUnlockedTechniques()
+                    .containsKey(StrikeAttackTemplates.ANDROID_ABSORPTION)) {
+                // Remove the old Bio Android grant and any grant left behind after
+                // a human loses the Android upgrade.
+                data.getTechniques().removeTechnique(StrikeAttackTemplates.ANDROID_ABSORPTION);
+                changed = true;
             }
             changed |= migrateSleepRecovery(data, eligibility.sleepRecovery);
             if (changed) {
@@ -107,10 +113,9 @@ public final class RaceExclusiveStrikeEvents {
     private static Eligibility eligibility(StatsData data) {
         String racial = CustomRacialActionHelper.getConfiguredRacialSkillId(data);
         String race = data.getCharacter().getRaceName();
-        boolean bioAndroid = "bioandroidrevamp".equalsIgnoreCase(racial) || "bioandroid".equalsIgnoreCase(race);
         boolean human = "humanrevamp".equalsIgnoreCase(racial) || "human".equalsIgnoreCase(race);
         boolean majin = "majinrevamp".equalsIgnoreCase(racial) || "majin".equalsIgnoreCase(race);
-        return new Eligibility(bioAndroid || (human && data.getStatus().isAndroidUpgraded()),
+        return new Eligibility(human && data.getStatus().isAndroidUpgraded(),
                 majin);
     }
 
@@ -129,7 +134,9 @@ public final class RaceExclusiveStrikeEvents {
     private record Eligibility(boolean androidAbsorption, boolean sleepRecovery) {
         private boolean hasAllRequired(StatsData data) {
             var unlocked = data.getTechniques().getUnlockedTechniques();
-            return (!androidAbsorption || unlocked.containsKey(StrikeAttackTemplates.ANDROID_ABSORPTION))
+            return (androidAbsorption
+                    ? unlocked.containsKey(StrikeAttackTemplates.ANDROID_ABSORPTION)
+                    : !unlocked.containsKey(StrikeAttackTemplates.ANDROID_ABSORPTION))
                     && (!sleepRecovery || unlocked.get(SLEEP_RECOVERY_ID) instanceof EvasionAttackData);
         }
     }

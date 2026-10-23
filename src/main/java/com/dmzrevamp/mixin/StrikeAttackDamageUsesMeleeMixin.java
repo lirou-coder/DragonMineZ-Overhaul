@@ -1,7 +1,9 @@
 package com.dmzrevamp.mixin;
 
 import com.dmzrevamp.revamp.strike.StrikeAttackComputationContext;
+import com.dragonminez.common.stats.StatsData;
 import com.dragonminez.server.events.players.combat.StrikeAttackHandler;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,6 +16,30 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(StrikeAttackHandler.class)
 public abstract class StrikeAttackDamageUsesMeleeMixin {
+    /**
+     * DMZ 2.2 computes strike damage in several handler methods and synthetic
+     * lambdas. Those paths do not all run inside the old construction context,
+     * so replace the stat at the actual StrikeAttackHandler call sites.
+     */
+    @Redirect(
+            method = {
+                    "lambda$startStrike$*",
+                    "startTargetlessStrike",
+                    "startSlam",
+                    "startDimensionalPunch",
+                    "startDimensionalSlash",
+                    "lambda$clashStrikeDamage$*"
+            },
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lcom/dragonminez/common/stats/StatsData;getStrikeDamage()D"
+            ),
+            remap = false
+    )
+    private static double dmzrevamp$useMeleeDamageForStrikeAttacks(StatsData stats) {
+        return stats.getMeleeDamage();
+    }
+
     @Inject(
             method = {
                     "startStrike",

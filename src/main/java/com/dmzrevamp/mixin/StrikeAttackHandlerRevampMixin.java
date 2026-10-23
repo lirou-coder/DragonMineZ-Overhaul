@@ -329,6 +329,11 @@ public abstract class StrikeAttackHandlerRevampMixin {
             if (technique instanceof StrikeAttackData strike
                     && strike instanceof RevampStrikeAttackData revamp
                     && revamp.dmzrevamp$isCustomStrike()) {
+                if (StrikeAttackTemplates.ANDROID_ABSORPTION.equals(strike.getId())) {
+                    StrikeCinematics.stop(player);
+                    ci.cancel();
+                    return;
+                }
                 if (target == null) {
                     StrikeCinematics.stop(player);
                 } else {

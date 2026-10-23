@@ -211,7 +211,11 @@ public final class DmzClassConfigManager {
         RaceStatsConfig.ClassStats finalRaceDefault = raceDefault;
         raceClasses.clear();
         CLASS_STATS.forEach((classId, classStats) -> {
-            if (!SduCompat.isClassSuppressed(classId) && isClassAllowedForRace(classId, normalizedRace)) {
+            // Keep suppressed classes in the runtime config. SDU suppression is a
+            // character-creation/UI concern; removing a class here makes existing
+            // characters' saved class IDs invalid, and DMZ's validator then silently
+            // replaces them with the alphabetically first class (usually Berserker).
+            if (isClassAllowedForRace(classId, normalizedRace)) {
                 raceClasses.put(classId, merge(finalRaceDefault, classStats));
             }
         });
